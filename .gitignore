@@ -1,64 +1,42 @@
-# =========================
 # OS
-# =========================
 .DS_Store
 
-# =========================
-# Logs
-# =========================
-*.log
-
-# =========================
-# Dart / Flutter
-# =========================
+# Flutter / Dart
 .dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
 .packages
 .pub/
 .pub-cache/
 build/
 coverage/
+.metadata
 
-# Flutter plugin
-.flutter-plugins
-.flutter-plugins-dependencies
-
-# =========================
-# IDE (IntelliJ / Android Studio)
-# =========================
+# IDE
 .idea/
 *.iml
 *.ipr
 *.iws
-
-# VSCode (선택)
 .vscode/
 
-# =========================
 # Android
-# =========================
 .gradle/
 local.properties
+android/app/debug/
+android/app/profile/
+android/app/release/
 
-/android/app/debug/
-/android/app/profile/
-/android/app/release/
-
-# =========================
-# iOS
-# =========================
+# iOS / macOS
 ios/Pods/
 ios/.symlinks/
 ios/Flutter/Flutter.framework
 ios/Flutter/Flutter.podspec
-
-# =========================
-# macOS
-# =========================
 macos/Pods/
 
-# =========================
+# Logs
+*.log
+
 # Misc
-# =========================
 *.swp
 *.pyc
 .history
