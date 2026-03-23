@@ -113,8 +113,8 @@ class _PlaceCardState extends State<PlaceCard>
                   border: Border.all(
                     color: _isPressed
                         ? palette.primary.withValues(
-                            alpha: isDark ? 0.28 : 0.20,
-                          )
+                      alpha: isDark ? 0.28 : 0.20,
+                    )
                         : isDark
                         ? palette.bottomSheetBorder.withValues(alpha: 0.42)
                         : palette.border,
@@ -138,42 +138,17 @@ class _PlaceCardState extends State<PlaceCard>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              widget.place.name,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: isCompact ? 17 : 18,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -0.45,
-                                color: palette.textPrimary,
-                                height: 1.16,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: AnimatedBuilder(
-                              animation: _bookmarkScale,
-                              builder: (context, child) {
-                                return Transform.scale(
-                                  scale: _bookmarkScale.value,
-                                  child: child,
-                                );
-                              },
-                              child: _BookmarkButton(
-                                isActive: widget.place.isBookmarked,
-                                compact: isCompact,
-                                onTap: widget.onTapBookmark,
-                              ),
-                            ),
-                          ),
-                        ],
+                      Text(
+                        widget.place.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: isCompact ? 17 : 18,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.45,
+                          color: palette.textPrimary,
+                          height: 1.16,
+                        ),
                       ),
                       const SizedBox(height: 10),
 
@@ -184,8 +159,8 @@ class _PlaceCardState extends State<PlaceCard>
                           children: visibleTags
                               .map(
                                 (tag) =>
-                                    _TagChip(label: tag, compact: isCompact),
-                              )
+                                _TagChip(label: tag, compact: isCompact),
+                          )
                               .toList(),
                         ),
                         const SizedBox(height: 12),
@@ -193,7 +168,7 @@ class _PlaceCardState extends State<PlaceCard>
 
                       Expanded(
                         child: Padding(
-                          padding: const EdgeInsets.only(bottom: 2),
+                          padding: const EdgeInsets.only(bottom: 6),
                           child: Text(
                             widget.place.description,
                             maxLines: descriptionMaxLines,
@@ -206,6 +181,26 @@ class _PlaceCardState extends State<PlaceCard>
                             ),
                           ),
                         ),
+                      ),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          AnimatedBuilder(
+                            animation: _bookmarkScale,
+                            builder: (context, child) {
+                              return Transform.scale(
+                                scale: _bookmarkScale.value,
+                                child: child,
+                              );
+                            },
+                            child: _BookmarkButton(
+                              isActive: widget.place.isBookmarked,
+                              compact: isCompact,
+                              onTap: widget.onTapBookmark,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
