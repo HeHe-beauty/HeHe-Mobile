@@ -2,14 +2,15 @@ import 'dart:convert';
 import 'dart:io';
 
 class NaverReverseGeocode {
-  static const String _clientId = String.fromEnvironment(
+  static final String _clientId = const String.fromEnvironment(
     'NAVER_MAP_CLIENT_ID',
     defaultValue: '',
-  );
-  static const String _clientSecret = String.fromEnvironment(
+  ).trim();
+
+  static final String _clientSecret = const String.fromEnvironment(
     'NAVER_MAP_CLIENT_SECRET',
     defaultValue: '',
-  );
+  ).trim();
 
   static bool get isConfigured =>
       _clientId.isNotEmpty && _clientSecret.isNotEmpty;
@@ -26,24 +27,23 @@ class NaverReverseGeocode {
     final client = HttpClient();
 
     try {
-      final uri = Uri.parse(
-        'https://naveropenapi.apigw.gov-ntruss.com/map-reversegeocode/v2/gc'
-            '?coords=$longitude,$latitude'
-            '&sourcecrs=epsg:4326'
-            '&orders=admcode,legalcode'
-            '&output=json',
+      final uri = Uri.https(
+        'maps.apigw.ntruss.com',
+        '/map-reversegeocode/v2/gc',
+        {
+          'coords': '$longitude,$latitude',
+          'output': 'json',
+          'orders': 'legalcode,admcode,addr,roadaddr',
+        },
       );
 
       final request = await client.getUrl(uri);
-      request.headers.set('X-NCP-APIGW-API-KEY-ID', _clientId);
-      request.headers.set('X-NCP-APIGW-API-KEY', _clientSecret);
+      request.headers.set('x-ncp-apigw-api-key-id', _clientId);
+      request.headers.set('x-ncp-apigw-api-key', _clientSecret);
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
 
       final response = await request.close();
       final body = await response.transform(utf8.decoder).join();
-
-      print('reverse geocode status: ${response.statusCode}');
-      print('reverse geocode body: $body');
 
       if (response.statusCode != HttpStatus.ok) {
         return null;
@@ -66,15 +66,13 @@ class NaverReverseGeocode {
         final area3 = _extractAreaName(region['area3']);
         final area4 = _extractAreaName(region['area4']);
 
-        if (area3 != null && area3.isNotEmpty) {
-          return area3;
+        if (area2 != null && area2.isNotEmpty &&
+            area3 != null && area3.isNotEmpty) {
+          return '$area2 $area3';
         }
 
-        if (area4 != null && area4.isNotEmpty) {
-          if (area2 != null && area2.isNotEmpty) {
-            return '$area2 $area4';
-          }
-          return area4;
+        if (area3 != null && area3.isNotEmpty) {
+          return area3;
         }
 
         if (area2 != null && area2.isNotEmpty) {
