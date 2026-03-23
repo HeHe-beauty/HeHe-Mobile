@@ -326,10 +326,12 @@ class _MapBottomSheetState extends State<MapBottomSheet> {
                                   if (!_isHiddenMode &&
                                       _isSingleMode &&
                                       !hideSingleContent)
-                                    _SinglePlaceSection(
-                                      place: widget.places.first,
-                                      onTapInquiry: widget.onTapInquiry,
-                                      onTapBookmark: widget.onTapBookmark,
+                                    _SinglePlaceGestureBlocker(
+                                      child: _SinglePlaceSection(
+                                        place: widget.places.first,
+                                        onTapInquiry: widget.onTapInquiry,
+                                        onTapBookmark: widget.onTapBookmark,
+                                      ),
                                     ),
                                 ],
                               ),
@@ -774,6 +776,23 @@ class _PrimaryActionButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SinglePlaceGestureBlocker extends StatelessWidget {
+  final Widget child;
+
+  const _SinglePlaceGestureBlocker({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onVerticalDragStart: (_) {},
+      onVerticalDragUpdate: (_) {},
+      onVerticalDragEnd: (_) {},
+      child: child,
     );
   }
 }

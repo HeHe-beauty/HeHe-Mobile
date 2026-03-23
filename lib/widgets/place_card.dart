@@ -164,15 +164,20 @@ class _PlaceCardState extends State<PlaceCard>
                         Wrap(
                           spacing: 6,
                           runSpacing: 6,
-                          children: [
-                            for (int i = 0; i < visibleTags.length; i++)
-                              _TagChip(
-                                label: visibleTags[i],
-                                compact: isCompact,
-                                highlighted: i == 0,
-                              ),
-                          ],
+                          children: visibleTags
+                              .map(
+                                (tag) => _TagChip(
+                              label: tag,
+                              compact: isCompact,
+                            ),
+                          )
+                              .toList(),
                         ),
+                      const SizedBox(height: 12),
+                      _AddressRow(
+                        address: widget.place.address,
+                        compact: isCompact,
+                      ),
                       const Spacer(),
                       Align(
                         alignment: Alignment.bottomRight,
@@ -203,15 +208,57 @@ class _PlaceCardState extends State<PlaceCard>
   }
 }
 
+class _AddressRow extends StatelessWidget {
+  final String address;
+  final bool compact;
+
+  const _AddressRow({
+    required this.address,
+    required this.compact,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(top: compact ? 1 : 2),
+          child: Icon(
+            Icons.location_on_outlined,
+            size: compact ? 14 : 15,
+            color: palette.textSecondary,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            address,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: compact ? 11 : 12,
+              height: 1.35,
+              fontWeight: FontWeight.w600,
+              color: palette.textSecondary,
+              letterSpacing: -0.15,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _TagChip extends StatelessWidget {
   final String label;
   final bool compact;
-  final bool highlighted;
 
   const _TagChip({
     required this.label,
     required this.compact,
-    required this.highlighted,
   });
 
   @override
@@ -226,18 +273,12 @@ class _TagChip extends StatelessWidget {
         vertical: compact ? 5 : 6,
       ),
       decoration: BoxDecoration(
-        color: highlighted
-            ? palette.primarySoft
-            : isDark
-            ? palette.bottomSheetSurface
-            : palette.surfaceMuted,
+        color: isDark ? palette.bottomSheetSurface : palette.primarySoft,
         borderRadius: BorderRadius.circular(_kPlaceCardInnerRadius),
         border: Border.all(
-          color: highlighted
-              ? palette.primary.withValues(alpha: 0.22)
-              : isDark
+          color: isDark
               ? palette.bottomSheetBorder.withValues(alpha: 0.34)
-              : palette.border,
+              : palette.primary.withValues(alpha: 0.22),
         ),
       ),
       child: Text(
@@ -247,7 +288,7 @@ class _TagChip extends StatelessWidget {
         style: TextStyle(
           fontSize: compact ? 10 : 11,
           fontWeight: FontWeight.w800,
-          color: highlighted ? palette.primary : palette.textSecondary,
+          color: isDark ? palette.textSecondary : palette.primary,
           height: 1,
         ),
       ),
