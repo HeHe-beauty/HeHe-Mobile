@@ -7,12 +7,14 @@ const double _kPlaceCardInnerRadius = 16;
 
 class PlaceCard extends StatefulWidget {
   final PlaceItem place;
+  final String distanceLabel;
   final VoidCallback onTap;
   final VoidCallback onTapBookmark;
 
   const PlaceCard({
     super.key,
     required this.place,
+    required this.distanceLabel,
     required this.onTap,
     required this.onTapBookmark,
   });
@@ -80,12 +82,7 @@ class _PlaceCardState extends State<PlaceCard>
         final isCompact = constraints.maxWidth < 160;
         final cardRadius = BorderRadius.circular(_kPlaceCardRadius);
         final horizontalPadding = isCompact ? 14.0 : 16.0;
-
-        final visibleTags = isCompact
-            ? widget.place.tags.take(1).toList()
-            : widget.place.tags.take(2).toList();
-
-        final descriptionMaxLines = isCompact ? 3 : 3;
+        final visibleTags = widget.place.tags.take(isCompact ? 1 : 2).toList();
 
         return AnimatedScale(
           scale: _isPressed ? 0.988 : 1.0,
@@ -139,68 +136,60 @@ class _PlaceCardState extends State<PlaceCard>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
+                        widget.distanceLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: isCompact ? 11 : 12,
+                          fontWeight: FontWeight.w700,
+                          color: palette.textSecondary,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
                         widget.place.name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: isCompact ? 17 : 18,
+                          fontSize: isCompact ? 15 : 16,
                           fontWeight: FontWeight.w900,
-                          letterSpacing: -0.45,
+                          letterSpacing: -0.4,
                           color: palette.textPrimary,
-                          height: 1.16,
+                          height: 1.18,
                         ),
                       ),
-                      const SizedBox(height: 10),
-
-                      if (visibleTags.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      if (visibleTags.isNotEmpty)
                         Wrap(
                           spacing: 6,
                           runSpacing: 6,
-                          children: visibleTags
-                              .map(
-                                (tag) =>
-                                _TagChip(label: tag, compact: isCompact),
-                          )
-                              .toList(),
+                          children: [
+                            for (int i = 0; i < visibleTags.length; i++)
+                              _TagChip(
+                                label: visibleTags[i],
+                                compact: isCompact,
+                                highlighted: i == 0,
+                              ),
+                          ],
                         ),
-                        const SizedBox(height: 12),
-                      ],
-
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Text(
-                            widget.place.description,
-                            maxLines: descriptionMaxLines,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: isCompact ? 13 : 14,
-                              height: 1.46,
-                              fontWeight: FontWeight.w600,
-                              color: palette.textSecondary,
-                            ),
+                      const Spacer(),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: AnimatedBuilder(
+                          animation: _bookmarkScale,
+                          builder: (context, child) {
+                            return Transform.scale(
+                              scale: _bookmarkScale.value,
+                              child: child,
+                            );
+                          },
+                          child: _BookmarkButton(
+                            isActive: widget.place.isBookmarked,
+                            compact: isCompact,
+                            onTap: widget.onTapBookmark,
                           ),
                         ),
-                      ),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          AnimatedBuilder(
-                            animation: _bookmarkScale,
-                            builder: (context, child) {
-                              return Transform.scale(
-                                scale: _bookmarkScale.value,
-                                child: child,
-                              );
-                            },
-                            child: _BookmarkButton(
-                              isActive: widget.place.isBookmarked,
-                              compact: isCompact,
-                              onTap: widget.onTapBookmark,
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
@@ -217,8 +206,13 @@ class _PlaceCardState extends State<PlaceCard>
 class _TagChip extends StatelessWidget {
   final String label;
   final bool compact;
+  final bool highlighted;
 
-  const _TagChip({required this.label, required this.compact});
+  const _TagChip({
+    required this.label,
+    required this.compact,
+    required this.highlighted,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -226,16 +220,22 @@ class _TagChip extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 28),
+      constraints: const BoxConstraints(minHeight: 26),
       padding: EdgeInsets.symmetric(
-        horizontal: compact ? 8 : 10,
-        vertical: compact ? 6 : 7,
+        horizontal: compact ? 8 : 9,
+        vertical: compact ? 5 : 6,
       ),
       decoration: BoxDecoration(
-        color: isDark ? palette.bottomSheetSurface : palette.surfaceMuted,
+        color: highlighted
+            ? palette.primarySoft
+            : isDark
+            ? palette.bottomSheetSurface
+            : palette.surfaceMuted,
         borderRadius: BorderRadius.circular(_kPlaceCardInnerRadius),
         border: Border.all(
-          color: isDark
+          color: highlighted
+              ? palette.primary.withValues(alpha: 0.22)
+              : isDark
               ? palette.bottomSheetBorder.withValues(alpha: 0.34)
               : palette.border,
         ),
@@ -245,9 +245,9 @@ class _TagChip extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
-          fontSize: compact ? 11 : 12,
+          fontSize: compact ? 10 : 11,
           fontWeight: FontWeight.w800,
-          color: palette.textSecondary,
+          color: highlighted ? palette.primary : palette.textSecondary,
           height: 1,
         ),
       ),
@@ -278,15 +278,15 @@ class _BookmarkButton extends StatelessWidget {
         onTap: onTap,
         customBorder: const CircleBorder(),
         child: Ink(
-          width: compact ? 44 : 46,
-          height: compact ? 44 : 46,
+          width: compact ? 38 : 40,
+          height: compact ? 38 : 40,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: isActive
                 ? palette.primarySoft
                 : isDark
-                ? palette.bottomSheetSurface
-                : palette.surfaceMuted,
+                ? palette.bottomSheetInnerSurface
+                : palette.surface,
             border: Border.all(
               color: isActive
                   ? palette.primary.withValues(alpha: 0.30)
@@ -294,18 +294,10 @@ class _BookmarkButton extends StatelessWidget {
                   ? palette.bottomSheetBorder.withValues(alpha: 0.34)
                   : palette.border,
             ),
-            boxShadow: [
-              if (!isDark)
-                BoxShadow(
-                  color: palette.shadow,
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-            ],
           ),
           child: Icon(
             isActive ? Icons.star_rounded : Icons.star_border_rounded,
-            size: compact ? 20 : 22,
+            size: compact ? 18 : 20,
             color: isActive ? palette.primary : palette.textSecondary,
           ),
         ),

@@ -228,6 +228,7 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
 
                   return PlaceCard(
                     place: place,
+                    distanceLabel: '여기서 1.2km',
                     onTap: () => _openPlaceDetail(place),
                     onTapBookmark: () => _toggleBookmark(place),
                   );

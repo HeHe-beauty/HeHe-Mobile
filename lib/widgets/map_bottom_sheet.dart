@@ -312,6 +312,7 @@ class _MapBottomSheetState extends State<MapBottomSheet> {
 
                                         return PlaceCard(
                                           place: place,
+                                          distanceLabel: '여기서 1.2km',
                                           onTap: () =>
                                               widget.onTapPlaceCard(place),
                                           onTapBookmark: () =>
