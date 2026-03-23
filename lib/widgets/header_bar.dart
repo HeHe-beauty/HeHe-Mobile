@@ -3,11 +3,15 @@ import '../theme/app_palette.dart';
 
 class HeaderBar extends StatelessWidget {
   final String title;
+  final VoidCallback? onTapProfile;
   final VoidCallback? onTapSettings;
+  final bool isLoggedIn;
 
   const HeaderBar({
     super.key,
     required this.title,
+    required this.isLoggedIn,
+    this.onTapProfile,
     this.onTapSettings,
   });
 
@@ -32,9 +36,18 @@ class HeaderBar extends StatelessWidget {
               ),
             ),
           ),
-          _RoundIconButton(
-            icon: Icons.settings_outlined,
-            onTap: onTapSettings,
+          Row(
+            children: [
+              _RoundIconButton(
+                icon: Icons.person_outline_rounded,
+                onTap: onTapProfile,
+              ),
+              const SizedBox(width: 8),
+              _RoundIconButton(
+                icon: Icons.settings_outlined,
+                onTap: onTapSettings,
+              ),
+            ],
           ),
         ],
       ),

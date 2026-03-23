@@ -14,6 +14,7 @@ import 'calendar_detail_screen.dart';
 import 'content_detail_screen.dart';
 import 'device_map_screen.dart';
 import 'settings_screen.dart';
+import 'my_page_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -100,6 +101,25 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _openMyPage(BuildContext context) async {
+    final isLoggedIn = AuthState.isLoggedIn.value;
+
+    if (!isLoggedIn) {
+      final allowed = await AuthGate.ensureLoggedIn(
+        context,
+        title: '로그인이 필요해요',
+        description: '내 정보와 개인화 메뉴는 로그인 후\n확인할 수 있어요.',
+      );
+
+      if (!allowed || !context.mounted) return;
+    }
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MyPageScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
@@ -116,6 +136,8 @@ class HomeScreen extends StatelessWidget {
             children: [
               HeaderBar(
                 title: '슬로건',
+                isLoggedIn: isLoggedIn,
+                onTapProfile: () => _openMyPage(context),
                 onTapSettings: () => _openSettings(context),
               ),
               Expanded(
