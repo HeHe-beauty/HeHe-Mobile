@@ -18,6 +18,7 @@ class VisitScheduleResult {
 Future<VisitScheduleResult?> showVisitScheduleBottomSheet(
   BuildContext context, {
   DateTime? initialDateTime,
+  DateTime? fixedDate,
   String? initialHospitalName,
   String? title,
   String confirmLabel = '완료',
@@ -30,11 +31,16 @@ Future<VisitScheduleResult?> showVisitScheduleBottomSheet(
     isDismissible: true,
     enableDrag: true,
     isScrollControlled: true,
-    backgroundColor: palette.surface.withValues(alpha: 0),
+    backgroundColor: palette.bottomSheetSurface,
+    clipBehavior: Clip.antiAlias,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+    ),
     barrierColor: palette.modalBarrier,
     builder: (_) {
       return VisitScheduleBottomSheet(
         initialDateTime: initialDateTime,
+        fixedDate: fixedDate,
         initialHospitalName: initialHospitalName,
         title: title,
         confirmLabel: confirmLabel,
@@ -46,6 +52,7 @@ Future<VisitScheduleResult?> showVisitScheduleBottomSheet(
 
 class VisitScheduleBottomSheet extends StatefulWidget {
   final DateTime? initialDateTime;
+  final DateTime? fixedDate;
   final String? initialHospitalName;
   final String? title;
   final String confirmLabel;
@@ -54,6 +61,7 @@ class VisitScheduleBottomSheet extends StatefulWidget {
   const VisitScheduleBottomSheet({
     super.key,
     this.initialDateTime,
+    this.fixedDate,
     this.initialHospitalName,
     this.title,
     this.confirmLabel = '완료',
@@ -89,6 +97,17 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
   late int _selectedDay;
   late int _selectedHour;
   late int _selectedMinute;
+
+  bool get _isFixedDateMode => widget.fixedDate != null;
+
+  DateTime get _effectiveFixedDate => widget.fixedDate!;
+
+  String get _fixedDateLabel {
+    const weekdayLabels = ['일', '월', '화', '수', '목', '금', '토'];
+    final date = _effectiveFixedDate;
+    final weekday = weekdayLabels[date.weekday % 7];
+    return '${date.year}년 ${date.month}월 ${date.day}일 $weekday요일';
+  }
 
   List<int> get _days => List.generate(
     _daysInMonth(_selectedYear, _selectedMonth),
@@ -151,9 +170,9 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
     final result = VisitScheduleResult(
       hospitalName: _hospitalController.text.trim(),
       dateTime: DateTime(
-        _selectedYear,
-        _selectedMonth,
-        _selectedDay,
+        _isFixedDateMode ? _effectiveFixedDate.year : _selectedYear,
+        _isFixedDateMode ? _effectiveFixedDate.month : _selectedMonth,
+        _isFixedDateMode ? _effectiveFixedDate.day : _selectedDay,
         _selectedHour,
         _selectedMinute,
       ),
@@ -211,7 +230,7 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
     final mediaQuery = MediaQuery.of(context);
     final bottomInset = mediaQuery.viewInsets.bottom;
     final bottomPadding = mediaQuery.padding.bottom;
-    final sheetBottomPadding = 6.0 + math.min(bottomPadding, 8.0);
+    final contentBottomPadding = math.max(bottomPadding, 12.0);
 
     return SafeArea(
       top: false,
@@ -220,13 +239,9 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
         padding: EdgeInsets.only(bottom: bottomInset),
-        child: Container(
-          padding: EdgeInsets.fromLTRB(20, 10, 20, sheetBottomPadding),
-          decoration: BoxDecoration(
-            color: palette.bottomSheetSurface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-          ),
-          child: SingleChildScrollView(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, 10, 20, contentBottomPadding),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,43 +282,57 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
                   onSubmitted: (_) => _submit(),
                 ),
                 const SizedBox(height: 26),
-                Text(
-                  '언제 방문하세요?',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: palette.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _DatePickerRow(
-                  height: _datePickerViewportHeight,
-                  yearCard: _WheelPickerCard(
-                    child: _WheelPickerColumn(
-                      values: _years,
-                      selectedValue: _selectedYear,
-                      scrollController: _yearController,
-                      onSelectedItemChanged: _onSelectedYear,
+                if (_isFixedDateMode) ...[
+                  Text(
+                    '선택한 날짜',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: palette.textSecondary,
                     ),
                   ),
-                  monthCard: _WheelPickerCard(
-                    child: _WheelPickerColumn(
-                      values: _months,
-                      selectedValue: _selectedMonth,
-                      scrollController: _monthController,
-                      onSelectedItemChanged: _onSelectedMonth,
+                  const SizedBox(height: 8),
+                  _FixedDateCard(label: _fixedDateLabel),
+                  const SizedBox(height: 26),
+                ] else ...[
+                  Text(
+                    '언제 방문하세요?',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: palette.textSecondary,
                     ),
                   ),
-                  dayCard: _WheelPickerCard(
-                    child: _WheelPickerColumn(
-                      values: _days,
-                      selectedValue: _selectedDay,
-                      scrollController: _dayController,
-                      onSelectedItemChanged: _onSelectedDay,
+                  const SizedBox(height: 8),
+                  _DatePickerRow(
+                    height: _datePickerViewportHeight,
+                    yearCard: _WheelPickerCard(
+                      child: _WheelPickerColumn(
+                        values: _years,
+                        selectedValue: _selectedYear,
+                        scrollController: _yearController,
+                        onSelectedItemChanged: _onSelectedYear,
+                      ),
+                    ),
+                    monthCard: _WheelPickerCard(
+                      child: _WheelPickerColumn(
+                        values: _months,
+                        selectedValue: _selectedMonth,
+                        scrollController: _monthController,
+                        onSelectedItemChanged: _onSelectedMonth,
+                      ),
+                    ),
+                    dayCard: _WheelPickerCard(
+                      child: _WheelPickerColumn(
+                        values: _days,
+                        selectedValue: _selectedDay,
+                        scrollController: _dayController,
+                        onSelectedItemChanged: _onSelectedDay,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 26),
+                  const SizedBox(height: 26),
+                ],
                 Text(
                   '몇시에 방문하세요?',
                   style: TextStyle(
@@ -382,6 +411,55 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
 
   static int _daysInMonth(int year, int month) {
     return DateTime(year, month + 1, 0).day;
+  }
+}
+
+class _FixedDateCard extends StatelessWidget {
+  final String label;
+
+  const _FixedDateCard({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: palette.bottomSheetInnerSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: palette.bottomSheetBorder),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: palette.primarySoft,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.calendar_today_rounded,
+              size: 18,
+              color: palette.primary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: palette.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
