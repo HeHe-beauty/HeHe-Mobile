@@ -56,14 +56,9 @@ class HomeScreen extends StatelessWidget {
       title: '병원 방문 일정을 등록할까요?',
     );
 
-    if (result == null || !context.mounted) return;
+    if (result == null) return;
 
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CalendarDetailScreen(initialScheduleResult: result),
-      ),
-    );
+    CalendarScheduleStore.upsertFromResult(result);
   }
 
   Future<void> _openCalendarIfLoggedIn(BuildContext context) async {

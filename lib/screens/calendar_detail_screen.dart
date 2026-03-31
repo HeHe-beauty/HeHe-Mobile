@@ -15,44 +15,22 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
   DateTime _focusedMonth = DateTime(2026, 6, 1);
   DateTime? _selectedDate;
 
-  final Map<DateTime, CalendarSchedule> _scheduleMap = {
-    _dateOnly(DateTime(2026, 6, 11)): CalendarSchedule(
-      hospitalName: '샤프 의원',
-      dateTime: DateTime(2026, 6, 11, 19),
-      isThreeDaysBefore: true,
-      isOneDayBefore: false,
-      isOneHourBefore: false,
-    ),
-    _dateOnly(DateTime(2026, 6, 13)): CalendarSchedule(
-      hospitalName: 'YY 의원',
-      dateTime: DateTime(2026, 6, 13, 14, 30),
-      isThreeDaysBefore: true,
-      isOneDayBefore: true,
-      isOneHourBefore: false,
-    ),
-    _dateOnly(DateTime(2026, 6, 28)): CalendarSchedule(
-      hospitalName: '범석 재호',
-      dateTime: DateTime(2026, 6, 28, 9),
-      isThreeDaysBefore: false,
-      isOneDayBefore: true,
-      isOneHourBefore: true,
-    ),
-  };
+  late final Map<DateTime, CalendarSchedule> _scheduleMap;
 
   @override
   void initState() {
     super.initState();
+    _scheduleMap = CalendarScheduleStore.snapshot();
 
     final initialScheduleResult = widget.initialScheduleResult;
     if (initialScheduleResult == null) return;
 
-    final selectedDate = _dateOnly(initialScheduleResult.dateTime);
-    _scheduleMap[selectedDate] = CalendarSchedule(
-      hospitalName: initialScheduleResult.hospitalName.isEmpty
-          ? '병원명을 입력해주세요'
-          : initialScheduleResult.hospitalName,
-      dateTime: initialScheduleResult.dateTime,
+    final selectedDate = CalendarScheduleStore.upsertFromResult(
+      initialScheduleResult,
     );
+    _scheduleMap
+      ..clear()
+      ..addAll(CalendarScheduleStore.snapshot());
     _focusedMonth = DateTime(selectedDate.year, selectedDate.month, 1);
     _selectedDate = selectedDate;
   }
@@ -142,6 +120,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
                 final shouldDelete = await _showDeleteConfirmDialog();
                 if (shouldDelete == true) {
                   setState(() {
+                    CalendarScheduleStore.remove(selectedDate);
                     _scheduleMap.remove(selectedDate);
                     if (_selectedDate == selectedDate) {
                       _selectedDate = null;
@@ -242,9 +221,11 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
       );
 
       if (targetDate != selectedDate) {
+        CalendarScheduleStore.remove(selectedDate);
         _scheduleMap.remove(selectedDate);
       }
 
+      CalendarScheduleStore.upsert(schedule);
       _scheduleMap[targetDate] = schedule;
       _focusedMonth = DateTime(targetDate.year, targetDate.month, 1);
       _selectedDate = targetDate;
@@ -829,5 +810,58 @@ class CalendarSchedule {
         ? hour - 12
         : hour;
     return '$period $displayHour:${minute.toString().padLeft(2, '0')}';
+  }
+}
+
+class CalendarScheduleStore {
+  static final Map<DateTime, CalendarSchedule> _scheduleMap = {
+    _dateOnly(DateTime(2026, 6, 11)): CalendarSchedule(
+      hospitalName: '샤프 의원',
+      dateTime: DateTime(2026, 6, 11, 19),
+      isThreeDaysBefore: true,
+      isOneDayBefore: false,
+      isOneHourBefore: false,
+    ),
+    _dateOnly(DateTime(2026, 6, 13)): CalendarSchedule(
+      hospitalName: 'YY 의원',
+      dateTime: DateTime(2026, 6, 13, 14, 30),
+      isThreeDaysBefore: true,
+      isOneDayBefore: true,
+      isOneHourBefore: false,
+    ),
+    _dateOnly(DateTime(2026, 6, 28)): CalendarSchedule(
+      hospitalName: '범석 재호',
+      dateTime: DateTime(2026, 6, 28, 9),
+      isThreeDaysBefore: false,
+      isOneDayBefore: true,
+      isOneHourBefore: true,
+    ),
+  };
+
+  static Map<DateTime, CalendarSchedule> snapshot() {
+    return Map<DateTime, CalendarSchedule>.from(_scheduleMap);
+  }
+
+  static DateTime upsertFromResult(VisitScheduleResult result) {
+    final schedule = CalendarSchedule(
+      hospitalName: result.hospitalName.isEmpty
+          ? '병원명을 입력해주세요'
+          : result.hospitalName,
+      dateTime: result.dateTime,
+    );
+    upsert(schedule);
+    return _dateOnly(result.dateTime);
+  }
+
+  static void upsert(CalendarSchedule schedule) {
+    _scheduleMap[_dateOnly(schedule.dateTime)] = schedule;
+  }
+
+  static void remove(DateTime date) {
+    _scheduleMap.remove(_dateOnly(date));
+  }
+
+  static DateTime _dateOnly(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
   }
 }

@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../core/auth/auth_gate.dart';
 import '../core/auth/auth_state.dart';
+import '../core/common/favorite_store.dart';
 import '../models/place_cluster_node.dart';
 import '../models/place_item.dart';
 import '../models/subway_station.dart';
@@ -37,6 +37,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   final FocusNode _searchFocusNode = FocusNode();
   final SubwayStationRepository _subwayStationRepository =
       SubwayStationRepository();
+  final FavoriteStore _favoriteStore = FavoriteStore.instance;
 
   NaverMapController? _mapController;
   NLatLng? _currentLocation;
@@ -51,7 +52,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   double _currentZoom = 13.2;
   String _currentRegionLabel = '역삼동';
 
-  late List<PlaceItem> _places = _buildMockHospitals();
+  late List<PlaceItem> _places = _favoriteStore.allPlaces;
   List<PlaceItem> _sheetPlaces = [];
   List<SubwayStation> _stationSuggestions = [];
 
@@ -66,6 +67,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   @override
   void initState() {
     super.initState();
+    _favoriteStore.addListener(_handleFavoriteStoreChanged);
     _searchFocusNode.addListener(_handleSearchFocusChanged);
     _loadSubwayStations();
   }
@@ -73,6 +75,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   @override
   void dispose() {
     _regionLabelDebounce?.cancel();
+    _favoriteStore.removeListener(_handleFavoriteStoreChanged);
     _searchFocusNode.removeListener(_handleSearchFocusChanged);
     _searchFocusNode.dispose();
     _searchController.dispose();
@@ -80,26 +83,18 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     super.dispose();
   }
 
-  List<PlaceItem> _buildMockHospitals() {
-    const baseLat = 37.4979;
-    const baseLng = 127.0276;
-    final random = Random(7);
+  void _handleFavoriteStoreChanged() {
+    if (!mounted) return;
 
-    return List.generate(48, (index) {
-      final latOffset = (random.nextDouble() - 0.5) * 0.014;
-      final lngOffset = (random.nextDouble() - 0.5) * 0.016;
-
-      return PlaceItem(
-        id: 'hospital_$index',
-        name: '테스트 병원 ${index + 1}',
-        tags: index.isEven ? ['#피부', '#토닝'] : ['#레이저', '#남성시술'],
-        description: '임시 데이터로 넣은 병원입니다.',
-        address: '서울 강남구 테헤란로 ${101 + index}',
-        isBookmarked: index % 3 == 0,
-        latitude: baseLat + latOffset,
-        longitude: baseLng + lngOffset,
-      );
+    setState(() {
+      _places = _favoriteStore.allPlaces;
+      _sheetPlaces = _favoriteStore.applyFavoriteStateToAll(_sheetPlaces);
+      if (_selectedPlace != null) {
+        _selectedPlace = _favoriteStore.findById(_selectedPlace!.id);
+      }
     });
+
+    unawaited(_refreshMarkers());
   }
 
   void _toggleSidePanel() {
@@ -271,12 +266,16 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
 
     if (!allowed || !mounted) return;
 
-    await Navigator.push(
+    final selectedPlaceId = await Navigator.push<String>(
       context,
       MaterialPageRoute(
         builder: (_) => HospitalHistoryScreen(initialTabIndex: initialTabIndex),
       ),
     );
+
+    if (selectedPlaceId == null || !mounted) return;
+
+    await _focusOnPlaceById(selectedPlaceId);
   }
 
   Future<void> _openProtectedCalendarPage() async {
@@ -466,6 +465,17 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
         curve: Curves.easeOutCubic,
       );
     });
+  }
+
+  Future<void> _focusOnPlaceById(String placeId) async {
+    final place = _favoriteStore.findById(placeId);
+    if (place == null) return;
+
+    setState(() {
+      _places = _favoriteStore.allPlaces;
+    });
+
+    await _onTapPlaceCard(place);
   }
 
   Future<void> _clearSelection() async {
@@ -741,23 +751,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   }
 
   void _toggleBookmark(PlaceItem place) {
-    setState(() {
-      _places = _places.map((item) {
-        if (item.id != place.id) return item;
-        return item.copyWith(isBookmarked: !item.isBookmarked);
-      }).toList();
-
-      _sheetPlaces = _sheetPlaces.map((item) {
-        if (item.id != place.id) return item;
-        return item.copyWith(isBookmarked: !item.isBookmarked);
-      }).toList();
-
-      if (_selectedPlace?.id == place.id) {
-        _selectedPlace = _selectedPlace!.copyWith(
-          isBookmarked: !_selectedPlace!.isBookmarked,
-        );
-      }
-    });
+    _favoriteStore.toggleFavorite(place.id);
   }
 
   @override

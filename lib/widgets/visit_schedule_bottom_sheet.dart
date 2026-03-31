@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/app_palette.dart';
 
@@ -100,7 +101,7 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
 
     final now = DateTime.now();
     final initialDateTime = widget.initialDateTime ?? now;
-    final minYear = math.min(now.year - 5, initialDateTime.year);
+    final minYear = now.year;
     final maxYear = math.max(now.year + 10, initialDateTime.year);
 
     _years = List.generate(maxYear - minYear + 1, (index) => minYear + index);
@@ -108,7 +109,7 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
     _hours = List.generate(24, (index) => index);
     _minutes = List.generate(60, (index) => index);
 
-    _selectedYear = initialDateTime.year;
+    _selectedYear = math.max(initialDateTime.year, minYear);
     _selectedMonth = initialDateTime.month;
     _selectedDay = initialDateTime.day;
     _selectedHour = initialDateTime.hour;
@@ -163,22 +164,34 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
   }
 
   void _onSelectedYear(int index) {
+    final nextYear = _years[index];
+    if (nextYear == _selectedYear) return;
+
+    HapticFeedback.selectionClick();
     setState(() {
-      _selectedYear = _years[index];
+      _selectedYear = nextYear;
       _syncDaySelection();
     });
   }
 
   void _onSelectedMonth(int index) {
+    final nextMonth = _months[index];
+    if (nextMonth == _selectedMonth) return;
+
+    HapticFeedback.selectionClick();
     setState(() {
-      _selectedMonth = _months[index];
+      _selectedMonth = nextMonth;
       _syncDaySelection();
     });
   }
 
   void _onSelectedDay(int index) {
+    final nextDay = _days[index];
+    if (nextDay == _selectedDay) return;
+
+    HapticFeedback.selectionClick();
     setState(() {
-      _selectedDay = _days[index];
+      _selectedDay = nextDay;
     });
   }
 
@@ -308,8 +321,12 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
                       selectedValue: _selectedHour,
                       scrollController: _hourController,
                       onSelectedItemChanged: (index) {
+                        final nextHour = _hours[index];
+                        if (nextHour == _selectedHour) return;
+
+                        HapticFeedback.selectionClick();
                         setState(() {
-                          _selectedHour = _hours[index];
+                          _selectedHour = nextHour;
                         });
                       },
                     ),
@@ -320,8 +337,12 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
                       selectedValue: _selectedMinute,
                       scrollController: _minuteController,
                       onSelectedItemChanged: (index) {
+                        final nextMinute = _minutes[index];
+                        if (nextMinute == _selectedMinute) return;
+
+                        HapticFeedback.selectionClick();
                         setState(() {
-                          _selectedMinute = _minutes[index];
+                          _selectedMinute = nextMinute;
                         });
                       },
                     ),
@@ -571,17 +592,29 @@ class _WheelPickerColumn extends StatelessWidget {
               final isSelected = value == selectedValue;
 
               return Center(
-                child: AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 160),
-                  curve: Curves.easeOut,
-                  style: TextStyle(
-                    fontSize: isSelected ? 16 : 12,
-                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                    color: isSelected
-                        ? palette.textPrimary
-                        : palette.textTertiary,
+                child: AnimatedScale(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  scale: isSelected ? 1.0 : 0.92,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    opacity: isSelected ? 1.0 : 0.68,
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      style: TextStyle(
+                        fontSize: isSelected ? 16 : 12,
+                        fontWeight: isSelected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                        color: isSelected
+                            ? palette.textPrimary
+                            : palette.textTertiary,
+                      ),
+                      child: Text(value.toString().padLeft(2, '0')),
+                    ),
                   ),
-                  child: Text(value.toString().padLeft(2, '0')),
                 ),
               );
             },

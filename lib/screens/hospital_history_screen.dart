@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/common/favorite_store.dart';
 import '../models/place_item.dart';
 import '../theme/app_palette.dart';
 import '../widgets/place_card.dart';
@@ -6,16 +7,14 @@ import '../widgets/place_card.dart';
 class HospitalHistoryScreen extends StatefulWidget {
   final int initialTabIndex;
 
-  const HospitalHistoryScreen({
-    super.key,
-    this.initialTabIndex = 0,
-  });
+  const HospitalHistoryScreen({super.key, this.initialTabIndex = 0});
 
   @override
   State<HospitalHistoryScreen> createState() => _HospitalHistoryScreenState();
 }
 
 class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
+  final FavoriteStore _favoriteStore = FavoriteStore.instance;
   late int selectedTabIndex;
 
   final List<String> tabs = const ['최근 본', '찜한', '문의한'];
@@ -53,29 +52,6 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
     ),
   ];
 
-  late List<PlaceItem> favoritePlaces = [
-    const PlaceItem(
-      id: 'favorite_xx',
-      name: 'XX 의원',
-      tags: ['#피부', '#레이저'],
-      description: '후기 많고 접근성 좋은 곳',
-      address: '임시 주소 4',
-      isBookmarked: true,
-      latitude: 37.4979,
-      longitude: 127.0276,
-    ),
-    const PlaceItem(
-      id: 'favorite_ef',
-      name: 'EF 클리닉',
-      tags: ['#리프팅', '#탄력'],
-      description: '후기 반응 좋고 위치 편리',
-      address: '임시 주소 5',
-      isBookmarked: true,
-      latitude: 37.4948,
-      longitude: 127.0288,
-    ),
-  ];
-
   late List<PlaceItem> inquiryPlaces = [
     const PlaceItem(
       id: 'inquiry_gh',
@@ -110,7 +86,7 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
       case 0:
         return recentPlaces;
       case 1:
-        return favoritePlaces;
+        return _favoriteStore.favoritePlaces;
       case 2:
         return inquiryPlaces;
       default:
@@ -132,13 +108,13 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
   }
 
   void _toggleBookmark(PlaceItem place) {
+    if (_favoriteStore.containsPlace(place.id)) {
+      _favoriteStore.toggleFavorite(place.id);
+      return;
+    }
+
     setState(() {
       recentPlaces = recentPlaces.map((item) {
-        if (item.id != place.id) return item;
-        return item.copyWith(isBookmarked: !item.isBookmarked);
-      }).toList();
-
-      favoritePlaces = favoritePlaces.map((item) {
         if (item.id != place.id) return item;
         return item.copyWith(isBookmarked: !item.isBookmarked);
       }).toList();
@@ -151,93 +127,97 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
   }
 
   void _openPlaceDetail(PlaceItem place) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${place.name} 상세보기는 추후 연결 예정입니다.')),
-    );
+    Navigator.pop(context, place.id);
   }
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final places = currentPlaces;
 
-    return Scaffold(
-      backgroundColor: palette.bg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
-              child: Row(
-                children: [
-                  _CircleButton(
-                    icon: Icons.arrow_back_ios_new_rounded,
-                    onTap: () => Navigator.pop(context),
+    return AnimatedBuilder(
+      animation: _favoriteStore,
+      builder: (context, _) {
+        final places = currentPlaces;
+
+        return Scaffold(
+          backgroundColor: palette.bg,
+          body: SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+                  child: Row(
+                    children: [
+                      _CircleButton(
+                        icon: Icons.arrow_back_ios_new_rounded,
+                        onTap: () => Navigator.pop(context),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
-              child: Row(
-                children: [
-                  for (int i = 0; i < tabs.length; i++) ...[
-                    _TabChip(
-                      label: tabs[i],
-                      isSelected: selectedTabIndex == i,
-                      onTap: () {
-                        setState(() {
-                          selectedTabIndex = i;
-                        });
-                      },
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+                  child: Row(
+                    children: [
+                      for (int i = 0; i < tabs.length; i++) ...[
+                        _TabChip(
+                          label: tabs[i],
+                          isSelected: selectedTabIndex == i,
+                          onTap: () {
+                            setState(() {
+                              selectedTabIndex = i;
+                            });
+                          },
+                        ),
+                        if (i != tabs.length - 1) const SizedBox(width: 10),
+                      ],
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      currentTitle,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: palette.textPrimary,
+                      ),
                     ),
-                    if (i != tabs.length - 1) const SizedBox(width: 10),
-                  ],
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  currentTitle,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: palette.textPrimary,
                   ),
                 ),
-              ),
-            ),
-            Expanded(
-              child: places.isEmpty
-                  ? const _EmptyState()
-                  : GridView.builder(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
-                itemCount: places.length,
-                gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.72,
-                ),
-                itemBuilder: (context, index) {
-                  final place = places[index];
+                Expanded(
+                  child: places.isEmpty
+                      ? const _EmptyState()
+                      : GridView.builder(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+                          itemCount: places.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                                childAspectRatio: 0.72,
+                              ),
+                          itemBuilder: (context, index) {
+                            final place = places[index];
 
-                  return PlaceCard(
-                    place: place,
-                    distanceLabel: '여기서 1.2km',
-                    onTap: () => _openPlaceDetail(place),
-                    onTapBookmark: () => _toggleBookmark(place),
-                  );
-                },
-              ),
+                            return PlaceCard(
+                              place: place,
+                              distanceLabel: '여기서 1.2km',
+                              onTap: () => _openPlaceDetail(place),
+                              onTapBookmark: () => _toggleBookmark(place),
+                            );
+                          },
+                        ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -246,10 +226,7 @@ class _CircleButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  const _CircleButton({
-    required this.icon,
-    required this.onTap,
-  });
+  const _CircleButton({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -275,11 +252,7 @@ class _CircleButton extends StatelessWidget {
               ),
             ],
           ),
-          child: Icon(
-            icon,
-            size: 24,
-            color: palette.icon,
-          ),
+          child: Icon(icon, size: 24, color: palette.icon),
         ),
       ),
     );
