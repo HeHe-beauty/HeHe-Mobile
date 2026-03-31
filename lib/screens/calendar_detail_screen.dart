@@ -1,9 +1,11 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_palette.dart';
+import '../widgets/visit_schedule_bottom_sheet.dart';
 
 class CalendarDetailScreen extends StatefulWidget {
-  const CalendarDetailScreen({super.key});
+  final VisitScheduleResult? initialScheduleResult;
+
+  const CalendarDetailScreen({super.key, this.initialScheduleResult});
 
   @override
   State<CalendarDetailScreen> createState() => _CalendarDetailScreenState();
@@ -16,29 +18,44 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
   final Map<DateTime, CalendarSchedule> _scheduleMap = {
     _dateOnly(DateTime(2026, 6, 11)): CalendarSchedule(
       hospitalName: '샤프 의원',
-      hour: 19,
-      minute: 0,
+      dateTime: DateTime(2026, 6, 11, 19),
       isThreeDaysBefore: true,
       isOneDayBefore: false,
       isOneHourBefore: false,
     ),
     _dateOnly(DateTime(2026, 6, 13)): CalendarSchedule(
       hospitalName: 'YY 의원',
-      hour: 14,
-      minute: 30,
+      dateTime: DateTime(2026, 6, 13, 14, 30),
       isThreeDaysBefore: true,
       isOneDayBefore: true,
       isOneHourBefore: false,
     ),
     _dateOnly(DateTime(2026, 6, 28)): CalendarSchedule(
       hospitalName: '범석 재호',
-      hour: 9,
-      minute: 0,
+      dateTime: DateTime(2026, 6, 28, 9),
       isThreeDaysBefore: false,
       isOneDayBefore: true,
       isOneHourBefore: true,
     ),
   };
+
+  @override
+  void initState() {
+    super.initState();
+
+    final initialScheduleResult = widget.initialScheduleResult;
+    if (initialScheduleResult == null) return;
+
+    final selectedDate = _dateOnly(initialScheduleResult.dateTime);
+    _scheduleMap[selectedDate] = CalendarSchedule(
+      hospitalName: initialScheduleResult.hospitalName.isEmpty
+          ? '병원명을 입력해주세요'
+          : initialScheduleResult.hospitalName,
+      dateTime: initialScheduleResult.dateTime,
+    );
+    _focusedMonth = DateTime(selectedDate.year, selectedDate.month, 1);
+    _selectedDate = selectedDate;
+  }
 
   static DateTime _dateOnly(DateTime date) {
     return DateTime(date.year, date.month, date.day);
@@ -201,22 +218,36 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
     required DateTime selectedDate,
     CalendarSchedule? initialSchedule,
   }) async {
-    final palette = context.palette;
-
-    final result = await showModalBottomSheet<CalendarSchedule>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: palette.surface.withValues(alpha: 0),
-      barrierColor: palette.scrim,
-      builder: (_) {
-        return _ScheduleEditorBottomSheet(initialSchedule: initialSchedule);
-      },
+    final initialDateTime = initialSchedule?.dateTime ?? selectedDate;
+    final result = await showVisitScheduleBottomSheet(
+      context,
+      initialDateTime: initialDateTime,
+      initialHospitalName: initialSchedule?.hospitalName,
+      title: initialSchedule == null ? '일정을 등록할까요?' : '일정을 수정할까요?',
     );
 
     if (result == null) return;
 
+    final targetDate = _dateOnly(result.dateTime);
+
     setState(() {
-      _scheduleMap[selectedDate] = result;
+      final schedule = CalendarSchedule(
+        hospitalName: result.hospitalName.isEmpty
+            ? '병원명을 입력해주세요'
+            : result.hospitalName,
+        dateTime: result.dateTime,
+        isThreeDaysBefore: initialSchedule?.isThreeDaysBefore ?? false,
+        isOneDayBefore: initialSchedule?.isOneDayBefore ?? false,
+        isOneHourBefore: initialSchedule?.isOneHourBefore ?? false,
+      );
+
+      if (targetDate != selectedDate) {
+        _scheduleMap.remove(selectedDate);
+      }
+
+      _scheduleMap[targetDate] = schedule;
+      _focusedMonth = DateTime(targetDate.year, targetDate.month, 1);
+      _selectedDate = targetDate;
     });
   }
 
@@ -717,313 +748,6 @@ class _ChecklistTile extends StatelessWidget {
   }
 }
 
-class _ScheduleEditorBottomSheet extends StatefulWidget {
-  final CalendarSchedule? initialSchedule;
-
-  const _ScheduleEditorBottomSheet({required this.initialSchedule});
-
-  @override
-  State<_ScheduleEditorBottomSheet> createState() =>
-      _ScheduleEditorBottomSheetState();
-}
-
-class _ScheduleEditorBottomSheetState
-    extends State<_ScheduleEditorBottomSheet> {
-  late final TextEditingController _hospitalController;
-  late final FixedExtentScrollController _hourController;
-  late final FixedExtentScrollController _minuteController;
-
-  late int selectedHour;
-  late int selectedMinute;
-
-  @override
-  void initState() {
-    super.initState();
-
-    selectedHour = widget.initialSchedule?.hour ?? 9;
-    selectedMinute = widget.initialSchedule?.minute ?? 0;
-
-    _hospitalController = TextEditingController(
-      text: widget.initialSchedule?.hospitalName ?? '',
-    );
-    _hourController = FixedExtentScrollController(initialItem: selectedHour);
-    _minuteController = FixedExtentScrollController(
-      initialItem: selectedMinute,
-    );
-  }
-
-  @override
-  void dispose() {
-    _hospitalController.dispose();
-    _hourController.dispose();
-    _minuteController.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    FocusManager.instance.primaryFocus?.unfocus();
-
-    final hospital = _hospitalController.text.trim();
-
-    Navigator.of(context).pop(
-      CalendarSchedule(
-        hospitalName: hospital.isEmpty ? '병원명을 입력해주세요' : hospital,
-        hour: selectedHour,
-        minute: selectedMinute,
-        isThreeDaysBefore: widget.initialSchedule?.isThreeDaysBefore ?? false,
-        isOneDayBefore: widget.initialSchedule?.isOneDayBefore ?? false,
-        isOneHourBefore: widget.initialSchedule?.isOneHourBefore ?? false,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-    final hours = List.generate(24, (index) => index);
-    final minutes = List.generate(60, (index) => index);
-
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          12,
-          20,
-          20 + MediaQuery.of(context).padding.bottom,
-        ),
-        decoration: BoxDecoration(
-          color: palette.surfaceSoft,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 64,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: palette.border,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-            const SizedBox(height: 22),
-            Text(
-              widget.initialSchedule == null ? '일정을 등록할까요?' : '일정을 수정할까요?',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                color: palette.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 18),
-            Container(
-              height: 60,
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              decoration: BoxDecoration(
-                color: palette.surface,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: palette.border),
-              ),
-              alignment: Alignment.center,
-              child: TextField(
-                controller: _hospitalController,
-                decoration: InputDecoration(
-                  hintText: '병원명을 입력해주세요',
-                  hintStyle: TextStyle(
-                    color: palette.textTertiary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  border: InputBorder.none,
-                  isCollapsed: true,
-                ),
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: palette.textPrimary,
-                ),
-              ),
-            ),
-            const SizedBox(height: 28),
-            Text(
-              '언제 방문하세요?',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                color: palette.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _WheelPickerBox(
-                    child: CupertinoPicker(
-                      itemExtent: 42,
-                      diameterRatio: 1.25,
-                      squeeze: 1.15,
-                      useMagnifier: true,
-                      magnification: 1.05,
-                      scrollController: _hourController,
-                      selectionOverlay: const SizedBox.shrink(),
-                      onSelectedItemChanged: (index) {
-                        setState(() {
-                          selectedHour = hours[index];
-                        });
-                      },
-                      children: hours
-                          .map(
-                            (hour) => Center(
-                              child: Text(
-                                hour.toString().padLeft(2, '0'),
-                                style: TextStyle(
-                                  fontSize: hour == selectedHour ? 26 : 20,
-                                  fontWeight: hour == selectedHour
-                                      ? FontWeight.w800
-                                      : FontWeight.w600,
-                                  color: hour == selectedHour
-                                      ? palette.textPrimary
-                                      : palette.textTertiary,
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Text(
-                  '시',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: palette.textPrimary,
-                  ),
-                ),
-                const SizedBox(width: 18),
-                Expanded(
-                  child: _WheelPickerBox(
-                    child: CupertinoPicker(
-                      itemExtent: 42,
-                      diameterRatio: 1.25,
-                      squeeze: 1.15,
-                      useMagnifier: true,
-                      magnification: 1.05,
-                      scrollController: _minuteController,
-                      selectionOverlay: const SizedBox.shrink(),
-                      onSelectedItemChanged: (index) {
-                        setState(() {
-                          selectedMinute = minutes[index];
-                        });
-                      },
-                      children: minutes
-                          .map(
-                            (minute) => Center(
-                              child: Text(
-                                minute.toString().padLeft(2, '0'),
-                                style: TextStyle(
-                                  fontSize: minute == selectedMinute ? 26 : 20,
-                                  fontWeight: minute == selectedMinute
-                                      ? FontWeight.w800
-                                      : FontWeight.w600,
-                                  color: minute == selectedMinute
-                                      ? palette.textPrimary
-                                      : palette.textTertiary,
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Text(
-                  '분',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: palette.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              height: 58,
-              child: ElevatedButton(
-                onPressed: _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: palette.primarySoft,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: Text(
-                  '완료',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: palette.primary,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _WheelPickerBox extends StatelessWidget {
-  final Widget child;
-
-  const _WheelPickerBox({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Container(
-      height: 150,
-      decoration: BoxDecoration(
-        color: palette.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: palette.border),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          IgnorePointer(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 28),
-              height: 50,
-              decoration: BoxDecoration(
-                color: palette.primarySoft,
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: child,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _CircleIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
@@ -1078,22 +802,26 @@ class _MiniArrowButton extends StatelessWidget {
 
 class CalendarSchedule {
   String hospitalName;
-  int hour;
-  int minute;
+  DateTime dateTime;
   bool isThreeDaysBefore;
   bool isOneDayBefore;
   bool isOneHourBefore;
 
   CalendarSchedule({
     required this.hospitalName,
-    required this.hour,
-    required this.minute,
+    required this.dateTime,
     this.isThreeDaysBefore = false,
     this.isOneDayBefore = false,
     this.isOneHourBefore = false,
   });
 
+  int get hour => dateTime.hour;
+
+  int get minute => dateTime.minute;
+
   String get timeText {
+    final hour = dateTime.hour;
+    final minute = dateTime.minute;
     final period = hour < 12 ? '오전' : '오후';
     final displayHour = hour == 0
         ? 12
