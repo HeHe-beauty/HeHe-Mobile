@@ -19,6 +19,7 @@ import '../widgets/device_map_controls.dart';
 import '../widgets/map_side_panel.dart';
 import 'calendar_detail_screen.dart';
 import 'hospital_history_screen.dart';
+import 'login_required_screen.dart';
 import 'my_page_screen.dart';
 
 class DeviceMapScreen extends StatefulWidget {
@@ -63,6 +64,21 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   int _regionRequestToken = 0;
 
   final Map<String, Future<NOverlayImage>> _iconCache = {};
+
+  PlaceItem _visiblePlaceForAuth(PlaceItem place, bool isLoggedIn) {
+    if (isLoggedIn) return place;
+    return place.copyWith(isBookmarked: false);
+  }
+
+  List<PlaceItem> _visiblePlacesForAuth(
+    Iterable<PlaceItem> places,
+    bool isLoggedIn,
+  ) {
+    if (isLoggedIn) return List<PlaceItem>.from(places);
+    return places
+        .map((place) => place.copyWith(isBookmarked: false))
+        .toList(growable: false);
+  }
 
   @override
   void initState() {
@@ -306,6 +322,104 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('문의하기 기능은 추후 연결 예정입니다.')));
+      },
+    );
+  }
+
+  Future<void> _showFavoriteLoginPromptSheet() async {
+    final palette = context.palette;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: palette.bottomSheetSurface,
+      barrierColor: palette.modalBarrier,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              14,
+              20,
+              bottomPadding > 0 ? bottomPadding + 8 : 12,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 52,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: palette.bottomSheetBorder,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  '로그인하면 찜한 병원을 모아볼 수 있어요',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: palette.textPrimary,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '찜한 병원은 로그인 후 저장하고 언제든 다시 확인할 수 있어요.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    fontWeight: FontWeight.w700,
+                    color: palette.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 22),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _FavoritePromptButton(
+                        label: '나중에',
+                        isPrimary: false,
+                        onTap: () => Navigator.pop(sheetContext),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _FavoritePromptButton(
+                        label: '로그인하기',
+                        isPrimary: true,
+                        onTap: () async {
+                          Navigator.pop(sheetContext);
+                          if (!mounted) return;
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginRequiredScreen(
+                                title: '로그인이 필요해요',
+                                description:
+                                    '찜한 병원은 로그인 후 저장하고\n언제든 다시 확인할 수 있어요.',
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
       },
     );
   }
@@ -751,6 +865,11 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   }
 
   void _toggleBookmark(PlaceItem place) {
+    if (!AuthState.isLoggedIn.value) {
+      _showFavoriteLoginPromptSheet();
+      return;
+    }
+
     _favoriteStore.toggleFavorite(place.id);
   }
 
@@ -765,6 +884,14 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
         child: ValueListenableBuilder<bool>(
           valueListenable: AuthState.isLoggedIn,
           builder: (context, isLoggedIn, _) {
+            final visibleSheetPlaces = _visiblePlacesForAuth(
+              _sheetPlaces,
+              isLoggedIn,
+            );
+            final visibleSelectedPlace = _selectedPlace == null
+                ? null
+                : _visiblePlaceForAuth(_selectedPlace!, isLoggedIn);
+
             return Stack(
               children: [
                 Positioned.fill(
@@ -800,8 +927,8 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
                 MapBottomSheet(
                   controller: _sheetController,
                   regionLabel: _currentRegionLabel,
-                  places: _sheetPlaces,
-                  selectedPlace: _selectedPlace,
+                  places: visibleSheetPlaces,
+                  selectedPlace: visibleSelectedPlace,
                   isHidden: _isSheetHidden,
                   onTapPlaceCard: _onTapPlaceCard,
                   onTapInquiry: _handleProtectedInquiry,
@@ -947,6 +1074,52 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
                   ),
                 );
               },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FavoritePromptButton extends StatelessWidget {
+  final String label;
+  final bool isPrimary;
+  final VoidCallback onTap;
+
+  const _FavoritePromptButton({
+    required this.label,
+    required this.isPrimary,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Material(
+      color: isPrimary ? palette.primarySoft : palette.bottomSheetInnerSurface,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          height: 48,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isPrimary
+                  ? palette.primarySoft
+                  : palette.bottomSheetBorder,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: isPrimary ? palette.primaryStrong : palette.textSecondary,
             ),
           ),
         ),
