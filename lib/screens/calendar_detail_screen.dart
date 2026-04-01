@@ -59,18 +59,13 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
 
   List<DateTime> _buildCalendarDates(DateTime month) {
     final firstDayOfMonth = DateTime(month.year, month.month, 1);
-    final lastDayOfMonth = DateTime(month.year, month.month + 1, 0);
-
     final leadingDays = firstDayOfMonth.weekday % 7;
     final startDate = firstDayOfMonth.subtract(Duration(days: leadingDays));
-
-    final trailingDays = 6 - (lastDayOfMonth.weekday % 7);
-    final endDate = lastDayOfMonth.add(Duration(days: trailingDays));
 
     final dates = <DateTime>[];
     var cursor = startDate;
 
-    while (!cursor.isAfter(endDate)) {
+    while (dates.length < 42) {
       dates.add(cursor);
       cursor = cursor.add(const Duration(days: 1));
     }
@@ -101,13 +96,17 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
   }
 
   void _onTapDate(DateTime date) {
+    final selectedDate = _dateOnly(date);
+
     setState(() {
-      _selectedDate = _dateOnly(date);
+      _selectedDate = selectedDate;
       _focusedMonth = DateTime(date.year, date.month, 1);
     });
+
+    _showDateSchedulesBottomSheet(selectedDate);
   }
 
-  Future<void> _showScheduleDetailBottomSheet(CalendarSchedule schedule) async {
+  Future<void> _showDateSchedulesBottomSheet(DateTime selectedDate) async {
     final palette = context.palette;
 
     await showModalBottomSheet(
@@ -118,28 +117,76 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
       barrierColor: palette.scrim,
       clipBehavior: Clip.antiAlias,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(30),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      builder: (sheetContext) {
+        final schedules = _schedulesFor(selectedDate);
+
+        return _DateSchedulesBottomSheet(
+          selectedDate: selectedDate,
+          schedules: schedules,
+          onTapAdd: () async {
+            Navigator.pop(sheetContext);
+            await _showScheduleEditorBottomSheet(selectedDate: selectedDate);
+            if (!mounted) return;
+            await _showDateSchedulesBottomSheet(selectedDate);
+          },
+          onTapSchedule: (schedule) async {
+            Navigator.pop(sheetContext);
+            final result = await _showScheduleDetailBottomSheet(schedule);
+            if (!mounted ||
+                result == _ScheduleDetailSheetResult.deleted ||
+                result == _ScheduleDetailSheetResult.closed) {
+              return;
+            }
+            await _showDateSchedulesBottomSheet(selectedDate);
+          },
+          onTapEdit: (schedule) async {
+            Navigator.pop(sheetContext);
+            await _showScheduleEditorBottomSheet(initialSchedule: schedule);
+            if (!mounted) return;
+            await _showDateSchedulesBottomSheet(selectedDate);
+          },
+        );
+      },
+    );
+  }
+
+  Future<_ScheduleDetailSheetResult> _showScheduleDetailBottomSheet(
+    CalendarSchedule schedule,
+  ) async {
+    final palette = context.palette;
+
+    final result = await showModalBottomSheet<_ScheduleDetailSheetResult>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: false,
+      backgroundColor: palette.surfaceSoft,
+      barrierColor: palette.scrim,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
       ),
       builder: (_) {
         return StatefulBuilder(
-          builder: (context, setModalState) {
+          builder: (sheetContext, setModalState) {
             return _CalendarScheduleBottomSheetContent(
               schedule: schedule,
+              onTapBack: () {
+                Navigator.pop(
+                  sheetContext,
+                  _ScheduleDetailSheetResult.backToList,
+                );
+              },
               onTapEdit: () async {
-                Navigator.pop(context);
+                Navigator.pop(sheetContext, _ScheduleDetailSheetResult.closed);
                 await _showScheduleEditorBottomSheet(initialSchedule: schedule);
               },
               onTapDelete: () async {
-                Navigator.pop(context);
-                final shouldDelete = await _showDeleteConfirmDialog();
-                if (shouldDelete != true) return;
-
-                setState(() {
-                  CalendarScheduleStore.removeById(schedule.id);
-                  _refreshSchedules();
-                });
+                Navigator.pop(
+                  sheetContext,
+                  _ScheduleDetailSheetResult.deleteRequested,
+                );
               },
               onChangedThreeDaysBefore: (value) {
                 setState(() {
@@ -170,6 +217,22 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
         );
       },
     );
+
+    if (result == _ScheduleDetailSheetResult.deleteRequested) {
+      final shouldDelete = await _showDeleteConfirmDialog();
+      if (shouldDelete != true) {
+        if (!mounted) return _ScheduleDetailSheetResult.closed;
+        return _showScheduleDetailBottomSheet(schedule);
+      }
+
+      setState(() {
+        CalendarScheduleStore.removeById(schedule.id);
+        _refreshSchedules();
+      });
+      return _ScheduleDetailSheetResult.deleted;
+    }
+
+    return result ?? _ScheduleDetailSheetResult.closed;
   }
 
   Future<bool?> _showDeleteConfirmDialog() {
@@ -177,6 +240,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
 
     return showDialog<bool>(
       context: context,
+      useRootNavigator: true,
       builder: (_) {
         return AlertDialog(
           backgroundColor: palette.surface,
@@ -255,7 +319,6 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
     final palette = context.palette;
     final dates = _buildCalendarDates(_focusedMonth);
     final monthLabel = '${_focusedMonth.year}년 ${_focusedMonth.month}월';
-    final selectedSchedules = _schedulesFor(_selectedDate);
 
     return Scaffold(
       backgroundColor: palette.bg,
@@ -284,33 +347,17 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
               ),
             ),
             Expanded(
-              child: SingleChildScrollView(
+              child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                child: Column(
-                  children: [
-                    _CalendarOverviewCard(
-                      monthLabel: monthLabel,
-                      dates: dates,
-                      focusedMonth: _focusedMonth,
-                      selectedDate: _selectedDate,
-                      scheduleCountForDate: _scheduleCountFor,
-                      onTapPreviousMonth: _goToPreviousMonth,
-                      onTapNextMonth: _goToNextMonth,
-                      onTapDate: _onTapDate,
-                    ),
-                    const SizedBox(height: 16),
-                    _SelectedDateScheduleSection(
-                      selectedDate: _selectedDate,
-                      schedules: selectedSchedules,
-                      onTapAdd: () => _showScheduleEditorBottomSheet(
-                        selectedDate: _selectedDate,
-                      ),
-                      onTapSchedule: _showScheduleDetailBottomSheet,
-                      onTapEdit: (schedule) => _showScheduleEditorBottomSheet(
-                        initialSchedule: schedule,
-                      ),
-                    ),
-                  ],
+                child: _CalendarOverviewCard(
+                  monthLabel: monthLabel,
+                  dates: dates,
+                  focusedMonth: _focusedMonth,
+                  selectedDate: _selectedDate,
+                  scheduleCountForDate: _scheduleCountFor,
+                  onTapPreviousMonth: _goToPreviousMonth,
+                  onTapNextMonth: _goToNextMonth,
+                  onTapDate: _onTapDate,
                 ),
               ),
             ),
@@ -320,6 +367,8 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
     );
   }
 }
+
+enum _ScheduleDetailSheetResult { closed, backToList, deleteRequested, deleted }
 
 class _CalendarOverviewCard extends StatelessWidget {
   final String monthLabel;
@@ -351,7 +400,7 @@ class _CalendarOverviewCard extends StatelessWidget {
     final palette = context.palette;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       decoration: BoxDecoration(
         color: palette.surface,
         borderRadius: BorderRadius.circular(28),
@@ -365,7 +414,7 @@ class _CalendarOverviewCard extends StatelessWidget {
                 child: Text(
                   monthLabel,
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 20,
                     fontWeight: FontWeight.w900,
                     color: palette.textPrimary,
                   ),
@@ -382,40 +431,6 @@ class _CalendarOverviewCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Text(
-                '날짜를 선택하면 아래에서 하루 일정 전체를 확인할 수 있어요.',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: palette.textSecondary,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: palette.primarySoft,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  '일정 ${scheduleCountForDate(selectedDate)}개',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    color: palette.primaryStrong,
-                  ),
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: 14),
           const Row(
             children: [
@@ -428,32 +443,45 @@ class _CalendarOverviewCard extends StatelessWidget {
               _WeekdayHeader(label: '토'),
             ],
           ),
-          const SizedBox(height: 10),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: dates.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              mainAxisExtent: 78,
-            ),
-            itemBuilder: (context, index) {
-              final date = dates[index];
-              final normalizedDate = _dateOnly(date);
-              final isCurrentMonth = date.month == focusedMonth.month;
-              final isSelected = normalizedDate == _dateOnly(selectedDate);
-              final scheduleCount = scheduleCountForDate(normalizedDate);
+          const SizedBox(height: 8),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final totalSpacing = 5 * 6.0;
+                final cellHeight = ((constraints.maxHeight - totalSpacing) / 6)
+                    .clamp(52.0, 62.0);
 
-              return _CalendarDateCell(
-                date: date,
-                isCurrentMonth: isCurrentMonth,
-                isSelected: isSelected,
-                scheduleCount: scheduleCount,
-                onTap: () => onTapDate(date),
-              );
-            },
+                return GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: dates.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 7,
+                    mainAxisSpacing: 6,
+                    crossAxisSpacing: 6,
+                    mainAxisExtent: cellHeight,
+                  ),
+                  itemBuilder: (context, index) {
+                    final date = dates[index];
+                    final normalizedDate = _dateOnly(date);
+                    final isCurrentMonth = date.month == focusedMonth.month;
+                    final isSelected =
+                        normalizedDate == _dateOnly(selectedDate);
+                    final today = _dateOnly(DateTime.now());
+                    final isToday = normalizedDate == today;
+                    final scheduleCount = scheduleCountForDate(normalizedDate);
+
+                    return _CalendarDateCell(
+                      date: date,
+                      isCurrentMonth: isCurrentMonth,
+                      isSelected: isSelected,
+                      isToday: isToday,
+                      scheduleCount: scheduleCount,
+                      onTap: () => onTapDate(date),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -461,14 +489,14 @@ class _CalendarOverviewCard extends StatelessWidget {
   }
 }
 
-class _SelectedDateScheduleSection extends StatelessWidget {
+class _DateSchedulesBottomSheet extends StatelessWidget {
   final DateTime selectedDate;
   final List<CalendarSchedule> schedules;
   final VoidCallback onTapAdd;
   final ValueChanged<CalendarSchedule> onTapSchedule;
   final ValueChanged<CalendarSchedule> onTapEdit;
 
-  const _SelectedDateScheduleSection({
+  const _DateSchedulesBottomSheet({
     required this.selectedDate,
     required this.schedules,
     required this.onTapAdd,
@@ -478,43 +506,68 @@ class _SelectedDateScheduleSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
     final palette = context.palette;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-      decoration: BoxDecoration(
-        color: palette.surface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: palette.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SelectedDateHeader(
-            selectedDate: selectedDate,
-            scheduleCount: schedules.length,
-            onTapAdd: onTapAdd,
+    return SafeArea(
+      top: false,
+      child: FractionallySizedBox(
+        heightFactor: 0.78,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPadding + 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 64,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: palette.border,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              _SelectedDateHeader(
+                selectedDate: selectedDate,
+                scheduleCount: schedules.length,
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeOutCubic,
+                  child: schedules.isEmpty
+                      ? _ScheduleEmptyState(
+                          key: ValueKey(
+                            'empty_${selectedDate.toIso8601String()}',
+                          ),
+                          onTapAdd: onTapAdd,
+                        )
+                      : ListView.separated(
+                          key: ValueKey(
+                            'list_${selectedDate.toIso8601String()}',
+                          ),
+                          itemCount: schedules.length,
+                          padding: EdgeInsets.zero,
+                          itemBuilder: (context, index) {
+                            final schedule = schedules[index];
+                            return _ScheduleCard(
+                              schedule: schedule,
+                              onTap: () => onTapSchedule(schedule),
+                              onTapEdit: () => onTapEdit(schedule),
+                            );
+                          },
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 12),
+                        ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          if (schedules.isEmpty)
-            _ScheduleEmptyState(selectedDate: selectedDate, onTapAdd: onTapAdd)
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: schedules.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final schedule = schedules[index];
-                return _ScheduleCard(
-                  schedule: schedule,
-                  onTap: () => onTapSchedule(schedule),
-                  onTapEdit: () => onTapEdit(schedule),
-                );
-              },
-            ),
-        ],
+        ),
       ),
     );
   }
@@ -523,12 +576,10 @@ class _SelectedDateScheduleSection extends StatelessWidget {
 class _SelectedDateHeader extends StatelessWidget {
   final DateTime selectedDate;
   final int scheduleCount;
-  final VoidCallback onTapAdd;
 
   const _SelectedDateHeader({
     required this.selectedDate,
     required this.scheduleCount,
-    required this.onTapAdd,
   });
 
   String get _weekdayLabel {
@@ -542,8 +593,7 @@ class _SelectedDateHeader extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 340;
-        final textBlock = Column(
+        return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
@@ -556,9 +606,7 @@ class _SelectedDateHeader extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              scheduleCount == 0
-                  ? '아직 등록된 일정이 없어요.'
-                  : '총 $scheduleCount개의 케어 일정이 준비되어 있어요.',
+              '총 $scheduleCount개 일정',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -567,31 +615,15 @@ class _SelectedDateHeader extends StatelessWidget {
             ),
           ],
         );
-
-        return Flex(
-          direction: compact ? Axis.vertical : Axis.horizontal,
-          crossAxisAlignment: compact
-              ? CrossAxisAlignment.start
-              : CrossAxisAlignment.center,
-          children: [
-            if (compact) textBlock else Expanded(child: textBlock),
-            SizedBox(width: compact ? 0 : 12, height: compact ? 12 : 0),
-            _PrimaryActionButton(label: '일정 추가하기', onTap: onTapAdd),
-          ],
-        );
       },
     );
   }
 }
 
 class _ScheduleEmptyState extends StatelessWidget {
-  final DateTime selectedDate;
   final VoidCallback onTapAdd;
 
-  const _ScheduleEmptyState({
-    required this.selectedDate,
-    required this.onTapAdd,
-  });
+  const _ScheduleEmptyState({super.key, required this.onTapAdd});
 
   @override
   Widget build(BuildContext context) {
@@ -599,7 +631,7 @@ class _ScheduleEmptyState extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
       decoration: BoxDecoration(
         color: palette.surfaceSoft,
         borderRadius: BorderRadius.circular(24),
@@ -623,7 +655,7 @@ class _ScheduleEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            '${selectedDate.month}월 ${selectedDate.day}일에는 아직 일정이 없어요.',
+            '오늘은 일정이 없어요',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 17,
@@ -633,7 +665,7 @@ class _ScheduleEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '치료 전 준비나 방문 후 체크를 놓치지 않도록 일정을 추가해보세요.',
+            '치료 전 준비나 방문 후 체크를 놓치지 않도록 일정을 추가해보세요',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
@@ -668,14 +700,14 @@ class _ScheduleCard extends StatelessWidget {
 
     return Material(
       color: palette.surfaceSoft,
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(22),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(22),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(color: palette.border),
           ),
           child: Column(
@@ -870,6 +902,7 @@ class _CalendarDateCell extends StatelessWidget {
   final DateTime date;
   final bool isCurrentMonth;
   final bool isSelected;
+  final bool isToday;
   final int scheduleCount;
   final VoidCallback onTap;
 
@@ -877,6 +910,7 @@ class _CalendarDateCell extends StatelessWidget {
     required this.date,
     required this.isCurrentMonth,
     required this.isSelected,
+    required this.isToday,
     required this.scheduleCount,
     required this.onTap,
   });
@@ -895,65 +929,102 @@ class _CalendarDateCell extends StatelessWidget {
 
     return Material(
       color: isSelected ? palette.primarySoft : palette.surfaceSoft,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(6, 5, 6, 6),
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected ? palette.primaryStrong : palette.border,
+              color: isSelected
+                  ? palette.primaryStrong
+                  : isToday
+                  ? palette.primary.withValues(alpha: 0.35)
+                  : palette.border,
               width: isSelected ? 1.4 : 1,
             ),
           ),
           child: Column(
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? palette.primary
-                      : palette.surface.withValues(alpha: 0),
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  '${date.day}',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
-                    color: isSelected ? palette.surface : textColor,
+              AnimatedScale(
+                duration: const Duration(milliseconds: 170),
+                curve: Curves.easeOutCubic,
+                scale: isSelected ? 1.0 : 0.94,
+                child: Container(
+                  width: 30,
+                  height: 30,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? palette.primary
+                        : isToday
+                        ? palette.primarySoft.withValues(alpha: 0.7)
+                        : palette.surface.withValues(alpha: 0),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '${date.day}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      color: isSelected ? palette.surface : textColor,
+                    ),
                   ),
                 ),
               ),
               const Spacer(),
-              if (scheduleCount > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected ? palette.primaryStrong : palette.primary,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    scheduleCount > 9 ? '9+' : '$scheduleCount',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      color: palette.surface,
-                    ),
-                  ),
-                )
-              else
-                const SizedBox(height: 18),
+              _CalendarScheduleMarker(
+                scheduleCount: scheduleCount,
+                isSelected: isSelected,
+                palette: palette,
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CalendarScheduleMarker extends StatelessWidget {
+  final int scheduleCount;
+  final bool isSelected;
+  final AppPalette palette;
+
+  const _CalendarScheduleMarker({
+    required this.scheduleCount,
+    required this.isSelected,
+    required this.palette,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (scheduleCount <= 0) {
+      return const SizedBox(height: 10);
+    }
+
+    final markerColor = isSelected
+        ? palette.primaryStrong
+        : palette.primary.withValues(alpha: 0.9);
+    final markerCount = scheduleCount == 1 ? 1 : 2;
+
+    return SizedBox(
+      height: 10,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(markerCount, (index) {
+          return Container(
+            width: 4,
+            height: 4,
+            margin: EdgeInsets.only(right: index == markerCount - 1 ? 0 : 4),
+            decoration: BoxDecoration(
+              color: markerColor,
+              shape: BoxShape.circle,
+            ),
+          );
+        }),
       ),
     );
   }
@@ -986,6 +1057,7 @@ class _WeekdayHeader extends StatelessWidget {
 
 class _CalendarScheduleBottomSheetContent extends StatelessWidget {
   final CalendarSchedule schedule;
+  final VoidCallback onTapBack;
   final VoidCallback onTapEdit;
   final VoidCallback onTapDelete;
   final ValueChanged<bool> onChangedThreeDaysBefore;
@@ -994,6 +1066,7 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
 
   const _CalendarScheduleBottomSheetContent({
     required this.schedule,
+    required this.onTapBack,
     required this.onTapEdit,
     required this.onTapDelete,
     required this.onChangedThreeDaysBefore,
@@ -1026,6 +1099,25 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
             const SizedBox(height: 18),
             Row(
               children: [
+                InkWell(
+                  onTap: onTapBack,
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: palette.surface,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: palette.border),
+                    ),
+                    child: Icon(
+                      Icons.chevron_left_rounded,
+                      size: 22,
+                      color: palette.textSecondary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     '${schedule.dateTime.month}월 ${schedule.dateTime.day}일 일정',
@@ -1138,19 +1230,19 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                         _ChecklistTile(
-                          label: '3일 전 알림',
+                          label: '방문 3일 전에 알림',
                           value: schedule.isThreeDaysBefore,
                           onChanged: onChangedThreeDaysBefore,
                         ),
                         const SizedBox(height: 10),
                         _ChecklistTile(
-                          label: '1일 전 알림',
+                          label: '방문 1일 전에 알림',
                           value: schedule.isOneDayBefore,
                           onChanged: onChangedOneDayBefore,
                         ),
                         const SizedBox(height: 10),
                         _ChecklistTile(
-                          label: '1시간 전 알림',
+                          label: '방문 1시간 전에 알림',
                           value: schedule.isOneHourBefore,
                           onChanged: onChangedOneHourBefore,
                         ),
@@ -1351,15 +1443,15 @@ class CalendarSchedule {
 
   String get reminderSummary {
     final items = <String>[];
-    if (isThreeDaysBefore) items.add('3일 전');
-    if (isOneDayBefore) items.add('1일 전');
-    if (isOneHourBefore) items.add('1시간 전');
+    if (isThreeDaysBefore) items.add('방문 3일 전에 알림');
+    if (isOneDayBefore) items.add('방문 1일 전에 알림');
+    if (isOneHourBefore) items.add('방문 1시간 전에 알림');
 
     if (items.isEmpty) {
       return '알림 없음';
     }
 
-    return '알림 ${items.join(', ')}';
+    return items.join(' · ');
   }
 }
 
