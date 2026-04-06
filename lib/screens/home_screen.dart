@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import '../core/auth/auth_gate.dart';
 import '../core/auth/auth_state.dart';
 import '../models/content_item.dart';
+import '../models/calendar_schedule.dart';
 import '../models/device_item.dart';
 import '../theme/app_palette.dart';
+import '../data/calendar_schedule_store.dart';
+import '../utils/calendar_schedule_utils.dart';
 import '../widgets/calendar_card.dart';
 import '../widgets/content_carousel.dart';
 import '../widgets/device_tile.dart';
@@ -160,79 +163,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  List<CalendarSchedule> _upcomingSchedulesFromToday() {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    return CalendarScheduleStore.snapshot().values
-        .expand((items) => items)
-        .where((schedule) {
-          final scheduleDate = DateTime(
-            schedule.dateTime.year,
-            schedule.dateTime.month,
-            schedule.dateTime.day,
-          );
-          return !scheduleDate.isBefore(today);
-        })
-        .toList()
-      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
-  }
-
-  String _nearestReservationTitle(CalendarSchedule schedule) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final scheduleDate = DateTime(
-      schedule.dateTime.year,
-      schedule.dateTime.month,
-      schedule.dateTime.day,
-    );
-    final diff = scheduleDate.difference(today).inDays;
-
-    if (diff <= 0) {
-      return '${schedule.hospitalName} 예약 당일';
-    }
-
-    return '${schedule.hospitalName} 예약 $diff일 전';
-  }
-
-  String _scheduleDateLabel(DateTime dateTime) {
-    const weekdayLabels = ['일', '월', '화', '수', '목', '금', '토'];
-    final weekdayLabel = weekdayLabels[dateTime.weekday % 7];
-    return '${dateTime.month}월 ${dateTime.day}일($weekdayLabel) ${_timeText(dateTime)}';
-  }
-
-  String _relativeLabel(DateTime dateTime) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final scheduleDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
-    final diff = scheduleDate.difference(today).inDays;
-
-    if (diff <= 0) {
-      return '오늘';
-    }
-
-    return '$diff일 후';
-  }
-
-  String _timeText(DateTime dateTime) {
-    final hour = dateTime.hour;
-    final minute = dateTime.minute;
-    final period = hour < 12 ? '오전' : '오후';
-    final displayHour = hour == 0
-        ? 12
-        : hour > 12
-        ? hour - 12
-        : hour;
-    return '$period $displayHour:${minute.toString().padLeft(2, '0')}';
-  }
-
-  String _todayReferenceLabel() {
-    final now = DateTime.now();
-    const weekdayLabels = ['일', '월', '화', '수', '목', '금', '토'];
-    final weekdayLabel = weekdayLabels[now.weekday % 7];
-    return 'Today · ${now.month}월 ${now.day}일 ($weekdayLabel)';
-  }
-
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
@@ -243,7 +173,11 @@ class _HomeScreenState extends State<HomeScreen> {
       valueListenable: AuthState.isLoggedIn,
       builder: (context, isLoggedIn, _) {
         final upcomingSchedules = isLoggedIn
-            ? _upcomingSchedulesFromToday()
+            ? upcomingSchedulesFromToday(
+                CalendarScheduleStore.snapshot().values.expand(
+                  (items) => items,
+                ),
+              )
             : const <CalendarSchedule>[];
         final nearestSchedule = upcomingSchedules.isNotEmpty
             ? upcomingSchedules.first
@@ -251,21 +185,21 @@ class _HomeScreenState extends State<HomeScreen> {
         final reservationTitle = !isLoggedIn
             ? '로그인이 필요해요'
             : nearestSchedule != null
-            ? _nearestReservationTitle(nearestSchedule)
+            ? buildNearestReservationTitle(nearestSchedule)
             : '다가오는 예약이 없어요';
         final reservationSubtitle = !isLoggedIn
             ? '로그인 후 내 캘린더를 확인할 수 있어요'
             : nearestSchedule != null
-            ? _scheduleDateLabel(nearestSchedule.dateTime)
+            ? formatCompactScheduleDate(nearestSchedule.dateTime)
             : '오늘 기준으로 예정된 예약이 없어요';
-        final todayLabel = _todayReferenceLabel();
+        final todayLabel = formatTodayReferenceLabel();
         final reservationItems = upcomingSchedules
             .skip(nearestSchedule != null ? 1 : 0)
             .map(
               (schedule) => CalendarCardReservationItem(
                 title: schedule.hospitalName,
-                dateLabel: _scheduleDateLabel(schedule.dateTime),
-                relativeLabel: _relativeLabel(schedule.dateTime),
+                dateLabel: formatCompactScheduleDate(schedule.dateTime),
+                relativeLabel: formatRelativeFromToday(schedule.dateTime),
                 onTap: () => _openReservationDetail(context, schedule),
               ),
             )
@@ -351,7 +285,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 nearestSchedule,
                               )
                             : null,
-                        onTapRecord: () {},
                         onTapStart: () async {
                           final allowed = await AuthGate.ensureLoggedIn(
                             context,

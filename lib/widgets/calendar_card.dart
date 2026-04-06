@@ -22,7 +22,6 @@ class CalendarCard extends StatelessWidget {
   final String? reservationSectionLabel;
   final List<CalendarCardReservationItem> reservations;
   final VoidCallback? onTapCalendar;
-  final VoidCallback? onTapRecord;
   final VoidCallback? onTapStart;
   final VoidCallback? onTapCard;
   final VoidCallback? onTapSummary;
@@ -38,7 +37,6 @@ class CalendarCard extends StatelessWidget {
     this.reservationSectionLabel,
     required this.reservations,
     this.onTapCalendar,
-    this.onTapRecord,
     this.onTapStart,
     this.onTapCard,
     this.onTapSummary,

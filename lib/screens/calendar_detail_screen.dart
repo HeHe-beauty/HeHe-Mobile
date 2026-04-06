@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../data/calendar_schedule_store.dart';
+import '../models/calendar_schedule.dart';
 import '../theme/app_palette.dart';
+import '../utils/calendar_schedule_utils.dart';
 import '../widgets/visit_schedule_bottom_sheet.dart';
 
 class CalendarDetailScreen extends StatefulWidget {
@@ -22,21 +25,12 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
   late DateTime _selectedDate;
   final Map<DateTime, List<CalendarSchedule>> _scheduleMap = {};
   bool _didOpenInitialSchedule = false;
-  static const List<String> _weekdayLabels = [
-    '일',
-    '월',
-    '화',
-    '수',
-    '목',
-    '금',
-    '토',
-  ];
 
   @override
   void initState() {
     super.initState();
 
-    final today = _dateOnly(DateTime.now());
+    final today = calendarDateOnly(DateTime.now());
     _focusedMonth = DateTime(today.year, today.month, 1);
     _selectedDate = today;
     _refreshSchedules();
@@ -56,10 +50,6 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
     _openInitialScheduleIfNeeded();
   }
 
-  static DateTime _dateOnly(DateTime date) {
-    return DateTime(date.year, date.month, date.day);
-  }
-
   void _refreshSchedules() {
     _scheduleMap
       ..clear()
@@ -74,7 +64,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
     if (schedule == null) return;
 
     _didOpenInitialSchedule = true;
-    final targetDate = _dateOnly(schedule.dateTime);
+    final targetDate = calendarDateOnly(schedule.dateTime);
     _focusedMonth = DateTime(targetDate.year, targetDate.month, 1);
     _selectedDate = targetDate;
 
@@ -97,15 +87,13 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
 
   List<CalendarSchedule> _schedulesFor(DateTime date) {
     return List<CalendarSchedule>.from(
-      _scheduleMap[_dateOnly(date)] ?? const <CalendarSchedule>[],
+      _scheduleMap[calendarDateOnly(date)] ?? const <CalendarSchedule>[],
     )..sort((a, b) => a.dateTime.compareTo(b.dateTime));
   }
 
   int _scheduleCountFor(DateTime date) {
-    return _scheduleMap[_dateOnly(date)]?.length ?? 0;
+    return _scheduleMap[calendarDateOnly(date)]?.length ?? 0;
   }
-
-  String _monthLabel(DateTime date) => '${date.year}. ${date.month}';
 
   List<DateTime> _buildCalendarDates(DateTime month) {
     final firstDayOfMonth = DateTime(month.year, month.month, 1);
@@ -146,7 +134,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
   }
 
   void _onTapDate(DateTime date) {
-    final selectedDate = _dateOnly(date);
+    final selectedDate = calendarDateOnly(date);
 
     setState(() {
       _selectedDate = selectedDate;
@@ -332,7 +320,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
   }) async {
     final seedDate = initialSchedule?.dateTime ?? selectedDate ?? _selectedDate;
     final fixedDate = initialSchedule == null && selectedDate != null
-        ? _dateOnly(selectedDate)
+        ? calendarDateOnly(selectedDate)
         : null;
     final result = await showVisitScheduleBottomSheet(
       context,
@@ -354,7 +342,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
       isOneDayBefore: initialSchedule?.isOneDayBefore ?? false,
       isOneHourBefore: initialSchedule?.isOneHourBefore ?? false,
     );
-    final targetDate = _dateOnly(result.dateTime);
+    final targetDate = calendarDateOnly(result.dateTime);
 
     setState(() {
       CalendarScheduleStore.upsert(schedule);
@@ -368,7 +356,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final dates = _buildCalendarDates(_focusedMonth);
-    final monthLabel = _monthLabel(_focusedMonth);
+    final monthLabel = formatMonthDotLabel(_focusedMonth);
 
     return Scaffold(
       backgroundColor: palette.bg,
@@ -401,7 +389,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                 child: _CalendarOverviewCard(
                   monthLabel: monthLabel,
-                  weekdayLabels: _weekdayLabels,
+                  weekdayLabels: calendarWeekdayLabels,
                   dates: dates,
                   focusedMonth: _focusedMonth,
                   selectedDate: _selectedDate,
@@ -443,10 +431,6 @@ class _CalendarOverviewCard extends StatelessWidget {
     required this.onTapNextMonth,
     required this.onTapDate,
   });
-
-  static DateTime _dateOnly(DateTime date) {
-    return DateTime(date.year, date.month, date.day);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -507,10 +491,11 @@ class _CalendarOverviewCard extends StatelessWidget {
                 ),
                 itemBuilder: (context, index) {
                   final date = dates[index];
-                  final normalizedDate = _dateOnly(date);
+                  final normalizedDate = calendarDateOnly(date);
                   final isCurrentMonth = date.month == focusedMonth.month;
-                  final isSelected = normalizedDate == _dateOnly(selectedDate);
-                  final today = _dateOnly(DateTime.now());
+                  final isSelected =
+                      normalizedDate == calendarDateOnly(selectedDate);
+                  final today = calendarDateOnly(DateTime.now());
                   final isToday = normalizedDate == today;
                   final scheduleCount = scheduleCountForDate(normalizedDate);
 
@@ -1462,173 +1447,5 @@ class _MiniArrowButton extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class CalendarSchedule {
-  final String id;
-  String hospitalName;
-  DateTime dateTime;
-  bool isThreeDaysBefore;
-  bool isOneDayBefore;
-  bool isOneHourBefore;
-
-  CalendarSchedule({
-    required this.id,
-    required this.hospitalName,
-    required this.dateTime,
-    this.isThreeDaysBefore = false,
-    this.isOneDayBefore = false,
-    this.isOneHourBefore = false,
-  });
-
-  CalendarSchedule copyWith({
-    String? id,
-    String? hospitalName,
-    DateTime? dateTime,
-    bool? isThreeDaysBefore,
-    bool? isOneDayBefore,
-    bool? isOneHourBefore,
-  }) {
-    return CalendarSchedule(
-      id: id ?? this.id,
-      hospitalName: hospitalName ?? this.hospitalName,
-      dateTime: dateTime ?? this.dateTime,
-      isThreeDaysBefore: isThreeDaysBefore ?? this.isThreeDaysBefore,
-      isOneDayBefore: isOneDayBefore ?? this.isOneDayBefore,
-      isOneHourBefore: isOneHourBefore ?? this.isOneHourBefore,
-    );
-  }
-
-  String get timeText {
-    final hour = dateTime.hour;
-    final minute = dateTime.minute;
-    final period = hour < 12 ? '오전' : '오후';
-    final displayHour = hour == 0
-        ? 12
-        : hour > 12
-        ? hour - 12
-        : hour;
-    return '$period $displayHour:${minute.toString().padLeft(2, '0')}';
-  }
-
-  String get dateText {
-    const labels = ['일', '월', '화', '수', '목', '금', '토'];
-    final weekdayLabel = labels[dateTime.weekday % 7];
-    return '${dateTime.month}월 ${dateTime.day}일 $weekdayLabel요일';
-  }
-
-  String get reminderSummary {
-    final items = <String>[];
-    if (isThreeDaysBefore) items.add('방문 3일 전에 알림');
-    if (isOneDayBefore) items.add('방문 1일 전에 알림');
-    if (isOneHourBefore) items.add('방문 1시간 전에 알림');
-
-    if (items.isEmpty) {
-      return '알림 없음';
-    }
-
-    return items.join(' · ');
-  }
-}
-
-class CalendarScheduleStore {
-  static int _idSeed = 0;
-
-  static final Map<DateTime, List<CalendarSchedule>> _scheduleMap = {
-    _dateOnly(DateTime(2026, 6, 11)): [
-      CalendarSchedule(
-        id: createId(),
-        hospitalName: '샤프 의원',
-        dateTime: DateTime(2026, 6, 11, 10, 30),
-        isThreeDaysBefore: true,
-      ),
-      CalendarSchedule(
-        id: createId(),
-        hospitalName: '리프 클리닉',
-        dateTime: DateTime(2026, 6, 11, 19),
-        isOneDayBefore: true,
-      ),
-    ],
-    _dateOnly(DateTime(2026, 6, 13)): [
-      CalendarSchedule(
-        id: createId(),
-        hospitalName: 'YY 의원',
-        dateTime: DateTime(2026, 6, 13, 14, 30),
-        isThreeDaysBefore: true,
-        isOneDayBefore: true,
-      ),
-      CalendarSchedule(
-        id: createId(),
-        hospitalName: '아크 피부과',
-        dateTime: DateTime(2026, 6, 13, 17),
-        isOneHourBefore: true,
-      ),
-    ],
-    _dateOnly(DateTime(2026, 6, 28)): [
-      CalendarSchedule(
-        id: createId(),
-        hospitalName: '범석 재호',
-        dateTime: DateTime(2026, 6, 28, 9),
-        isOneDayBefore: true,
-        isOneHourBefore: true,
-      ),
-    ],
-  };
-
-  static String createId() {
-    _idSeed += 1;
-    return 'schedule_${DateTime.now().microsecondsSinceEpoch}_$_idSeed';
-  }
-
-  static Map<DateTime, List<CalendarSchedule>> snapshot() {
-    return {
-      for (final entry in _scheduleMap.entries)
-        entry.key: entry.value.map((schedule) => schedule.copyWith()).toList()
-          ..sort((a, b) => a.dateTime.compareTo(b.dateTime)),
-    };
-  }
-
-  static DateTime upsertFromResult(VisitScheduleResult result) {
-    final schedule = CalendarSchedule(
-      id: createId(),
-      hospitalName: result.hospitalName.isEmpty
-          ? '병원명을 입력해주세요'
-          : result.hospitalName,
-      dateTime: result.dateTime,
-    );
-    upsert(schedule);
-    return _dateOnly(result.dateTime);
-  }
-
-  static void upsert(CalendarSchedule schedule) {
-    removeById(schedule.id);
-
-    final targetDate = _dateOnly(schedule.dateTime);
-    final schedules = _scheduleMap.putIfAbsent(
-      targetDate,
-      () => <CalendarSchedule>[],
-    );
-    schedules.add(schedule.copyWith());
-    schedules.sort((a, b) => a.dateTime.compareTo(b.dateTime));
-  }
-
-  static void removeById(String scheduleId) {
-    final emptyDates = <DateTime>[];
-
-    for (final entry in _scheduleMap.entries) {
-      entry.value.removeWhere((schedule) => schedule.id == scheduleId);
-      if (entry.value.isEmpty) {
-        emptyDates.add(entry.key);
-      }
-    }
-
-    for (final date in emptyDates) {
-      _scheduleMap.remove(date);
-    }
-  }
-
-  static DateTime _dateOnly(DateTime date) {
-    return DateTime(date.year, date.month, date.day);
   }
 }
