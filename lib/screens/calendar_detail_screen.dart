@@ -16,6 +16,15 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
   late DateTime _focusedMonth;
   late DateTime _selectedDate;
   final Map<DateTime, List<CalendarSchedule>> _scheduleMap = {};
+  static const List<String> _weekdayLabels = [
+    '일',
+    '월',
+    '화',
+    '수',
+    '목',
+    '금',
+    '토',
+  ];
 
   @override
   void initState() {
@@ -56,6 +65,8 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
   int _scheduleCountFor(DateTime date) {
     return _scheduleMap[_dateOnly(date)]?.length ?? 0;
   }
+
+  String _monthLabel(DateTime date) => '${date.year}. ${date.month}';
 
   List<DateTime> _buildCalendarDates(DateTime month) {
     final firstDayOfMonth = DateTime(month.year, month.month, 1);
@@ -318,7 +329,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final dates = _buildCalendarDates(_focusedMonth);
-    final monthLabel = '${_focusedMonth.year}년 ${_focusedMonth.month}월';
+    final monthLabel = _monthLabel(_focusedMonth);
 
     return Scaffold(
       backgroundColor: palette.bg,
@@ -351,6 +362,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                 child: _CalendarOverviewCard(
                   monthLabel: monthLabel,
+                  weekdayLabels: _weekdayLabels,
                   dates: dates,
                   focusedMonth: _focusedMonth,
                   selectedDate: _selectedDate,
@@ -372,6 +384,7 @@ enum _ScheduleDetailSheetResult { closed, backToList, deleteRequested, deleted }
 
 class _CalendarOverviewCard extends StatelessWidget {
   final String monthLabel;
+  final List<String> weekdayLabels;
   final List<DateTime> dates;
   final DateTime focusedMonth;
   final DateTime selectedDate;
@@ -382,6 +395,7 @@ class _CalendarOverviewCard extends StatelessWidget {
 
   const _CalendarOverviewCard({
     required this.monthLabel,
+    required this.weekdayLabels,
     required this.dates,
     required this.focusedMonth,
     required this.selectedDate,
@@ -399,94 +413,110 @@ class _CalendarOverviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-      decoration: BoxDecoration(
-        color: palette.surface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: palette.border),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  monthLabel,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: palette.textPrimary,
-                  ),
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                monthLabel,
+                style: TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.3,
+                  color: palette.textPrimary,
                 ),
               ),
-              _MiniArrowButton(
-                icon: Icons.chevron_left_rounded,
-                onTap: onTapPreviousMonth,
-              ),
-              const SizedBox(width: 8),
-              _MiniArrowButton(
-                icon: Icons.chevron_right_rounded,
-                onTap: onTapNextMonth,
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          const Row(
-            children: [
-              _WeekdayHeader(label: '일', isSunday: true),
-              _WeekdayHeader(label: '월'),
-              _WeekdayHeader(label: '화'),
-              _WeekdayHeader(label: '수'),
-              _WeekdayHeader(label: '목'),
-              _WeekdayHeader(label: '금'),
-              _WeekdayHeader(label: '토'),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final totalSpacing = 5 * 6.0;
-                final cellHeight = ((constraints.maxHeight - totalSpacing) / 6)
-                    .clamp(52.0, 62.0);
-
-                return GridView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: dates.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 7,
-                    mainAxisSpacing: 6,
-                    crossAxisSpacing: 6,
-                    mainAxisExtent: cellHeight,
-                  ),
-                  itemBuilder: (context, index) {
-                    final date = dates[index];
-                    final normalizedDate = _dateOnly(date);
-                    final isCurrentMonth = date.month == focusedMonth.month;
-                    final isSelected =
-                        normalizedDate == _dateOnly(selectedDate);
-                    final today = _dateOnly(DateTime.now());
-                    final isToday = normalizedDate == today;
-                    final scheduleCount = scheduleCountForDate(normalizedDate);
-
-                    return _CalendarDateCell(
-                      date: date,
-                      isCurrentMonth: isCurrentMonth,
-                      isSelected: isSelected,
-                      isToday: isToday,
-                      scheduleCount: scheduleCount,
-                      onTap: () => onTapDate(date),
-                    );
-                  },
-                );
-              },
             ),
+            _MiniArrowButton(
+              icon: Icons.chevron_left_rounded,
+              onTap: onTapPreviousMonth,
+            ),
+            const SizedBox(width: 6),
+            _MiniArrowButton(
+              icon: Icons.chevron_right_rounded,
+              onTap: onTapNextMonth,
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        Row(
+          children: List.generate(weekdayLabels.length, (index) {
+            return _WeekdayHeader(
+              label: weekdayLabels[index],
+              isSunday: index == 0,
+              isSaturday: index == 6,
+            );
+          }),
+        ),
+        const SizedBox(height: 14),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final totalSpacing = 5 * 12.0;
+              final cellHeight = ((constraints.maxHeight - totalSpacing) / 6)
+                  .clamp(56.0, 68.0);
+
+              return GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: dates.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 7,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 4,
+                  mainAxisExtent: cellHeight,
+                ),
+                itemBuilder: (context, index) {
+                  final date = dates[index];
+                  final normalizedDate = _dateOnly(date);
+                  final isCurrentMonth = date.month == focusedMonth.month;
+                  final isSelected = normalizedDate == _dateOnly(selectedDate);
+                  final today = _dateOnly(DateTime.now());
+                  final isToday = normalizedDate == today;
+                  final scheduleCount = scheduleCountForDate(normalizedDate);
+
+                  return _CalendarDateCell(
+                    date: date,
+                    isCurrentMonth: isCurrentMonth,
+                    isSelected: isSelected,
+                    isToday: isToday,
+                    scheduleCount: scheduleCount,
+                    onTap: () => onTapDate(date),
+                  );
+                },
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
+}
+
+class _CalendarDayColors {
+  final Color active;
+  final Color inactive;
+
+  const _CalendarDayColors({required this.active, required this.inactive});
+}
+
+_CalendarDayColors _dayColors(AppPalette palette, DateTime date) {
+  if (date.weekday % 7 == 0) {
+    return _CalendarDayColors(
+      active: palette.danger.withValues(alpha: 0.88),
+      inactive: palette.danger.withValues(alpha: 0.36),
+    );
+  }
+  if (date.weekday == DateTime.saturday) {
+    return _CalendarDayColors(
+      active: const Color(0xFF4D84E8),
+      inactive: const Color(0xFF9EBBF2),
+    );
+  }
+  return _CalendarDayColors(
+    active: palette.textPrimary,
+    inactive: palette.textTertiary.withValues(alpha: 0.72),
+  );
 }
 
 class _DateSchedulesBottomSheet extends StatelessWidget {
@@ -520,20 +550,20 @@ class _DateSchedulesBottomSheet extends StatelessWidget {
             children: [
               Center(
                 child: Container(
-                  width: 64,
-                  height: 8,
+                  width: 52,
+                  height: 5,
                   decoration: BoxDecoration(
-                    color: palette.border,
+                    color: palette.border.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 20),
               _SelectedDateHeader(
                 selectedDate: selectedDate,
                 scheduleCount: schedules.length,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               Expanded(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 180),
@@ -561,7 +591,7 @@ class _DateSchedulesBottomSheet extends StatelessWidget {
                             );
                           },
                           separatorBuilder: (context, index) =>
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 10),
                         ),
                 ),
               ),
@@ -591,31 +621,28 @@ class _SelectedDateHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${selectedDate.month}월 ${selectedDate.day}일 $_weekdayLabel요일',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: palette.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '총 $scheduleCount개 일정',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: palette.textSecondary,
-              ),
-            ),
-          ],
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '${selectedDate.month}월 ${selectedDate.day}일 $_weekdayLabel요일',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.4,
+            color: palette.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '총 $scheduleCount개 일정',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: palette.textSecondary,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -631,26 +658,25 @@ class _ScheduleEmptyState extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
       decoration: BoxDecoration(
-        color: palette.surfaceSoft,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: palette.border),
+        color: palette.surface.withValues(alpha: 0.84),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: palette.primarySoft,
+              color: palette.primarySoft.withValues(alpha: 0.8),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.calendar_month_rounded,
               color: palette.primaryStrong,
-              size: 28,
+              size: 24,
             ),
           ),
           const SizedBox(height: 16),
@@ -658,8 +684,9 @@ class _ScheduleEmptyState extends StatelessWidget {
             '오늘은 일정이 없어요',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w900,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.2,
               color: palette.textPrimary,
             ),
           ),
@@ -670,7 +697,7 @@ class _ScheduleEmptyState extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               height: 1.5,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w500,
               color: palette.textSecondary,
             ),
           ),
@@ -699,16 +726,16 @@ class _ScheduleCard extends StatelessWidget {
     final status = _scheduleStatus(context, schedule.dateTime);
 
     return Material(
-      color: palette.surfaceSoft,
-      borderRadius: BorderRadius.circular(22),
+      color: palette.surface.withValues(alpha: 0.94),
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         child: Container(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: palette.border),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: palette.border.withValues(alpha: 0.7)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -727,14 +754,14 @@ class _ScheduleCard extends StatelessWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: palette.primarySoft,
+                            color: palette.primarySoft.withValues(alpha: 0.82),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
                             schedule.timeText,
                             style: TextStyle(
                               fontSize: 12,
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w700,
                               color: palette.primaryStrong,
                             ),
                           ),
@@ -752,16 +779,15 @@ class _ScheduleCard extends StatelessWidget {
                     onTap: onTapEdit,
                     borderRadius: BorderRadius.circular(999),
                     child: Container(
-                      width: 36,
-                      height: 36,
+                      width: 34,
+                      height: 34,
                       decoration: BoxDecoration(
-                        color: palette.surface,
+                        color: palette.surfaceSoft.withValues(alpha: 0.7),
                         shape: BoxShape.circle,
-                        border: Border.all(color: palette.border),
                       ),
                       child: Icon(
                         Icons.edit_rounded,
-                        size: 18,
+                        size: 17,
                         color: palette.textSecondary,
                       ),
                     ),
@@ -773,7 +799,8 @@ class _ScheduleCard extends StatelessWidget {
                 schedule.hospitalName,
                 style: TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
                   color: palette.textPrimary,
                 ),
               ),
@@ -783,7 +810,7 @@ class _ScheduleCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   height: 1.4,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w500,
                   color: palette.textSecondary,
                 ),
               ),
@@ -858,7 +885,7 @@ class _StatusPill extends StatelessWidget {
         label,
         style: TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w900,
+          fontWeight: FontWeight.w700,
           color: textColor,
         ),
       ),
@@ -877,18 +904,18 @@ class _PrimaryActionButton extends StatelessWidget {
     final palette = context.palette;
 
     return Material(
-      color: palette.primarySoft,
-      borderRadius: BorderRadius.circular(16),
+      color: palette.primarySoft.withValues(alpha: 0.86),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           child: Text(
             label,
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
               color: palette.primaryStrong,
             ),
           ),
@@ -915,66 +942,64 @@ class _CalendarDateCell extends StatelessWidget {
     required this.onTap,
   });
 
-  bool get _isSunday => date.weekday % 7 == 0;
-
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-
-    final textColor = !isCurrentMonth
-        ? palette.textTertiary
-        : _isSunday
-        ? palette.danger
-        : palette.textPrimary;
+    final dayColors = _dayColors(palette, date);
+    final textColor = isCurrentMonth ? dayColors.active : dayColors.inactive;
 
     return Material(
-      color: isSelected ? palette.primarySoft : palette.surfaceSoft,
-      borderRadius: BorderRadius.circular(16),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isSelected
-                  ? palette.primaryStrong
-                  : isToday
-                  ? palette.primary.withValues(alpha: 0.35)
-                  : palette.border,
-              width: isSelected ? 1.4 : 1,
-            ),
-          ),
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              AnimatedScale(
-                duration: const Duration(milliseconds: 170),
-                curve: Curves.easeOutCubic,
-                scale: isSelected ? 1.0 : 0.94,
-                child: Container(
-                  width: 30,
-                  height: 30,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? palette.primary
-                        : isToday
-                        ? palette.primarySoft.withValues(alpha: 0.7)
-                        : palette.surface.withValues(alpha: 0),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    '${date.day}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      color: isSelected ? palette.surface : textColor,
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? palette.primary
+                          : isToday
+                          ? palette.primarySoft.withValues(alpha: 0.18)
+                          : Colors.transparent,
+                      border: isToday && !isSelected
+                          ? Border.all(
+                              color: palette.primary.withValues(alpha: 0.8),
+                              width: 1.6,
+                            )
+                          : null,
+                      shape: BoxShape.circle,
                     ),
                   ),
-                ),
+                  Text(
+                    '${date.day}',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : isToday
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      color: isSelected
+                          ? palette.surface
+                          : isToday
+                          ? palette.primaryStrong
+                          : textColor,
+                    ),
+                  ),
+                ],
               ),
-              const Spacer(),
+              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               _CalendarScheduleMarker(
                 scheduleCount: scheduleCount,
                 isSelected: isSelected,
@@ -1006,18 +1031,19 @@ class _CalendarScheduleMarker extends StatelessWidget {
     }
 
     final markerColor = isSelected
-        ? palette.primaryStrong
-        : palette.primary.withValues(alpha: 0.9);
-    final markerCount = scheduleCount == 1 ? 1 : 2;
+        ? const Color(0xFFF6C94C)
+        : palette.primaryStrong;
+    final markerCount = scheduleCount >= 3 ? 3 : scheduleCount;
 
     return SizedBox(
       height: 10,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: List.generate(markerCount, (index) {
           return Container(
-            width: 4,
-            height: 4,
+            width: 5,
+            height: 5,
             margin: EdgeInsets.only(right: index == markerCount - 1 ? 0 : 4),
             decoration: BoxDecoration(
               color: markerColor,
@@ -1033,21 +1059,31 @@ class _CalendarScheduleMarker extends StatelessWidget {
 class _WeekdayHeader extends StatelessWidget {
   final String label;
   final bool isSunday;
+  final bool isSaturday;
 
-  const _WeekdayHeader({required this.label, this.isSunday = false});
+  const _WeekdayHeader({
+    required this.label,
+    this.isSunday = false,
+    this.isSaturday = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    final color = isSunday
+        ? palette.danger.withValues(alpha: 0.82)
+        : isSaturday
+        ? const Color(0xFF4D84E8)
+        : palette.textSecondary;
 
     return Expanded(
       child: Center(
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-            color: isSunday ? palette.danger : palette.textSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: color,
           ),
         ),
       ),
@@ -1088,31 +1124,30 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
           children: [
             Center(
               child: Container(
-                width: 64,
-                height: 8,
+                width: 52,
+                height: 5,
                 decoration: BoxDecoration(
-                  color: palette.border,
+                  color: palette.border.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 20),
             Row(
               children: [
                 InkWell(
                   onTap: onTapBack,
                   borderRadius: BorderRadius.circular(999),
                   child: Container(
-                    width: 38,
-                    height: 38,
+                    width: 34,
+                    height: 34,
                     decoration: BoxDecoration(
-                      color: palette.surface,
+                      color: palette.surfaceSoft.withValues(alpha: 0.72),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: palette.border),
                     ),
                     child: Icon(
                       Icons.chevron_left_rounded,
-                      size: 22,
+                      size: 20,
                       color: palette.textSecondary,
                     ),
                   ),
@@ -1123,7 +1158,8 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
                     '${schedule.dateTime.month}월 ${schedule.dateTime.day}일 일정',
                     style: TextStyle(
                       fontSize: 18,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
                       color: palette.textPrimary,
                     ),
                   ),
@@ -1132,30 +1168,31 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
                   onTap: onTapEdit,
                   borderRadius: BorderRadius.circular(999),
                   child: Container(
-                    width: 38,
-                    height: 38,
+                    width: 34,
+                    height: 34,
                     decoration: BoxDecoration(
-                      color: palette.surface,
+                      color: palette.surfaceSoft.withValues(alpha: 0.72),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: palette.border),
                     ),
                     child: Icon(
                       Icons.edit_rounded,
-                      size: 20,
+                      size: 18,
                       color: palette.textSecondary,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 20),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
               decoration: BoxDecoration(
-                color: palette.surface,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: palette.border),
+                color: palette.surface.withValues(alpha: 0.94),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: palette.border.withValues(alpha: 0.72),
+                ),
               ),
               child: Column(
                 children: [
@@ -1165,8 +1202,8 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
                         child: Text(
                           '병원명',
                           style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
                             color: palette.textSecondary,
                           ),
                         ),
@@ -1175,8 +1212,8 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
                         child: Text(
                           '시간',
                           style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
                             color: palette.textSecondary,
                           ),
                         ),
@@ -1191,7 +1228,8 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
                           schedule.hospitalName,
                           style: TextStyle(
                             fontSize: 19,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.2,
                             color: palette.textPrimary,
                           ),
                         ),
@@ -1201,7 +1239,8 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
                           schedule.timeText,
                           style: TextStyle(
                             fontSize: 19,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.2,
                             color: palette.textPrimary,
                           ),
                         ),
@@ -1213,9 +1252,8 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: palette.surfaceSoft,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: palette.border),
+                      color: palette.surfaceSoft.withValues(alpha: 0.62),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1223,8 +1261,8 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
                         Text(
                           '알림 체크',
                           style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
                             color: palette.textPrimary,
                           ),
                         ),
@@ -1252,22 +1290,22 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
                   const SizedBox(height: 14),
                   SizedBox(
                     width: double.infinity,
-                    height: 52,
+                    height: 50,
                     child: ElevatedButton(
                       onPressed: onTapDelete,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: palette.danger.withValues(alpha: 0.14),
+                        backgroundColor: palette.danger.withValues(alpha: 0.12),
                         foregroundColor: palette.danger,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
                       child: const Text(
                         '일정 삭제',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
@@ -1304,19 +1342,19 @@ class _ChecklistTile extends StatelessWidget {
         children: [
           AnimatedContainer(
             duration: const Duration(milliseconds: 160),
-            width: 24,
-            height: 24,
+            width: 22,
+            height: 22,
             decoration: BoxDecoration(
               color: value
                   ? palette.primary
                   : palette.surface.withValues(alpha: 0),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(7),
               border: Border.all(
                 color: value ? palette.primary : palette.border,
               ),
             ),
             child: value
-                ? Icon(Icons.check_rounded, size: 16, color: palette.surface)
+                ? Icon(Icons.check_rounded, size: 14, color: palette.surface)
                 : null,
           ),
           const SizedBox(width: 12),
@@ -1324,8 +1362,8 @@ class _ChecklistTile extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
                 color: palette.textPrimary,
               ),
             ),
@@ -1347,7 +1385,7 @@ class _CircleIconButton extends StatelessWidget {
     final palette = context.palette;
 
     return Material(
-      color: palette.surface,
+      color: palette.surface.withValues(alpha: 0.88),
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
@@ -1373,15 +1411,15 @@ class _MiniArrowButton extends StatelessWidget {
     final palette = context.palette;
 
     return Material(
-      color: palette.surfaceSoft,
-      borderRadius: BorderRadius.circular(12),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(999),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(999),
         child: SizedBox(
-          width: 40,
-          height: 40,
-          child: Icon(icon, size: 24, color: palette.textSecondary),
+          width: 34,
+          height: 34,
+          child: Icon(icon, size: 22, color: palette.textSecondary),
         ),
       ),
     );
