@@ -16,13 +16,20 @@ import 'device_map_screen.dart';
 import 'settings_screen.dart';
 import 'my_page_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  static const int _maxVisibleReservations = 3;
+
   List<DeviceItem> _devices() => const [
-    DeviceItem(title: '메인 기기 1', icon: Icons.devices_rounded),
-    DeviceItem(title: '기기 2', icon: Icons.health_and_safety_rounded),
-    DeviceItem(title: '기기 3', icon: Icons.spa_rounded),
+    DeviceItem(title: '젠틀맥스 프로', icon: Icons.auto_awesome_rounded),
+    DeviceItem(title: '아포지', icon: Icons.bolt_rounded),
+    DeviceItem(title: '클라리티', icon: Icons.blur_circular_rounded),
   ];
 
   List<ContentItem> _contents() => const [
@@ -59,6 +66,7 @@ class HomeScreen extends StatelessWidget {
     if (result == null) return;
 
     CalendarScheduleStore.upsertFromResult(result);
+    setState(() {});
   }
 
   Future<void> _openCalendarIfLoggedIn(BuildContext context) async {
@@ -73,6 +81,40 @@ class HomeScreen extends StatelessWidget {
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const CalendarDetailScreen()),
+    );
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _openReservationDetail(
+    BuildContext context,
+    CalendarSchedule schedule,
+  ) async {
+    final allowed = await AuthGate.ensureLoggedIn(
+      context,
+      title: '로그인이 필요해요',
+      description: '내 캘린더는 로그인 후\n일정 저장과 관리를 할 수 있어요.',
+    );
+
+    if (!allowed || !context.mounted) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CalendarDetailScreen(initialScheduleId: schedule.id),
+      ),
+    );
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _openReservationLoginRequired(BuildContext context) {
+    return AuthGate.ensureLoggedIn(
+      context,
+      title: '로그인이 필요해요',
+      description: '로그인 후 다가오는 예약 일정과 내 캘린더를 확인할 수 있어요.',
     );
   }
 
@@ -118,6 +160,79 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  List<CalendarSchedule> _upcomingSchedulesFromToday() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return CalendarScheduleStore.snapshot().values
+        .expand((items) => items)
+        .where((schedule) {
+          final scheduleDate = DateTime(
+            schedule.dateTime.year,
+            schedule.dateTime.month,
+            schedule.dateTime.day,
+          );
+          return !scheduleDate.isBefore(today);
+        })
+        .toList()
+      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+  }
+
+  String _nearestReservationTitle(CalendarSchedule schedule) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final scheduleDate = DateTime(
+      schedule.dateTime.year,
+      schedule.dateTime.month,
+      schedule.dateTime.day,
+    );
+    final diff = scheduleDate.difference(today).inDays;
+
+    if (diff <= 0) {
+      return '${schedule.hospitalName} 예약 당일';
+    }
+
+    return '${schedule.hospitalName} 예약 $diff일 전';
+  }
+
+  String _scheduleDateLabel(DateTime dateTime) {
+    const weekdayLabels = ['일', '월', '화', '수', '목', '금', '토'];
+    final weekdayLabel = weekdayLabels[dateTime.weekday % 7];
+    return '${dateTime.month}월 ${dateTime.day}일($weekdayLabel) ${_timeText(dateTime)}';
+  }
+
+  String _relativeLabel(DateTime dateTime) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final scheduleDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    final diff = scheduleDate.difference(today).inDays;
+
+    if (diff <= 0) {
+      return '오늘';
+    }
+
+    return '$diff일 후';
+  }
+
+  String _timeText(DateTime dateTime) {
+    final hour = dateTime.hour;
+    final minute = dateTime.minute;
+    final period = hour < 12 ? '오전' : '오후';
+    final displayHour = hour == 0
+        ? 12
+        : hour > 12
+        ? hour - 12
+        : hour;
+    return '$period $displayHour:${minute.toString().padLeft(2, '0')}';
+  }
+
+  String _todayReferenceLabel() {
+    final now = DateTime.now();
+    const weekdayLabels = ['일', '월', '화', '수', '목', '금', '토'];
+    final weekdayLabel = weekdayLabels[now.weekday % 7];
+    return 'Today · ${now.month}월 ${now.day}일 ($weekdayLabel)';
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
@@ -127,6 +242,37 @@ class HomeScreen extends StatelessWidget {
     return ValueListenableBuilder<bool>(
       valueListenable: AuthState.isLoggedIn,
       builder: (context, isLoggedIn, _) {
+        final upcomingSchedules = isLoggedIn
+            ? _upcomingSchedulesFromToday()
+            : const <CalendarSchedule>[];
+        final nearestSchedule = upcomingSchedules.isNotEmpty
+            ? upcomingSchedules.first
+            : null;
+        final reservationTitle = !isLoggedIn
+            ? '로그인이 필요해요'
+            : nearestSchedule != null
+            ? _nearestReservationTitle(nearestSchedule)
+            : '다가오는 예약이 없어요';
+        final reservationSubtitle = !isLoggedIn
+            ? '로그인 후 내 캘린더를 확인할 수 있어요'
+            : nearestSchedule != null
+            ? _scheduleDateLabel(nearestSchedule.dateTime)
+            : '오늘 기준으로 예정된 예약이 없어요';
+        final todayLabel = _todayReferenceLabel();
+        final reservationItems = upcomingSchedules
+            .skip(nearestSchedule != null ? 1 : 0)
+            .map(
+              (schedule) => CalendarCardReservationItem(
+                title: schedule.hospitalName,
+                dateLabel: _scheduleDateLabel(schedule.dateTime),
+                relativeLabel: _relativeLabel(schedule.dateTime),
+                onTap: () => _openReservationDetail(context, schedule),
+              ),
+            )
+            .toList();
+        final reservationSectionLabel =
+            isLoggedIn && reservationItems.isNotEmpty ? '이후 예약 일정' : null;
+
         return Scaffold(
           backgroundColor: palette.bg,
           body: Column(
@@ -176,17 +322,35 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '💡 기기를 선택하면 주변 병원 위치를 확인할 수 있어요',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: palette.textSecondary,
+                        ),
+                      ),
                       const SizedBox(height: 18),
                       CalendarCard(
-                        title: isLoggedIn ? '레이저제모 3일 전' : '로그인이 필요해요',
-                        subtitle: isLoggedIn
-                            ? '6월 14일(일)'
-                            : '로그인 후 내 캘린더를 확인할 수 있어요',
-                        selectedDay: 16,
-                        days: const [14, 15, 16, 17, 18, 19, 20],
+                        title: reservationTitle,
+                        subtitle: reservationSubtitle,
+                        todayLabel: todayLabel,
+                        reservationSectionLabel: reservationSectionLabel,
+                        reservations: reservationItems,
                         isLoginRequired: !isLoggedIn,
-                        showAddButton: true,
+                        showAddButton: isLoggedIn,
+                        maxVisibleItems: _maxVisibleReservations,
                         onTapCalendar: () => _openCalendarIfLoggedIn(context),
+                        onTapCard: !isLoggedIn
+                            ? () => _openReservationLoginRequired(context)
+                            : null,
+                        onTapSummary: nearestSchedule != null && isLoggedIn
+                            ? () => _openReservationDetail(
+                                context,
+                                nearestSchedule,
+                              )
+                            : null,
                         onTapRecord: () {},
                         onTapStart: () async {
                           final allowed = await AuthGate.ensureLoggedIn(
@@ -258,54 +422,34 @@ class _PrimaryDeviceCard extends StatelessWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Spacer(),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(icon, color: Colors.white, size: 22),
+            child: Align(
+              alignment: const Alignment(0, -0.10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    const SizedBox(width: 10),
-                    Flexible(
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 14),
-
-                Text(
-                  '주변 병원과 위치를 빠르게 확인할 수 있어요.',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.84),
-                    height: 1.35,
-                    fontWeight: FontWeight.w500,
+                    child: Icon(icon, color: Colors.white, size: 15),
                   ),
-                ),
-
-                const Spacer(),
-              ],
+                  const SizedBox(height: 22),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
+                      height: 1.1,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

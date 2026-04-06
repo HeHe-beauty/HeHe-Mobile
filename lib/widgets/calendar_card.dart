@@ -1,69 +1,72 @@
 import 'package:flutter/material.dart';
 import '../theme/app_palette.dart';
 
+class CalendarCardReservationItem {
+  final String title;
+  final String dateLabel;
+  final String? relativeLabel;
+  final VoidCallback? onTap;
+
+  const CalendarCardReservationItem({
+    required this.title,
+    required this.dateLabel,
+    this.relativeLabel,
+    this.onTap,
+  });
+}
+
 class CalendarCard extends StatelessWidget {
   final String title;
   final String subtitle;
-  final int selectedDay;
-  final List<int> days;
+  final String todayLabel;
+  final String? reservationSectionLabel;
+  final List<CalendarCardReservationItem> reservations;
   final VoidCallback? onTapCalendar;
   final VoidCallback? onTapRecord;
   final VoidCallback? onTapStart;
+  final VoidCallback? onTapCard;
+  final VoidCallback? onTapSummary;
   final bool isLoginRequired;
   final bool showAddButton;
+  final int maxVisibleItems;
 
   const CalendarCard({
     super.key,
     required this.title,
     required this.subtitle,
-    required this.selectedDay,
-    required this.days,
+    required this.todayLabel,
+    this.reservationSectionLabel,
+    required this.reservations,
     this.onTapCalendar,
     this.onTapRecord,
     this.onTapStart,
+    this.onTapCard,
+    this.onTapSummary,
     this.isLoginRequired = false,
     this.showAddButton = true,
+    this.maxVisibleItems = 3,
   });
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    final visibleReservations = reservations.take(maxVisibleItems).toList();
 
     return SectionLikeCard(
+      onTap: onTapCard,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Expanded(
-                child: Row(
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.2,
-                        color: palette.textPrimary,
-                      ),
-                    ),
-                    if (!isLoginRequired) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 26,
-                        height: 26,
-                        decoration: BoxDecoration(
-                          color: palette.surfaceSoft,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Icon(
-                          Icons.sync_rounded,
-                          size: 16,
-                          color: palette.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ],
+                child: Text(
+                  todayLabel,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: palette.textSecondary,
+                  ),
                 ),
               ),
               InkWell(
@@ -72,35 +75,93 @@ class CalendarCard extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(4),
                   child: Icon(
-                    Icons.chevron_right_rounded,
-                    size: 28,
+                    Icons.calendar_month_rounded,
+                    size: 22,
                     color: palette.textSecondary,
                   ),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 10),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTapSummary,
+              borderRadius: BorderRadius.circular(14),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.2,
+                          color: palette.textPrimary,
+                        ),
+                      ),
+                    ),
+                    if (isLoginRequired || onTapSummary != null)
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 22,
+                        color: palette.textSecondary,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 13,
-              color: palette.textSecondary,
-              fontWeight: FontWeight.w700,
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTapSummary,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: palette.textSecondary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 14),
-          _MiniWeekRow(days: days, selectedDay: selectedDay),
-          if (showAddButton) ...[
-            const SizedBox(height: 14),
-            Row(
+          if (visibleReservations.isEmpty)
+            _EmptyReservationState(isLoginRequired: isLoginRequired)
+          else
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _PrimaryButton(label: '일정 추가하기', onTap: onTapStart),
-                ),
+                if (reservationSectionLabel != null) ...[
+                  Text(
+                    reservationSectionLabel!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: palette.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                for (var i = 0; i < visibleReservations.length; i++) ...[
+                  _UpcomingReservationRow(item: visibleReservations[i]),
+                  if (i != visibleReservations.length - 1)
+                    const SizedBox(height: 10),
+                ],
               ],
             ),
+          if (showAddButton) ...[
+            const SizedBox(height: 14),
+            _PrimaryButton(label: '일정 추가하기', onTap: onTapStart),
           ],
         ],
       ),
@@ -110,89 +171,142 @@ class CalendarCard extends StatelessWidget {
 
 class SectionLikeCard extends StatelessWidget {
   final Widget child;
-  const SectionLikeCard({super.key, required this.child});
+  final VoidCallback? onTap;
+
+  const SectionLikeCard({super.key, required this.child, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: palette.surface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: palette.border),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+                color: palette.shadow,
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _UpcomingReservationRow extends StatelessWidget {
+  final CalendarCardReservationItem item;
+
+  const _UpcomingReservationRow({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Material(
+      color: palette.surfaceSoft,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: item.onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: palette.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.dateLabel,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: palette.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (item.relativeLabel != null) ...[
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: palette.primarySoft,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    item.relativeLabel!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: palette.primaryStrong,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyReservationState extends StatelessWidget {
+  final bool isLoginRequired;
+
+  const _EmptyReservationState({required this.isLoginRequired});
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
-        color: palette.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: palette.border),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-            color: palette.shadow,
-          ),
-        ],
+        color: palette.surfaceSoft,
+        borderRadius: BorderRadius.circular(14),
       ),
-      child: child,
+      child: Text(
+        isLoginRequired
+            ? '로그인 후 다가오는 예약 일정을 확인할 수 있어요.'
+            : '다가오는 예약이 없어요. 다음 방문 일정을 추가해보세요.',
+        style: TextStyle(
+          fontSize: 13,
+          height: 1.45,
+          fontWeight: FontWeight.w700,
+          color: palette.textSecondary,
+        ),
+      ),
     );
-  }
-}
-
-class _MiniWeekRow extends StatelessWidget {
-  final List<int> days;
-  final int selectedDay;
-
-  const _MiniWeekRow({required this.days, required this.selectedDay});
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Row(
-      children: [
-        for (final d in days) ...[
-          Expanded(
-            child: Column(
-              children: [
-                Text(
-                  _weekdayLabelFor(d, days.first),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: palette.textTertiary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: d == selectedDay
-                        ? palette.primaryStrong
-                        : palette.surface.withValues(alpha: 0),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '$d',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                        color: d == selectedDay
-                            ? palette.surface
-                            : palette.textPrimary,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  String _weekdayLabelFor(int day, int start) {
-    const labels = ['일', '월', '화', '수', '목', '금', '토'];
-    return labels[(day - start) % 7];
   }
 }
 

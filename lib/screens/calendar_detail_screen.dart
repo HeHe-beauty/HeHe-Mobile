@@ -5,8 +5,13 @@ import '../widgets/visit_schedule_bottom_sheet.dart';
 
 class CalendarDetailScreen extends StatefulWidget {
   final VisitScheduleResult? initialScheduleResult;
+  final String? initialScheduleId;
 
-  const CalendarDetailScreen({super.key, this.initialScheduleResult});
+  const CalendarDetailScreen({
+    super.key,
+    this.initialScheduleResult,
+    this.initialScheduleId,
+  });
 
   @override
   State<CalendarDetailScreen> createState() => _CalendarDetailScreenState();
@@ -16,6 +21,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
   late DateTime _focusedMonth;
   late DateTime _selectedDate;
   final Map<DateTime, List<CalendarSchedule>> _scheduleMap = {};
+  bool _didOpenInitialSchedule = false;
   static const List<String> _weekdayLabels = [
     '일',
     '월',
@@ -36,7 +42,10 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
     _refreshSchedules();
 
     final initialScheduleResult = widget.initialScheduleResult;
-    if (initialScheduleResult == null) return;
+    if (initialScheduleResult == null) {
+      _openInitialScheduleIfNeeded();
+      return;
+    }
 
     final selectedDate = CalendarScheduleStore.upsertFromResult(
       initialScheduleResult,
@@ -44,6 +53,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
     _refreshSchedules();
     _focusedMonth = DateTime(selectedDate.year, selectedDate.month, 1);
     _selectedDate = selectedDate;
+    _openInitialScheduleIfNeeded();
   }
 
   static DateTime _dateOnly(DateTime date) {
@@ -54,6 +64,35 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
     _scheduleMap
       ..clear()
       ..addAll(CalendarScheduleStore.snapshot());
+  }
+
+  void _openInitialScheduleIfNeeded() {
+    final scheduleId = widget.initialScheduleId;
+    if (_didOpenInitialSchedule || scheduleId == null) return;
+
+    final schedule = _findScheduleById(scheduleId);
+    if (schedule == null) return;
+
+    _didOpenInitialSchedule = true;
+    final targetDate = _dateOnly(schedule.dateTime);
+    _focusedMonth = DateTime(targetDate.year, targetDate.month, 1);
+    _selectedDate = targetDate;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await _showScheduleDetailBottomSheet(schedule);
+    });
+  }
+
+  CalendarSchedule? _findScheduleById(String scheduleId) {
+    for (final schedules in _scheduleMap.values) {
+      for (final schedule in schedules) {
+        if (schedule.id == scheduleId) {
+          return schedule;
+        }
+      }
+    }
+    return null;
   }
 
   List<CalendarSchedule> _schedulesFor(DateTime date) {
