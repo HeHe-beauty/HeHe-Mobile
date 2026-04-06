@@ -1,13 +1,12 @@
-import 'dart:math';
-
 import 'package:flutter/foundation.dart';
 
+import '../../data/mock_place_data.dart';
 import '../../models/place_item.dart';
 
 class FavoriteStore extends ChangeNotifier {
   FavoriteStore._internal() {
-    _allPlaces = _buildMockHospitals();
-    _favoriteIds = _buildInitialFavoriteIds(_allPlaces);
+    _allPlaces = MockPlaceData.buildMockHospitals();
+    _favoriteIds = MockPlaceData.buildInitialFavoriteIds(_allPlaces);
   }
 
   static final FavoriteStore instance = FavoriteStore._internal();
@@ -55,44 +54,5 @@ class FavoriteStore extends ChangeNotifier {
     }
 
     notifyListeners();
-  }
-
-  static List<PlaceItem> _buildMockHospitals() {
-    const baseLat = 37.4979;
-    const baseLng = 127.0276;
-    final random = Random(7);
-
-    return List.generate(48, (index) {
-      final latOffset = (random.nextDouble() - 0.5) * 0.014;
-      final lngOffset = (random.nextDouble() - 0.5) * 0.016;
-
-      return PlaceItem(
-        id: 'hospital_$index',
-        name: '테스트 병원 ${index + 1}',
-        tags: index.isEven ? ['#피부', '#토닝'] : ['#레이저', '#남성시술'],
-        description: '임시 데이터로 넣은 병원입니다.',
-        address: '서울 강남구 테헤란로 ${101 + index}',
-        isBookmarked: false,
-        latitude: baseLat + latOffset,
-        longitude: baseLng + lngOffset,
-      );
-    });
-  }
-
-  static Set<String> _buildInitialFavoriteIds(List<PlaceItem> places) {
-    final random = Random();
-    final ids = <String>{};
-
-    for (final place in places) {
-      if (random.nextDouble() < 0.28) {
-        ids.add(place.id);
-      }
-    }
-
-    if (ids.isEmpty && places.isNotEmpty) {
-      ids.add(places[random.nextInt(places.length)].id);
-    }
-
-    return ids;
   }
 }

@@ -4,6 +4,7 @@ import '../data/calendar_schedule_store.dart';
 import '../models/calendar_schedule.dart';
 import '../theme/app_palette.dart';
 import '../utils/calendar_schedule_utils.dart';
+import '../widgets/app_icon_circle_button.dart';
 import '../widgets/visit_schedule_bottom_sheet.dart';
 
 class CalendarDetailScreen extends StatefulWidget {
@@ -332,15 +333,10 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
 
     if (result == null) return;
 
-    final schedule = CalendarSchedule(
-      id: initialSchedule?.id ?? CalendarScheduleStore.createId(),
-      hospitalName: result.hospitalName.isEmpty
-          ? '병원명을 입력해주세요'
-          : result.hospitalName,
-      dateTime: result.dateTime,
-      isThreeDaysBefore: initialSchedule?.isThreeDaysBefore ?? false,
-      isOneDayBefore: initialSchedule?.isOneDayBefore ?? false,
-      isOneHourBefore: initialSchedule?.isOneHourBefore ?? false,
+    final schedule = CalendarScheduleStore.createScheduleFromResult(
+      result,
+      scheduleId: initialSchedule?.id,
+      seedSchedule: initialSchedule,
     );
     final targetDate = calendarDateOnly(result.dateTime);
 
@@ -377,8 +373,11 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
                       ),
                     ),
                   ),
-                  _CircleIconButton(
+                  AppIconCircleButton(
                     icon: Icons.close_rounded,
+                    backgroundColor: palette.surface.withValues(alpha: 0.88),
+                    showBorder: false,
+                    showShadow: false,
                     onTap: () => Navigator.pop(context),
                   ),
                 ],
@@ -782,7 +781,7 @@ class _ScheduleCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
-                            schedule.timeText,
+                            formatScheduleTime(schedule.dateTime),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
@@ -830,7 +829,7 @@ class _ScheduleCard extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                '${schedule.dateText} · ${schedule.reminderSummary}',
+                '${formatScheduleDate(schedule.dateTime)} · ${formatReminderSummary(schedule)}',
                 style: TextStyle(
                   fontSize: 13,
                   height: 1.4,
@@ -1260,7 +1259,7 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
                       ),
                       Expanded(
                         child: Text(
-                          schedule.timeText,
+                          formatScheduleTime(schedule.dateTime),
                           style: TextStyle(
                             fontSize: 19,
                             fontWeight: FontWeight.w700,
@@ -1393,32 +1392,6 @@ class _ChecklistTile extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CircleIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _CircleIconButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Material(
-      color: palette.surface.withValues(alpha: 0.88),
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: 52,
-          height: 52,
-          child: Icon(icon, size: 24, color: palette.icon),
-        ),
       ),
     );
   }

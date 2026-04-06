@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import '../models/content_item.dart';
 import '../theme/app_palette.dart';
+import '../widgets/app_icon_circle_button.dart';
 
 class ContentDetailScreen extends StatelessWidget {
   final ContentItem item;
 
-  const ContentDetailScreen({
-    super.key,
-    required this.item,
-  });
+  const ContentDetailScreen({super.key, required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -38,11 +36,7 @@ class ContentDetailScreen extends StatelessWidget {
                       color: palette.surfaceMuted,
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: Icon(
-                      item.icon,
-                      size: 20,
-                      color: palette.primary,
-                    ),
+                    child: Icon(item.icon, size: 20, color: palette.primary),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -55,8 +49,13 @@ class ContentDetailScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  _CircleIconButton(
+                  AppIconCircleButton(
                     icon: Icons.close_rounded,
+                    size: 44,
+                    iconSize: 22,
+                    showBorder: false,
+                    showShadow: false,
+                    backgroundColor: palette.surfaceSoft,
                     onTap: () => Navigator.pop(context),
                   ),
                 ],
@@ -95,39 +94,6 @@ class ContentDetailScreen extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CircleIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _CircleIconButton({
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Material(
-      color: palette.surfaceSoft,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Icon(
-            icon,
-            size: 22,
-            color: palette.icon,
           ),
         ),
       ),

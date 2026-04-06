@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/common/app_settings_state.dart';
 import '../theme/app_palette.dart';
+import '../utils/app_snackbar.dart';
+import '../widgets/screen_header.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -14,29 +16,7 @@ class SettingsScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
-              child: Row(
-                children: [
-                  _CircleButton(
-                    icon: Icons.arrow_back_ios_new_rounded,
-                    onTap: () => Navigator.pop(context),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      '설정',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: palette.textPrimary,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ScreenHeader(title: '설정', onTapBack: () => Navigator.pop(context)),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
@@ -157,9 +137,7 @@ class SettingsScreen extends StatelessWidget {
                             title: '이용약관',
                             subtitle: '서비스 이용 관련 내용을 확인할 수 있어요.',
                             onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('이용약관 연결 예정')),
-                              );
+                              showAppSnackBar(context, '이용약관 연결 예정');
                             },
                           ),
                           const SizedBox(height: 10),
@@ -168,9 +146,7 @@ class SettingsScreen extends StatelessWidget {
                             title: '개인정보처리방침',
                             subtitle: '개인정보 수집 및 이용 정책을 확인할 수 있어요.',
                             onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('개인정보처리방침 연결 예정')),
-                              );
+                              showAppSnackBar(context, '개인정보처리방침 연결 예정');
                             },
                           ),
                         ],
@@ -449,43 +425,6 @@ class _SimpleMenuTile extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CircleButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _CircleButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Material(
-      color: palette.surface,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: palette.border),
-            boxShadow: [
-              BoxShadow(
-                color: palette.shadow,
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Icon(icon, size: 24, color: palette.icon),
         ),
       ),
     );

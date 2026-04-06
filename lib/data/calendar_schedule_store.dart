@@ -60,15 +60,24 @@ class CalendarScheduleStore {
   }
 
   static DateTime upsertFromResult(VisitScheduleResult result) {
-    final schedule = CalendarSchedule(
-      id: createId(),
-      hospitalName: result.hospitalName.isEmpty
-          ? '병원명을 입력해주세요'
-          : result.hospitalName,
-      dateTime: result.dateTime,
-    );
+    final schedule = createScheduleFromResult(result);
     upsert(schedule);
     return calendarDateOnly(result.dateTime);
+  }
+
+  static CalendarSchedule createScheduleFromResult(
+    VisitScheduleResult result, {
+    String? scheduleId,
+    CalendarSchedule? seedSchedule,
+  }) {
+    return CalendarSchedule(
+      id: scheduleId ?? seedSchedule?.id ?? createId(),
+      hospitalName: _normalizeHospitalName(result.hospitalName),
+      dateTime: result.dateTime,
+      isThreeDaysBefore: seedSchedule?.isThreeDaysBefore ?? false,
+      isOneDayBefore: seedSchedule?.isOneDayBefore ?? false,
+      isOneHourBefore: seedSchedule?.isOneHourBefore ?? false,
+    );
   }
 
   static void upsert(CalendarSchedule schedule) {
@@ -96,5 +105,10 @@ class CalendarScheduleStore {
     for (final date in emptyDates) {
       _scheduleMap.remove(date);
     }
+  }
+
+  static String _normalizeHospitalName(String value) {
+    final normalized = value.trim();
+    return normalized.isEmpty ? '병원명을 입력해주세요' : normalized;
   }
 }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../core/common/favorite_store.dart';
+import '../data/mock_place_data.dart';
 import '../models/place_item.dart';
 import '../theme/app_palette.dart';
 import '../widgets/place_card.dart';
+import '../widgets/screen_header.dart';
 
 class HospitalHistoryScreen extends StatefulWidget {
   final int initialTabIndex;
@@ -19,61 +21,9 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
 
   final List<String> tabs = const ['최근 본', '찜한', '문의한'];
 
-  late List<PlaceItem> recentPlaces = [
-    const PlaceItem(
-      id: 'recent_xx',
-      name: 'XX 의원',
-      tags: ['#피부', '#레이저'],
-      description: '후기 많고 접근성 좋은 곳',
-      address: '임시 주소 1',
-      isBookmarked: true,
-      latitude: 37.4979,
-      longitude: 127.0276,
-    ),
-    const PlaceItem(
-      id: 'recent_yy',
-      name: 'YY 클리닉',
-      tags: ['#피부', '#토닝'],
-      description: '상담 만족도가 높은 편',
-      address: '임시 주소 2',
-      isBookmarked: true,
-      latitude: 37.4993,
-      longitude: 127.0310,
-    ),
-    const PlaceItem(
-      id: 'recent_ab',
-      name: 'AB 피부과',
-      tags: ['#여드름', '#모공'],
-      description: '기기 다양, 예약 편리',
-      address: '임시 주소 3',
-      isBookmarked: false,
-      latitude: 37.4958,
-      longitude: 127.0305,
-    ),
-  ];
+  late List<PlaceItem> recentPlaces = MockPlaceData.recentPlaces();
 
-  late List<PlaceItem> inquiryPlaces = [
-    const PlaceItem(
-      id: 'inquiry_gh',
-      name: 'GH 피부과',
-      tags: ['#색소', '#토닝'],
-      description: '설명 자세하고 빠른 예약 가능',
-      address: '임시 주소 6',
-      isBookmarked: false,
-      latitude: 37.4966,
-      longitude: 127.0249,
-    ),
-    const PlaceItem(
-      id: 'inquiry_cd',
-      name: 'CD 의원',
-      tags: ['#제모', '#남성시술'],
-      description: '가성비 괜찮고 재방문율 높음',
-      address: '임시 주소 7',
-      isBookmarked: false,
-      latitude: 37.5002,
-      longitude: 127.0257,
-    ),
-  ];
+  late List<PlaceItem> inquiryPlaces = MockPlaceData.inquiryPlaces();
 
   @override
   void initState() {
@@ -144,16 +94,10 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
           body: SafeArea(
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
-                  child: Row(
-                    children: [
-                      _CircleButton(
-                        icon: Icons.arrow_back_ios_new_rounded,
-                        onTap: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
+                ScreenHeader(
+                  title: '',
+                  onTapBack: () => Navigator.pop(context),
+                  trailing: const SizedBox.shrink(),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
@@ -218,43 +162,6 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
           ),
         );
       },
-    );
-  }
-}
-
-class _CircleButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _CircleButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Material(
-      color: palette.surface,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: palette.border),
-            boxShadow: [
-              BoxShadow(
-                color: palette.shadow,
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Icon(icon, size: 24, color: palette.icon),
-        ),
-      ),
     );
   }
 }

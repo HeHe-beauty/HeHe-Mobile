@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/auth/auth_state.dart';
 import '../theme/app_palette.dart';
+import '../utils/app_snackbar.dart';
+import '../widgets/screen_header.dart';
 
 class MyPageScreen extends StatelessWidget {
   const MyPageScreen({super.key});
@@ -19,28 +21,9 @@ class MyPageScreen extends StatelessWidget {
           body: SafeArea(
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
-                  child: Row(
-                    children: [
-                      _CircleButton(
-                        icon: Icons.arrow_back_ios_new_rounded,
-                        onTap: () => Navigator.pop(context),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          '마이페이지',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            color: palette.textPrimary,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                ScreenHeader(
+                  title: '마이페이지',
+                  onTapBack: () => Navigator.pop(context),
                 ),
                 Expanded(
                   child: SingleChildScrollView(
@@ -53,24 +36,16 @@ class MyPageScreen extends StatelessWidget {
                         const SizedBox(height: 16),
                         _MenuSection(
                           onTapCalendar: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('내 캘린더 연결 예정')),
-                            );
+                            showAppSnackBar(context, '내 캘린더 연결 예정');
                           },
                           onTapFavorites: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('찜한 병원 연결 예정')),
-                            );
+                            showAppSnackBar(context, '찜한 병원 연결 예정');
                           },
                           onTapInquiries: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('문의 내역 연결 예정')),
-                            );
+                            showAppSnackBar(context, '문의 내역 연결 예정');
                           },
                           onTapRecent: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('최근 본 병원 연결 예정')),
-                            );
+                            showAppSnackBar(context, '최근 본 병원 연결 예정');
                           },
                         ),
                         const SizedBox(height: 16),
@@ -79,18 +54,12 @@ class MyPageScreen extends StatelessWidget {
                           onTapLogout: () {
                             AuthState.logOut();
 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('로그아웃 되었어요')),
-                            );
+                            showAppSnackBar(context, '로그아웃 되었어요');
 
                             Navigator.pop(context);
                           },
                           onTapWithdraw: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('회원탈퇴 기능은 추후 연결 예정입니다.'),
-                              ),
-                            );
+                            showAppSnackBar(context, '회원탈퇴 기능은 추후 연결 예정입니다.');
                           },
                         ),
                       ],
@@ -109,9 +78,7 @@ class MyPageScreen extends StatelessWidget {
 class _ProfileCard extends StatelessWidget {
   final String userName;
 
-  const _ProfileCard({
-    required this.userName,
-  });
+  const _ProfileCard({required this.userName});
 
   @override
   Widget build(BuildContext context) {
@@ -241,11 +208,7 @@ class _SummaryCard extends StatelessWidget {
               color: palette.surfaceMuted,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(
-              icon,
-              size: 22,
-              color: palette.primary,
-            ),
+            child: Icon(icon, size: 22, color: palette.primary),
           ),
           const SizedBox(height: 12),
           Text(
@@ -384,11 +347,7 @@ class _MenuTile extends StatelessWidget {
                   color: palette.surfaceMuted,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(
-                  icon,
-                  size: 22,
-                  color: palette.primary,
-                ),
+                child: Icon(icon, size: 22, color: palette.primary),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -462,10 +421,7 @@ class _AccountSection extends StatelessWidget {
             ),
             child: const Text(
               '로그아웃',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
             ),
           ),
         ),
@@ -486,50 +442,6 @@ class _AccountSection extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _CircleButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _CircleButton({
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Material(
-      color: palette.surface,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: palette.border),
-            boxShadow: [
-              BoxShadow(
-                color: palette.shadow,
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Icon(
-            icon,
-            size: 24,
-            color: palette.icon,
-          ),
-        ),
-      ),
     );
   }
 }

@@ -25,6 +25,19 @@ String formatScheduleDate(DateTime dateTime) {
   return '${dateTime.month}월 ${dateTime.day}일 $weekdayLabel요일';
 }
 
+String formatReminderSummary(CalendarSchedule schedule) {
+  final items = <String>[];
+  if (schedule.isThreeDaysBefore) items.add('방문 3일 전에 알림');
+  if (schedule.isOneDayBefore) items.add('방문 1일 전에 알림');
+  if (schedule.isOneHourBefore) items.add('방문 1시간 전에 알림');
+
+  if (items.isEmpty) {
+    return '알림 없음';
+  }
+
+  return items.join(' · ');
+}
+
 String formatCompactScheduleDate(DateTime dateTime) {
   final weekdayLabel = calendarWeekdayLabels[dateTime.weekday % 7];
   return '${dateTime.month}월 ${dateTime.day}일($weekdayLabel) ${formatScheduleTime(dateTime)}';

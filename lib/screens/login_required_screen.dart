@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
 import '../core/auth/auth_state.dart';
 import '../theme/app_palette.dart';
+import '../utils/app_snackbar.dart';
 
 class LoginRequiredScreen extends StatelessWidget {
   final String? title;
   final String? description;
 
   const LoginRequiredScreen({super.key, this.title, this.description});
+
+  void _completeTestLogin(BuildContext context) {
+    AuthState.logIn();
+    showAppSnackBar(context, '테스트 로그인 완료');
+
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,53 +58,17 @@ class LoginRequiredScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 36),
                         _LoginCard(
-                          onTapKakao: () {
-                            AuthState.logIn();
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('테스트 로그인 완료')),
-                            );
-
-                            Future.delayed(
-                              const Duration(milliseconds: 200),
-                              () {
-                                if (context.mounted) {
-                                  Navigator.pop(context);
-                                }
-                              },
-                            );
-                          },
-                          onTapNaver: () {
-                            AuthState.logIn();
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('테스트 로그인 완료')),
-                            );
-
-                            Future.delayed(
-                              const Duration(milliseconds: 200),
-                              () {
-                                if (context.mounted) {
-                                  Navigator.pop(context);
-                                }
-                              },
-                            );
-                          },
+                          onTapKakao: () => _completeTestLogin(context),
+                          onTapNaver: () => _completeTestLogin(context),
                         ),
                         const Spacer(),
                         const SizedBox(height: 28),
                         _BottomAgreementSection(
                           onTapPrivacy: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('개인정보처리방침 페이지 연결 예정'),
-                              ),
-                            );
+                            showAppSnackBar(context, '개인정보처리방침 페이지 연결 예정');
                           },
                           onTapTerms: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('이용약관 페이지 연결 예정')),
-                            );
+                            showAppSnackBar(context, '이용약관 페이지 연결 예정');
                           },
                         ),
                         const SizedBox(height: 20),

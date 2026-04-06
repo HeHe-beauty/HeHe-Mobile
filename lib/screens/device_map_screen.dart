@@ -4,6 +4,7 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../core/auth/auth_gate.dart';
+import '../core/auth/auth_prompt.dart';
 import '../core/auth/auth_state.dart';
 import '../core/common/favorite_store.dart';
 import '../models/place_cluster_node.dart';
@@ -11,6 +12,7 @@ import '../models/place_item.dart';
 import '../models/subway_station.dart';
 import '../repositories/subway_station_repository.dart';
 import '../theme/app_palette.dart';
+import '../utils/app_snackbar.dart';
 import '../utils/naver_reverse_geocode.dart';
 import '../utils/place_cluster_builder.dart';
 import '../widgets/cluster_count_marker.dart';
@@ -253,10 +255,9 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   Future<void> _openProtectedMyPage() async {
     _closeSidePanel();
 
-    final allowed = await AuthGate.ensureLoggedIn(
+    final allowed = await AuthGate.ensureLoggedInWithPrompt(
       context,
-      title: '로그인이 필요해요',
-      description: '마이페이지는 로그인 후\n내 정보와 활동을 확인할 수 있어요.',
+      prompt: AuthPrompts.mapMyPage,
     );
 
     if (!allowed || !mounted) return;
@@ -297,10 +298,9 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   Future<void> _openProtectedCalendarPage() async {
     _closeSidePanel();
 
-    final allowed = await AuthGate.ensureLoggedIn(
+    final allowed = await AuthGate.ensureLoggedInWithPrompt(
       context,
-      title: '로그인이 필요해요',
-      description: '내 캘린더는 로그인 후\n일정 저장과 관리를 할 수 있어요.',
+      prompt: AuthPrompts.calendar,
     );
 
     if (!allowed || !mounted) return;
@@ -312,16 +312,13 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   }
 
   Future<void> _handleProtectedInquiry() async {
-    await AuthGate.run(
+    await AuthGate.runWithPrompt(
       context,
-      title: '문의하려면 로그인이 필요해요',
-      description: '문의 내역 확인과 상담 연결은\n로그인 후 이용할 수 있어요.',
+      prompt: AuthPrompts.contact,
       onAuthenticated: () async {
         if (!mounted) return;
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('문의하기 기능은 추후 연결 예정입니다.')));
+        showAppSnackBar(context, '문의하기 기능은 추후 연결 예정입니다.');
       },
     );
   }
@@ -404,10 +401,9 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
                           await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const LoginRequiredScreen(
-                                title: '로그인이 필요해요',
-                                description:
-                                    '찜한 병원은 로그인 후 저장하고\n언제든 다시 확인할 수 있어요.',
+                              builder: (_) => LoginRequiredScreen(
+                                title: AuthPrompts.favorites.title,
+                                description: AuthPrompts.favorites.description,
                               ),
                             ),
                           );
@@ -946,18 +942,18 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
                   onTapMyPage: _openProtectedMyPage,
                   onTapRecent: () => _openProtectedHistoryPage(
                     0,
-                    title: '로그인이 필요해요',
-                    description: '최근 본 병원은 로그인 후\n기록과 관리를 할 수 있어요.',
+                    title: AuthPrompts.recentPlaces.title,
+                    description: AuthPrompts.recentPlaces.description,
                   ),
                   onTapFavorite: () => _openProtectedHistoryPage(
                     1,
-                    title: '로그인이 필요해요',
-                    description: '찜한 병원은 로그인 후 저장하고\n언제든 다시 확인할 수 있어요.',
+                    title: AuthPrompts.favorites.title,
+                    description: AuthPrompts.favorites.description,
                   ),
                   onTapInquiry: () => _openProtectedHistoryPage(
                     2,
-                    title: '로그인이 필요해요',
-                    description: '문의한 병원 내역은 로그인 후\n확인할 수 있어요.',
+                    title: AuthPrompts.inquiries.title,
+                    description: AuthPrompts.inquiries.description,
                   ),
                   onTapCalendar: _openProtectedCalendarPage,
                   onTapNotice: () {},

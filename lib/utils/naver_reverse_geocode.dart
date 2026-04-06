@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 class NaverReverseGeocode {
   static final String _clientId = const String.fromEnvironment(
     'NAVER_MAP_CLIENT_ID',
@@ -20,22 +22,19 @@ class NaverReverseGeocode {
     required double longitude,
   }) async {
     if (!isConfigured) {
-      print('NaverReverseGeocode is not configured.');
+      debugPrint('NaverReverseGeocode is not configured.');
       return null;
     }
 
     final client = HttpClient();
 
     try {
-      final uri = Uri.https(
-        'maps.apigw.ntruss.com',
-        '/map-reversegeocode/v2/gc',
-        {
-          'coords': '$longitude,$latitude',
-          'output': 'json',
-          'orders': 'legalcode,admcode,addr,roadaddr',
-        },
-      );
+      final uri =
+          Uri.https('maps.apigw.ntruss.com', '/map-reversegeocode/v2/gc', {
+            'coords': '$longitude,$latitude',
+            'output': 'json',
+            'orders': 'legalcode,admcode,addr,roadaddr',
+          });
 
       final request = await client.getUrl(uri);
       request.headers.set('x-ncp-apigw-api-key-id', _clientId);
@@ -64,10 +63,11 @@ class NaverReverseGeocode {
         final area1 = _extractAreaName(region['area1']);
         final area2 = _extractAreaName(region['area2']);
         final area3 = _extractAreaName(region['area3']);
-        final area4 = _extractAreaName(region['area4']);
 
-        if (area2 != null && area2.isNotEmpty &&
-            area3 != null && area3.isNotEmpty) {
+        if (area2 != null &&
+            area2.isNotEmpty &&
+            area3 != null &&
+            area3.isNotEmpty) {
           return '$area2 $area3';
         }
 
@@ -84,8 +84,8 @@ class NaverReverseGeocode {
         }
       }
     } catch (e, st) {
-      print('reverse geocode error: $e');
-      print(st);
+      debugPrint('reverse geocode error: $e');
+      debugPrintStack(stackTrace: st);
       return null;
     } finally {
       client.close(force: true);
