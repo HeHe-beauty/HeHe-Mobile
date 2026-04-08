@@ -1,3 +1,5 @@
+import 'package:hehe/common/utils/app_time.dart';
+
 import '../models/calendar_schedule.dart';
 import '../utils/calendar_schedule_utils.dart';
 import '../widgets/visit_schedule_bottom_sheet.dart';
@@ -48,7 +50,7 @@ class CalendarScheduleStore {
 
   static String createId() {
     _idSeed += 1;
-    return 'schedule_${DateTime.now().microsecondsSinceEpoch}_$_idSeed';
+    return 'schedule_${AppTime.now().microsecondsSinceEpoch}_$_idSeed';
   }
 
   static Map<DateTime, List<CalendarSchedule>> snapshot() {

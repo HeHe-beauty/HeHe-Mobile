@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hehe/common/utils/app_time.dart';
 
 import '../theme/app_palette.dart';
 
@@ -118,7 +119,7 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
   void initState() {
     super.initState();
 
-    final now = DateTime.now();
+    final now = AppTime.now();
     final initialDateTime = widget.initialDateTime ?? now;
     final minYear = now.year;
     final maxYear = math.max(now.year + 10, initialDateTime.year);

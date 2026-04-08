@@ -1,3 +1,5 @@
+import 'package:hehe/common/utils/app_time.dart';
+
 import '../models/calendar_schedule.dart';
 
 const List<String> calendarWeekdayLabels = ['일', '월', '화', '수', '목', '금', '토'];
@@ -44,7 +46,7 @@ String formatCompactScheduleDate(DateTime dateTime) {
 }
 
 String formatRelativeFromToday(DateTime dateTime, {DateTime? referenceDate}) {
-  final now = referenceDate ?? DateTime.now();
+  final now = referenceDate ?? AppTime.now();
   final today = calendarDateOnly(now);
   final scheduleDate = calendarDateOnly(dateTime);
   final diff = scheduleDate.difference(today).inDays;
@@ -60,7 +62,7 @@ String buildNearestReservationTitle(
   CalendarSchedule schedule, {
   DateTime? referenceDate,
 }) {
-  final now = referenceDate ?? DateTime.now();
+  final now = referenceDate ?? AppTime.now();
   final today = calendarDateOnly(now);
   final scheduleDate = calendarDateOnly(schedule.dateTime);
   final diff = scheduleDate.difference(today).inDays;
@@ -73,7 +75,7 @@ String buildNearestReservationTitle(
 }
 
 String formatTodayReferenceLabel({DateTime? referenceDate}) {
-  final now = referenceDate ?? DateTime.now();
+  final now = referenceDate ?? AppTime.now();
   final weekdayLabel = calendarWeekdayLabels[now.weekday % 7];
   return 'Today · ${now.month}월 ${now.day}일 ($weekdayLabel)';
 }
@@ -82,7 +84,7 @@ List<CalendarSchedule> upcomingSchedulesFromToday(
   Iterable<CalendarSchedule> schedules, {
   DateTime? referenceDate,
 }) {
-  final now = referenceDate ?? DateTime.now();
+  final now = referenceDate ?? AppTime.now();
   final today = calendarDateOnly(now);
 
   return schedules.where((schedule) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hehe/common/utils/app_time.dart';
 
 import '../data/calendar_schedule_store.dart';
 import '../models/calendar_schedule.dart';
@@ -31,7 +32,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
   void initState() {
     super.initState();
 
-    final today = calendarDateOnly(DateTime.now());
+    final today = calendarDateOnly(AppTime.now());
     _focusedMonth = DateTime(today.year, today.month, 1);
     _selectedDate = today;
     _refreshSchedules();
@@ -494,7 +495,7 @@ class _CalendarOverviewCard extends StatelessWidget {
                   final isCurrentMonth = date.month == focusedMonth.month;
                   final isSelected =
                       normalizedDate == calendarDateOnly(selectedDate);
-                  final today = calendarDateOnly(DateTime.now());
+                  final today = calendarDateOnly(AppTime.now());
                   final isToday = normalizedDate == today;
                   final scheduleCount = scheduleCountForDate(normalizedDate);
 
@@ -846,7 +847,7 @@ class _ScheduleCard extends StatelessWidget {
 
   _ScheduleStatusData _scheduleStatus(BuildContext context, DateTime dateTime) {
     final palette = context.palette;
-    final today = DateTime.now();
+    final today = AppTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
     final targetDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
     final diff = targetDate.difference(todayDate).inDays;

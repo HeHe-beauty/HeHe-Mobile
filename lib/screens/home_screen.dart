@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hehe/common/utils/app_time.dart';
 import '../core/auth/auth_prompt.dart';
 import '../core/auth/auth_gate.dart';
 import '../core/auth/auth_state.dart';
@@ -33,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _showAddScheduleSheet(BuildContext context) async {
     final result = await showVisitScheduleBottomSheet(
       context,
-      initialDateTime: DateTime.now(),
+      initialDateTime: AppTime.now(),
       title: '병원 방문 일정을 등록할까요?',
     );
 
