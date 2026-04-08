@@ -1,16 +1,8 @@
 import 'package:flutter/material.dart';
-
 import '../models/content_item.dart';
-import '../models/device_item.dart';
 
 class HomeCatalog {
   const HomeCatalog._();
-
-  static const List<DeviceItem> devices = [
-    DeviceItem(title: '젠틀맥스 프로', icon: Icons.auto_awesome_rounded),
-    DeviceItem(title: '아포지', icon: Icons.bolt_rounded),
-    DeviceItem(title: '클라리티', icon: Icons.blur_circular_rounded),
-  ];
 
   static const List<ContentItem> contents = [
     ContentItem(

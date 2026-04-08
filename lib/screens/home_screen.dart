@@ -8,6 +8,8 @@ import '../models/content_item.dart';
 import '../theme/app_palette.dart';
 import '../data/calendar_schedule_store.dart';
 import '../data/home_catalog.dart';
+import '../data/equipment/equip_repository.dart';
+import '../dtos/common/equipment/equip_dto.dart';
 import '../utils/calendar_schedule_utils.dart';
 import '../widgets/calendar_card.dart';
 import '../widgets/content_carousel.dart';
@@ -30,6 +32,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   static const int _maxVisibleReservations = 3;
+  List<EquipDto> _devices = [];
+
+  EquipDto? _device(int index) {
+    if (index >= _devices.length) return null;
+    return _devices[index];
+  }
 
   Future<void> _showAddScheduleSheet(BuildContext context) async {
     final result = await showVisitScheduleBottomSheet(
@@ -132,10 +140,36 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _loadDevices();
+  }
+
+  Future<void> _loadDevices() async {
+    try {
+      final devices = await EquipRepository.getEquips();
+
+      if (!mounted) return;
+
+      setState(() {
+        _devices = devices;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _devices = [];
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final devices = HomeCatalog.devices;
     final contents = HomeCatalog.contents;
+    final d0 = _device(0);
+    final d1 = _device(1);
+    final d2 = _device(2);
 
     return ValueListenableBuilder<bool>(
       valueListenable: AuthState.isLoggedIn,
@@ -196,10 +230,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Expanded(
                             child: _PrimaryDeviceCard(
-                              title: devices[0].title,
-                              icon: devices[0].icon,
-                              onTap: () =>
-                                  _openDeviceMap(context, devices[0].title),
+                              title: d0?.displayName ?? '젠틀맥스프로',
+                              icon: d0?.icon ?? Icons.auto_awesome_rounded,
+                              onTap: () => _openDeviceMap(
+                                context,
+                                d0?.displayName ?? '젠틀맥스프로',
+                              ),
                             ),
                           ),
                           const SizedBox(width: 14),
@@ -207,17 +243,23 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Column(
                               children: [
                                 DeviceTile(
-                                  title: devices[1].title,
-                                  icon: devices[1].icon,
+                                  title: d1?.displayName ?? '아포지',
+                                  icon: d1?.icon ?? Icons.bolt_rounded,
                                   height: 73,
-                                  onTap: () {},
+                                  onTap: () => _openDeviceMap(
+                                    context,
+                                    d1?.displayName ?? '아포지',
+                                  ),
                                 ),
                                 const SizedBox(height: 14),
                                 DeviceTile(
-                                  title: devices[2].title,
-                                  icon: devices[2].icon,
+                                  title: d2?.displayName ?? '클라리티',
+                                  icon: d2?.icon ?? Icons.blur_circular_rounded,
                                   height: 73,
-                                  onTap: () {},
+                                  onTap: () => _openDeviceMap(
+                                    context,
+                                    d2?.displayName ?? '클라리티',
+                                  ),
                                 ),
                               ],
                             ),
