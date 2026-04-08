@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hehe/common/helper/date_refresh_mixin.dart';
 import 'package:hehe/common/utils/app_time.dart';
 import '../core/auth/auth_prompt.dart';
 import '../core/auth/auth_gate.dart';
@@ -30,7 +31,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, DateRefreshMixin {
   static const int _maxVisibleReservations = 3;
   List<EquipDto> _devices = [];
 
@@ -137,6 +138,11 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(builder: (_) => const MyPageScreen()),
     );
+  }
+
+  @override
+  void onDateChanged() {
+    setState(() {});
   }
 
   @override

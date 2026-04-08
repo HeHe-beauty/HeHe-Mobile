@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hehe/common/utils/app_time.dart';
 
+import '../common/helper/date_refresh_mixin.dart';
 import '../data/calendar_schedule_store.dart';
 import '../models/calendar_schedule.dart';
 import '../theme/app_palette.dart';
@@ -22,17 +23,23 @@ class CalendarDetailScreen extends StatefulWidget {
   State<CalendarDetailScreen> createState() => _CalendarDetailScreenState();
 }
 
-class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
+class _CalendarDetailScreenState extends State<CalendarDetailScreen> with WidgetsBindingObserver, DateRefreshMixin {
   late DateTime _focusedMonth;
   late DateTime _selectedDate;
   final Map<DateTime, List<CalendarSchedule>> _scheduleMap = {};
   bool _didOpenInitialSchedule = false;
+  DateTime? _lastKnownCalendarToday;
+
+  bool _isSameDate(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
 
   @override
   void initState() {
     super.initState();
 
     final today = calendarDateOnly(AppTime.now());
+    _lastKnownCalendarToday = today;
     _focusedMonth = DateTime(today.year, today.month, 1);
     _selectedDate = today;
     _refreshSchedules();
@@ -50,6 +57,25 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
     _focusedMonth = DateTime(selectedDate.year, selectedDate.month, 1);
     _selectedDate = selectedDate;
     _openInitialScheduleIfNeeded();
+  }
+
+  @override
+  void onDateChanged() {
+    final today = calendarDateOnly(AppTime.now());
+    final previousToday = _lastKnownCalendarToday ?? today;
+
+    final wasViewingToday = _isSameDate(_selectedDate, previousToday);
+
+    setState(() {
+      _refreshSchedules();
+
+      if (wasViewingToday) {
+        _selectedDate = today;
+        _focusedMonth = DateTime(today.year, today.month, 1);
+      }
+    });
+
+    _lastKnownCalendarToday = today;
   }
 
   void _refreshSchedules() {
@@ -705,7 +731,7 @@ class _ScheduleEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            '오늘은 일정이 없어요',
+            '이날에는 일정이 없어요',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 18,
