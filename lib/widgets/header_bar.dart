@@ -24,30 +24,44 @@ class HeaderBar extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(20, safeTop + 18, 20, 14),
       color: palette.bg,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 21,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.2,
-                color: palette.textPrimary,
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: -0.2,
+                  height: 1.32,
+                  color: palette.textPrimary,
+                ),
+                children: const [
+                  TextSpan(text: '시술 꿀팁부터\n병원 찾기까지\n'),
+                  TextSpan(
+                    text: '관리는 HeHe에서',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ],
               ),
             ),
           ),
-          Row(
-            children: [
-              _RoundIconButton(
-                icon: Icons.person_outline_rounded,
-                onTap: onTapProfile,
-              ),
-              const SizedBox(width: 8),
-              _RoundIconButton(
-                icon: Icons.settings_outlined,
-                onTap: onTapSettings,
-              ),
-            ],
+          Align(
+            alignment: Alignment.topRight,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _RoundIconButton(
+                  icon: Icons.person_outline_rounded,
+                  onTap: onTapProfile,
+                ),
+                const SizedBox(width: 8),
+                _RoundIconButton(
+                  icon: Icons.settings_outlined,
+                  onTap: onTapSettings,
+                ),
+              ],
+            ),
           ),
         ],
       ),

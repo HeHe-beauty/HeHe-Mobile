@@ -17,7 +17,7 @@ class CalendarCardReservationItem {
 
 class CalendarCard extends StatelessWidget {
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final String todayLabel;
   final String? reservationSectionLabel;
   final List<CalendarCardReservationItem> reservations;
@@ -32,7 +32,7 @@ class CalendarCard extends StatelessWidget {
   const CalendarCard({
     super.key,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     required this.todayLabel,
     this.reservationSectionLabel,
     required this.reservations,
@@ -113,25 +113,27 @@ class CalendarCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 4),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTapSummary,
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: palette.textSecondary,
-                    fontWeight: FontWeight.w700,
+          if (subtitle != null) ...[
+            const SizedBox(height: 4),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTapSummary,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Text(
+                    subtitle!,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: palette.textSecondary,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+          ],
           const SizedBox(height: 14),
           if (visibleReservations.isEmpty)
             _EmptyReservationState(isLoginRequired: isLoginRequired)

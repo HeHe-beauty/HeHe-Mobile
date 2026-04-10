@@ -197,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen>
             ? buildNearestReservationTitle(nearestSchedule)
             : '다가오는 예약이 없어요';
         final reservationSubtitle = !isLoggedIn
-            ? '로그인 후 내 캘린더를 확인할 수 있어요'
+            ? null
             : nearestSchedule != null
             ? formatCompactScheduleDate(nearestSchedule.dateTime)
             : '오늘 기준으로 예정된 예약이 없어요';
@@ -218,16 +218,17 @@ class _HomeScreenState extends State<HomeScreen>
 
         return Scaffold(
           backgroundColor: palette.bg,
-          body: Column(
-            children: [
-              HeaderBar(
-                title: '슬로건',
-                isLoggedIn: isLoggedIn,
-                onTapProfile: () => _openMyPage(context),
-                onTapSettings: () => _openSettings(context),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
+          body: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                HeaderBar(
+                  title: '시술 꿀팁부터 병원 찾기까지 관리는 HeHe에서',
+                  isLoggedIn: isLoggedIn,
+                  onTapProfile: () => _openMyPage(context),
+                  onTapSettings: () => _openSettings(context),
+                ),
+                Padding(
                   padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -327,8 +328,8 @@ class _HomeScreenState extends State<HomeScreen>
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
