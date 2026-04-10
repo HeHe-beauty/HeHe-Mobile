@@ -13,7 +13,7 @@ class ContentCard extends StatelessWidget {
     final palette = context.palette;
 
     return Material(
-      color: palette.surfaceSoft,
+      color: palette.surface,
       borderRadius: BorderRadius.circular(22),
       child: InkWell(
         onTap: onTap,

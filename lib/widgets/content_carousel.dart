@@ -14,74 +14,69 @@ class ContentCarousel extends StatefulWidget {
 }
 
 class _ContentCarouselState extends State<ContentCarousel> {
-  late final PageController _pageController;
+  final ScrollController _scrollController = ScrollController();
   int _currentPage = 0;
-
-  static const int _itemsPerPage = 2;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController();
-  }
 
   @override
   void dispose() {
-    _pageController.dispose();
+    _scrollController.dispose();
     super.dispose();
-  }
-
-  List<List<ContentItem>> get _pages {
-    final pages = <List<ContentItem>>[];
-    for (int i = 0; i < widget.items.length; i += _itemsPerPage) {
-      final end = (i + _itemsPerPage < widget.items.length)
-          ? i + _itemsPerPage
-          : widget.items.length;
-      pages.add(widget.items.sublist(i, end));
-    }
-    return pages;
   }
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final pages = _pages;
+    final items = widget.items;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
           height: 152,
-          child: PageView.builder(
-            controller: _pageController,
-            itemCount: pages.length,
-            onPageChanged: (index) {
-              setState(() {
-                _currentPage = index;
-              });
-            },
-            itemBuilder: (context, pageIndex) {
-              final pageItems = pages[pageIndex];
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              const gap = 14.0;
+              final cardWidth = (constraints.maxWidth - (gap * 2)) / 2.5;
+              final itemExtent = cardWidth + gap;
 
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  children: [
-                    Expanded(
+              return NotificationListener<ScrollNotification>(
+                onNotification: (notification) {
+                  if (items.isEmpty) return false;
+                  final maxScrollExtent = notification.metrics.maxScrollExtent;
+                  final progress = maxScrollExtent <= 0
+                      ? 0.0
+                      : (notification.metrics.pixels / maxScrollExtent).clamp(
+                          0.0,
+                          1.0,
+                        );
+                  final nextPage = (progress * (items.length - 1))
+                      .round()
+                      .clamp(0, items.length - 1);
+                  if (nextPage != _currentPage) {
+                    setState(() {
+                      _currentPage = nextPage;
+                    });
+                  }
+                  return false;
+                },
+                child: ListView.separated(
+                  controller: _scrollController,
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: gap),
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+
+                    return SizedBox(
+                      width: cardWidth,
                       child: ContentCard(
-                        item: pageItems[0],
-                        onTap: () => widget.onTapItem?.call(pageItems[0]),
+                        item: item,
+                        onTap: () => widget.onTapItem?.call(item),
                       ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: pageItems.length > 1
-                          ? ContentCard(
-                              item: pageItems[1],
-                              onTap: () => widget.onTapItem?.call(pageItems[1]),
-                            )
-                          : const SizedBox(),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               );
             },
@@ -91,7 +86,7 @@ class _ContentCarouselState extends State<ContentCarousel> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
-            pages.length,
+            items.length,
             (index) => AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               margin: const EdgeInsets.symmetric(horizontal: 4),

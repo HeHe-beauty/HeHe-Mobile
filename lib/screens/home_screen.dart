@@ -16,7 +16,6 @@ import '../widgets/calendar_card.dart';
 import '../widgets/content_carousel.dart';
 import '../widgets/device_tile.dart';
 import '../widgets/header_bar.dart';
-import '../widgets/section_card.dart';
 import '../widgets/visit_schedule_bottom_sheet.dart';
 import 'calendar_detail_screen.dart';
 import 'content_detail_screen.dart';
@@ -316,16 +315,22 @@ class _HomeScreenState extends State<HomeScreen>
                           await _showAddScheduleSheet(context);
                         },
                       ),
-                      const SizedBox(height: 18),
-                      SectionCard(
-                        title: '추천 콘텐츠',
-                        child: ContentCarousel(
-                          items: contents,
-                          onTapItem: (item) =>
-                              _openContentDetail(context, item),
+                      const SizedBox(height: 24),
+                      Text(
+                        '추천 콘텐츠',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.2,
+                          color: palette.textPrimary,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 14),
+                      ContentCarousel(
+                        items: contents,
+                        onTapItem: (item) => _openContentDetail(context, item),
+                      ),
+                      const SizedBox(height: 14),
                     ],
                   ),
                 ),

@@ -61,7 +61,7 @@ class CalendarCard extends StatelessWidget {
               onTap: onTapSummary,
               borderRadius: BorderRadius.circular(14),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
+                padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -72,7 +72,7 @@ class CalendarCard extends StatelessWidget {
                           Text(
                             title,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 17,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.2,
                               color: palette.textPrimary,

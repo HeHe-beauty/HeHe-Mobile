@@ -31,13 +31,6 @@ class DeviceTile extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: palette.border),
-            boxShadow: [
-              BoxShadow(
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-                color: palette.shadow,
-              ),
-            ],
           ),
           child: Row(
             children: [
