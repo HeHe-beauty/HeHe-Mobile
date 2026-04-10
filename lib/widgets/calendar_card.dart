@@ -326,7 +326,7 @@ class _PrimaryButton extends StatelessWidget {
     final palette = context.palette;
 
     return Material(
-      color: palette.primarySoft,
+      color: palette.primary,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -339,7 +339,7 @@ class _PrimaryButton extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w900,
-                color: palette.primary,
+                color: palette.surface,
               ),
             ),
           ),
