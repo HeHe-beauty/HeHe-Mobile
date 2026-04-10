@@ -39,7 +39,7 @@ class SectionCard extends StatelessWidget {
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 14,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.2,
                     color: palette.textPrimary,

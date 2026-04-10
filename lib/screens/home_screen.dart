@@ -31,8 +31,9 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, DateRefreshMixin {
-  static const int _maxVisibleReservations = 3;
+class _HomeScreenState extends State<HomeScreen>
+    with WidgetsBindingObserver, DateRefreshMixin {
+  static const int _maxVisibleReservations = 2;
   List<EquipDto> _devices = [];
 
   EquipDto? _device(int index) {
@@ -276,7 +277,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Da
                       Text(
                         '💡 기기를 선택하면 주변 병원 위치를 확인할 수 있어요',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: palette.textSecondary,
                         ),
@@ -392,7 +393,7 @@ class _PrimaryDeviceCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: Colors.white,
-                      fontSize: 19,
+                      fontSize: 16,
                       fontWeight: FontWeight.w900,
                       height: 1.1,
                     ),

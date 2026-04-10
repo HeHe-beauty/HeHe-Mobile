@@ -48,18 +48,14 @@ class DeviceTile extends StatelessWidget {
                   color: palette.surfaceMuted,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(
-                  icon,
-                  color: palette.primary,
-                  size: 26,
-                ),
+                child: Icon(icon, color: palette.primary, size: 26),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 13,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.2,
                     color: palette.textPrimary,

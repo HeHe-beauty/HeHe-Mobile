@@ -61,7 +61,7 @@ class CalendarCard extends StatelessWidget {
                 child: Text(
                   todayLabel,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: palette.textSecondary,
                   ),
@@ -95,7 +95,7 @@ class CalendarCard extends StatelessWidget {
                       child: Text(
                         title,
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 16,
                           fontWeight: FontWeight.w900,
                           letterSpacing: -0.2,
                           color: palette.textPrimary,
@@ -124,7 +124,7 @@ class CalendarCard extends StatelessWidget {
                 child: Text(
                   subtitle,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 11,
                     color: palette.textSecondary,
                     fontWeight: FontWeight.w700,
                   ),
@@ -143,7 +143,7 @@ class CalendarCard extends StatelessWidget {
                   Text(
                     reservationSectionLabel!,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: palette.textSecondary,
                     ),
@@ -231,7 +231,7 @@ class _UpcomingReservationRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         fontWeight: FontWeight.w800,
                         color: palette.textPrimary,
                       ),
@@ -240,7 +240,7 @@ class _UpcomingReservationRow extends StatelessWidget {
                     Text(
                       item.dateLabel,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 10,
                         fontWeight: FontWeight.w700,
                         color: palette.textSecondary,
                       ),
@@ -262,7 +262,7 @@ class _UpcomingReservationRow extends StatelessWidget {
                   child: Text(
                     item.relativeLabel!,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 10,
                       fontWeight: FontWeight.w800,
                       color: palette.primaryStrong,
                     ),
@@ -298,7 +298,7 @@ class _EmptyReservationState extends StatelessWidget {
             ? '로그인 후 다가오는 예약 일정을 확인할 수 있어요.'
             : '다가오는 예약이 없어요. 다음 방문 일정을 추가해보세요.',
         style: TextStyle(
-          fontSize: 13,
+          fontSize: 11,
           height: 1.45,
           fontWeight: FontWeight.w700,
           color: palette.textSecondary,
@@ -330,6 +330,7 @@ class _PrimaryButton extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
+                fontSize: 12,
                 fontWeight: FontWeight.w900,
                 color: palette.primary,
               ),

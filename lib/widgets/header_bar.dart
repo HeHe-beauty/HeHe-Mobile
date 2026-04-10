@@ -29,7 +29,7 @@ class HeaderBar extends StatelessWidget {
             child: Text(
               title,
               style: TextStyle(
-                fontSize: 26,
+                fontSize: 21,
                 fontWeight: FontWeight.w900,
                 letterSpacing: -0.2,
                 color: palette.textPrimary,
@@ -59,10 +59,7 @@ class _RoundIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
 
-  const _RoundIconButton({
-    required this.icon,
-    this.onTap,
-  });
+  const _RoundIconButton({required this.icon, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -79,11 +76,7 @@ class _RoundIconButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(999),
           border: Border.all(color: palette.border),
         ),
-        child: Icon(
-          icon,
-          size: 22,
-          color: palette.icon,
-        ),
+        child: Icon(icon, size: 22, color: palette.icon),
       ),
     );
   }
