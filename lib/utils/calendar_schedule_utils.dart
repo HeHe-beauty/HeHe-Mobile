@@ -68,10 +68,10 @@ String buildNearestReservationTitle(
   final diff = scheduleDate.difference(today).inDays;
 
   if (diff <= 0) {
-    return '${schedule.hospitalName} 예약 당일';
+    return '${schedule.hospitalName} 방문 당일';
   }
 
-  return '${schedule.hospitalName} 예약 $diff일 전';
+  return '${schedule.hospitalName} 방문 $diff일 전';
 }
 
 String formatTodayReferenceLabel({DateTime? referenceDate}) {

@@ -27,22 +27,25 @@ class HeaderBar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: TextStyle(
-                  fontSize: 21,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: -0.2,
-                  height: 1.32,
-                  color: palette.textPrimary,
-                ),
-                children: const [
-                  TextSpan(text: '시술 꿀팁부터\n병원 찾기까지\n'),
-                  TextSpan(
-                    text: '관리는 HeHe에서',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: RichText(
+                text: TextSpan(
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -0.2,
+                    height: 1.32,
+                    color: palette.textPrimary,
                   ),
-                ],
+                  children: const [
+                    TextSpan(text: '시술 꿀팁부터\n병원 찾기까지\n'),
+                    TextSpan(
+                      text: '관리는 HeHe에서',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

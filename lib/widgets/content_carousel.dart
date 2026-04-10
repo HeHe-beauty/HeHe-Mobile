@@ -7,11 +7,7 @@ class ContentCarousel extends StatefulWidget {
   final List<ContentItem> items;
   final ValueChanged<ContentItem>? onTapItem;
 
-  const ContentCarousel({
-    super.key,
-    required this.items,
-    this.onTapItem,
-  });
+  const ContentCarousel({super.key, required this.items, this.onTapItem});
 
   @override
   State<ContentCarousel> createState() => _ContentCarouselState();
@@ -54,7 +50,7 @@ class _ContentCarouselState extends State<ContentCarousel> {
     return Column(
       children: [
         SizedBox(
-          height: 165,
+          height: 152,
           child: PageView.builder(
             controller: _pageController,
             itemCount: pages.length,
@@ -80,9 +76,9 @@ class _ContentCarouselState extends State<ContentCarousel> {
                     Expanded(
                       child: pageItems.length > 1
                           ? ContentCard(
-                        item: pageItems[1],
-                        onTap: () => widget.onTapItem?.call(pageItems[1]),
-                      )
+                              item: pageItems[1],
+                              onTap: () => widget.onTapItem?.call(pageItems[1]),
+                            )
                           : const SizedBox(),
                     ),
                   ],
@@ -91,20 +87,18 @@ class _ContentCarouselState extends State<ContentCarousel> {
             },
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
             pages.length,
-                (index) => AnimatedContainer(
+            (index) => AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               margin: const EdgeInsets.symmetric(horizontal: 4),
               width: index == _currentPage ? 28 : 8,
               height: 8,
               decoration: BoxDecoration(
-                color: index == _currentPage
-                    ? palette.primary
-                    : palette.border,
+                color: index == _currentPage ? palette.primary : palette.border,
                 borderRadius: BorderRadius.circular(999),
               ),
             ),

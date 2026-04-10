@@ -731,7 +731,7 @@ class _ScheduleEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            '이날에는 일정이 없어요',
+            '일정이 없어요',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 18,

@@ -177,6 +177,12 @@ class _HomeScreenState extends State<HomeScreen>
     final d0 = _device(0);
     final d1 = _device(1);
     final d2 = _device(2);
+    final d0Name = _deviceName(d0, '젠틀맥스 프로');
+    final d1Name = _deviceName(d1, '아포지');
+    final d2Name = _deviceName(d2, '클라리티2');
+    final d0Asset = _deviceImageAsset(d0Name);
+    final d1Asset = _deviceImageAsset(d1Name);
+    final d2Asset = _deviceImageAsset(d2Name);
 
     return ValueListenableBuilder<bool>(
       valueListenable: AuthState.isLoggedIn,
@@ -238,12 +244,9 @@ class _HomeScreenState extends State<HomeScreen>
                         children: [
                           Expanded(
                             child: _PrimaryDeviceCard(
-                              title: d0?.displayName ?? '젠틀맥스프로',
-                              icon: d0?.icon ?? Icons.auto_awesome_rounded,
-                              onTap: () => _openDeviceMap(
-                                context,
-                                d0?.displayName ?? '젠틀맥스프로',
-                              ),
+                              title: d0Name,
+                              imageAsset: d0Asset,
+                              onTap: () => _openDeviceMap(context, d0Name),
                             ),
                           ),
                           const SizedBox(width: 14),
@@ -251,23 +254,17 @@ class _HomeScreenState extends State<HomeScreen>
                             child: Column(
                               children: [
                                 DeviceTile(
-                                  title: d1?.displayName ?? '아포지',
-                                  icon: d1?.icon ?? Icons.bolt_rounded,
+                                  title: d1Name,
+                                  imageAsset: d1Asset,
                                   height: 73,
-                                  onTap: () => _openDeviceMap(
-                                    context,
-                                    d1?.displayName ?? '아포지',
-                                  ),
+                                  onTap: () => _openDeviceMap(context, d1Name),
                                 ),
                                 const SizedBox(height: 14),
                                 DeviceTile(
-                                  title: d2?.displayName ?? '클라리티',
-                                  icon: d2?.icon ?? Icons.blur_circular_rounded,
+                                  title: d2Name,
+                                  imageAsset: d2Asset,
                                   height: 73,
-                                  onTap: () => _openDeviceMap(
-                                    context,
-                                    d2?.displayName ?? '클라리티',
-                                  ),
+                                  onTap: () => _openDeviceMap(context, d2Name),
                                 ),
                               ],
                             ),
@@ -339,12 +336,12 @@ class _HomeScreenState extends State<HomeScreen>
 
 class _PrimaryDeviceCard extends StatelessWidget {
   final String title;
-  final IconData icon;
+  final String imageAsset;
   final VoidCallback onTap;
 
   const _PrimaryDeviceCard({
     required this.title,
-    required this.icon,
+    required this.imageAsset,
     required this.onTap,
   });
 
@@ -371,27 +368,18 @@ class _PrimaryDeviceCard extends StatelessWidget {
               ),
             ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            child: Align(
-              alignment: const Alignment(0, -0.10),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(icon, color: Colors.white, size: 15),
-                  ),
-                  const SizedBox(height: 22),
-                  Text(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: Stack(
+              children: [
+                Positioned(
+                  left: 18,
+                  top: 22,
+                  right: 92,
+                  child: Text(
                     title,
-                    maxLines: 1,
-                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    textAlign: TextAlign.left,
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: Colors.white,
                       fontSize: 16,
@@ -399,12 +387,42 @@ class _PrimaryDeviceCard extends StatelessWidget {
                       height: 1.1,
                     ),
                   ),
-                ],
-              ),
+                ),
+                Positioned(
+                  right: -14,
+                  bottom: -24,
+                  child: SizedBox(
+                    width: 214,
+                    height: 160,
+                    child: Image.asset(
+                      imageAsset,
+                      fit: BoxFit.contain,
+                      alignment: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ),
     );
   }
+}
+
+String _deviceName(EquipDto? device, String fallback) {
+  return (device?.displayName ?? fallback).trim();
+}
+
+String _deviceImageAsset(String deviceName) {
+  if (deviceName.contains('젠틀맥스')) {
+    return 'assets/images/gentlemax_pro_plus.png';
+  }
+  if (deviceName.contains('아포지')) {
+    return 'assets/images/apogee_plus.png';
+  }
+  if (deviceName.contains('클라리티')) {
+    return 'assets/images/clarity2.png';
+  }
+  return 'assets/images/logo.png';
 }

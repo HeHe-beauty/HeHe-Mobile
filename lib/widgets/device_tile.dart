@@ -3,14 +3,14 @@ import '../theme/app_palette.dart';
 
 class DeviceTile extends StatelessWidget {
   final String title;
-  final IconData icon;
+  final String imageAsset;
   final double height;
   final VoidCallback? onTap;
 
   const DeviceTile({
     super.key,
     required this.title,
-    required this.icon,
+    required this.imageAsset,
     required this.height,
     this.onTap,
   });
@@ -27,7 +27,7 @@ class DeviceTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         child: Container(
           height: height,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: palette.border),
@@ -41,24 +41,36 @@ class DeviceTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: palette.surfaceMuted,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: palette.primary, size: 26),
-              ),
-              const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.2,
-                    color: palette.textPrimary,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 12, right: 4),
+                    child: Text(
+                      title,
+                      maxLines: 2,
+                      textAlign: TextAlign.left,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        height: 1.15,
+                        letterSpacing: -0.2,
+                        color: palette.textPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 54,
+                  height: double.infinity,
+                  child: Image.asset(
+                    imageAsset,
+                    fit: BoxFit.contain,
+                    alignment: Alignment.center,
                   ),
                 ),
               ),

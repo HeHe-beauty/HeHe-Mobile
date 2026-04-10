@@ -23,21 +23,21 @@ class ContentCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(22),
             border: Border.all(color: palette.border),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 58,
-                  height: 58,
+                  width: 54,
+                  height: 54,
                   decoration: BoxDecoration(
                     color: palette.surfaceMuted,
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Icon(item.icon, size: 28, color: palette.primary),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
                 _WordWrappedTitle(
                   title: item.title,
                   style: TextStyle(
