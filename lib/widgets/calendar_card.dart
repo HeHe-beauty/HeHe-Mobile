@@ -4,21 +4,21 @@ import '../theme/app_palette.dart';
 class CalendarCardReservationItem {
   final String title;
   final String dateLabel;
-  final String? relativeLabel;
+  final String? dDayLabel;
   final VoidCallback? onTap;
 
   const CalendarCardReservationItem({
     required this.title,
     required this.dateLabel,
-    this.relativeLabel,
+    this.dDayLabel,
     this.onTap,
   });
 }
 
 class CalendarCard extends StatelessWidget {
   final String title;
+  final String? dDayLabel;
   final String? subtitle;
-  final String todayLabel;
   final String? reservationSectionLabel;
   final List<CalendarCardReservationItem> reservations;
   final VoidCallback? onTapCalendar;
@@ -32,8 +32,8 @@ class CalendarCard extends StatelessWidget {
   const CalendarCard({
     super.key,
     required this.title,
+    this.dDayLabel,
     this.subtitle,
-    required this.todayLabel,
     this.reservationSectionLabel,
     required this.reservations,
     this.onTapCalendar,
@@ -55,33 +55,6 @@ class CalendarCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  todayLabel,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: palette.textSecondary,
-                  ),
-                ),
-              ),
-              InkWell(
-                onTap: onTapCalendar,
-                borderRadius: BorderRadius.circular(999),
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: Icon(
-                    Icons.calendar_month_rounded,
-                    size: 22,
-                    color: palette.textSecondary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
           Material(
             color: Colors.transparent,
             child: InkWell(
@@ -90,50 +63,69 @@ class CalendarCard extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
-                      child: Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.2,
-                          color: palette.textPrimary,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.2,
+                              color: palette.textPrimary,
+                            ),
+                          ),
+                          if (dDayLabel != null || subtitle != null) ...[
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                if (dDayLabel != null)
+                                  Text(
+                                    dDayLabel!,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -0.3,
+                                      color: palette.primaryStrong,
+                                    ),
+                                  ),
+                                if (dDayLabel != null && subtitle != null)
+                                  const SizedBox(width: 10),
+                                if (subtitle != null)
+                                  Expanded(
+                                    child: Text(
+                                      subtitle!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: palette.textSecondary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    if (isLoginRequired || onTapSummary != null)
+                    if (isLoginRequired || onTapSummary != null) ...[
+                      const SizedBox(width: 8),
                       Icon(
                         Icons.chevron_right_rounded,
                         size: 22,
                         color: palette.textSecondary,
                       ),
+                    ],
                   ],
                 ),
               ),
             ),
           ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 4),
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: onTapSummary,
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text(
-                    subtitle!,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: palette.textSecondary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
           const SizedBox(height: 14),
           if (visibleReservations.isEmpty)
             _EmptyReservationState(isLoginRequired: isLoginRequired)
@@ -161,7 +153,20 @@ class CalendarCard extends StatelessWidget {
             ),
           if (showAddButton) ...[
             const SizedBox(height: 14),
-            _PrimaryButton(label: '일정 추가하기', onTap: onTapStart),
+            Row(
+              children: [
+                Expanded(
+                  child: _PrimaryButton(label: '일정 추가하기', onTap: onTapStart),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _SecondaryButton(
+                    label: '캘린더 바로가기',
+                    onTap: onTapCalendar,
+                  ),
+                ),
+              ],
+            ),
           ],
         ],
       ),
@@ -250,7 +255,7 @@ class _UpcomingReservationRow extends StatelessWidget {
                   ],
                 ),
               ),
-              if (item.relativeLabel != null) ...[
+              if (item.dDayLabel != null) ...[
                 const SizedBox(width: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -262,7 +267,7 @@ class _UpcomingReservationRow extends StatelessWidget {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    item.relativeLabel!,
+                    item.dDayLabel!,
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
@@ -335,6 +340,58 @@ class _PrimaryButton extends StatelessWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.w900,
                 color: palette.primary,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SecondaryButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onTap;
+
+  const _SecondaryButton({required this.label, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Material(
+      color: palette.surface,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: palette.primary.withValues(alpha: 0.22)),
+            color: palette.primarySoft.withValues(alpha: 0.28),
+          ),
+          child: SizedBox(
+            height: 46,
+            child: Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.calendar_month_rounded,
+                    size: 15,
+                    color: palette.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: palette.primary,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

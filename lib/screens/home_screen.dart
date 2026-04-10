@@ -200,21 +200,25 @@ class _HomeScreenState extends State<HomeScreen>
         final reservationTitle = !isLoggedIn
             ? '로그인이 필요해요'
             : nearestSchedule != null
-            ? buildNearestReservationTitle(nearestSchedule)
+            ? '${nearestSchedule.hospitalName} 방문'
             : '다가오는 예약이 없어요';
+        final reservationDday = !isLoggedIn
+            ? null
+            : nearestSchedule != null
+            ? formatDDay(nearestSchedule.dateTime)
+            : null;
         final reservationSubtitle = !isLoggedIn
             ? null
             : nearestSchedule != null
             ? formatCompactScheduleDate(nearestSchedule.dateTime)
             : '오늘 기준으로 예정된 예약이 없어요';
-        final todayLabel = formatTodayReferenceLabel();
         final reservationItems = upcomingSchedules
             .skip(nearestSchedule != null ? 1 : 0)
             .map(
               (schedule) => CalendarCardReservationItem(
                 title: schedule.hospitalName,
                 dateLabel: formatCompactScheduleDate(schedule.dateTime),
-                relativeLabel: formatRelativeFromToday(schedule.dateTime),
+                dDayLabel: formatDDay(schedule.dateTime),
                 onTap: () => _openReservationDetail(context, schedule),
               ),
             )
@@ -283,8 +287,8 @@ class _HomeScreenState extends State<HomeScreen>
                       const SizedBox(height: 18),
                       CalendarCard(
                         title: reservationTitle,
+                        dDayLabel: reservationDday,
                         subtitle: reservationSubtitle,
-                        todayLabel: todayLabel,
                         reservationSectionLabel: reservationSectionLabel,
                         reservations: reservationItems,
                         isLoginRequired: !isLoggedIn,

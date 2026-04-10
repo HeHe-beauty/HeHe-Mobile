@@ -42,36 +42,20 @@ String formatReminderSummary(CalendarSchedule schedule) {
 
 String formatCompactScheduleDate(DateTime dateTime) {
   final weekdayLabel = calendarWeekdayLabels[dateTime.weekday % 7];
-  return '${dateTime.month}월 ${dateTime.day}일($weekdayLabel) ${formatScheduleTime(dateTime)}';
+  return '${dateTime.month}/${dateTime.day}($weekdayLabel) ${formatScheduleTime(dateTime)}';
 }
 
-String formatRelativeFromToday(DateTime dateTime, {DateTime? referenceDate}) {
+String formatDDay(DateTime dateTime, {DateTime? referenceDate}) {
   final now = referenceDate ?? AppTime.now();
   final today = calendarDateOnly(now);
   final scheduleDate = calendarDateOnly(dateTime);
   final diff = scheduleDate.difference(today).inDays;
 
   if (diff <= 0) {
-    return '오늘';
+    return 'D-Day';
   }
 
-  return '$diff일 후';
-}
-
-String buildNearestReservationTitle(
-  CalendarSchedule schedule, {
-  DateTime? referenceDate,
-}) {
-  final now = referenceDate ?? AppTime.now();
-  final today = calendarDateOnly(now);
-  final scheduleDate = calendarDateOnly(schedule.dateTime);
-  final diff = scheduleDate.difference(today).inDays;
-
-  if (diff <= 0) {
-    return '${schedule.hospitalName} 방문 당일';
-  }
-
-  return '${schedule.hospitalName} 방문 $diff일 전';
+  return 'D-$diff';
 }
 
 String formatTodayReferenceLabel({DateTime? referenceDate}) {
