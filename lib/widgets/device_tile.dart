@@ -3,15 +3,17 @@ import '../theme/app_palette.dart';
 
 class DeviceTile extends StatelessWidget {
   final String title;
-  final String imageAsset;
+  final String? imageAsset;
   final double height;
+  final Widget? infoIcon;
   final VoidCallback? onTap;
 
   const DeviceTile({
     super.key,
     required this.title,
-    required this.imageAsset,
+    this.imageAsset,
     required this.height,
+    this.infoIcon,
     this.onTap,
   });
 
@@ -38,35 +40,49 @@ class DeviceTile extends StatelessWidget {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 12, right: 4),
-                    child: Text(
-                      title,
-                      maxLines: 2,
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        height: 1.15,
-                        letterSpacing: -0.2,
-                        color: palette.textPrimary,
-                      ),
+                    padding: const EdgeInsets.only(left: 6, right: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.left,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              height: 1.15,
+                              letterSpacing: -0.2,
+                              color: palette.textPrimary,
+                            ),
+                          ),
+                        ),
+                        if (infoIcon != null) ...[
+                          const SizedBox(width: 2),
+                          infoIcon!,
+                        ],
+                      ],
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  width: 54,
-                  height: double.infinity,
-                  child: Image.asset(
-                    imageAsset,
-                    fit: BoxFit.contain,
-                    alignment: Alignment.center,
+              if (imageAsset != null) ...[
+                const SizedBox(width: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 50,
+                    height: double.infinity,
+                    child: Image.asset(
+                      imageAsset!,
+                      fit: BoxFit.contain,
+                      alignment: Alignment.center,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

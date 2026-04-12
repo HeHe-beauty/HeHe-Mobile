@@ -43,7 +43,7 @@ class ContentDetailScreen extends StatelessWidget {
                     child: Text(
                       item.author,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                         color: palette.textPrimary,
                       ),
@@ -64,9 +64,9 @@ class ContentDetailScreen extends StatelessWidget {
               Text(
                 item.title,
                 style: TextStyle(
-                  fontSize: 30,
+                  fontSize: 17,
                   fontWeight: FontWeight.w900,
-                  height: 1.25,
+                  height: 1.4,
                   color: palette.textPrimary,
                 ),
               ),
@@ -85,8 +85,8 @@ class ContentDetailScreen extends StatelessWidget {
                   child: Text(
                     item.body,
                     style: TextStyle(
-                      fontSize: 17,
-                      height: 1.7,
+                      fontSize: 12,
+                      height: 1.6,
                       fontWeight: FontWeight.w600,
                       color: palette.textSecondary,
                     ),

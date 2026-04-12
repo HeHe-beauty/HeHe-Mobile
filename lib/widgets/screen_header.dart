@@ -9,6 +9,7 @@ class ScreenHeader extends StatelessWidget {
   final Widget? trailing;
   final EdgeInsetsGeometry padding;
   final IconData leadingIcon;
+  final double? titleFontSize;
 
   const ScreenHeader({
     super.key,
@@ -17,6 +18,7 @@ class ScreenHeader extends StatelessWidget {
     this.trailing,
     this.padding = const EdgeInsets.fromLTRB(20, 14, 20, 10),
     this.leadingIcon = Icons.arrow_back_ios_new_rounded,
+    this.titleFontSize,
   });
 
   @override
@@ -37,7 +39,7 @@ class ScreenHeader extends StatelessWidget {
             child: Text(
               title,
               style: TextStyle(
-                fontSize: 24,
+                fontSize: titleFontSize ?? 24,
                 fontWeight: FontWeight.w900,
                 color: palette.textPrimary,
                 letterSpacing: -0.3,

@@ -19,51 +19,74 @@ class MyPageScreen extends StatelessWidget {
         return Scaffold(
           backgroundColor: palette.bg,
           body: SafeArea(
-            child: Column(
+            child: Stack(
               children: [
-                ScreenHeader(
-                  title: '마이페이지',
-                  onTapBack: () => Navigator.pop(context),
+                Positioned(
+                  top: -72,
+                  right: -52,
+                  child: _BackgroundCircle(size: 180, opacity: 0.18),
                 ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-                    child: Column(
-                      children: [
-                        _ProfileCard(userName: userName),
-                        const SizedBox(height: 16),
-                        const _SummarySection(),
-                        const SizedBox(height: 16),
-                        _MenuSection(
-                          onTapCalendar: () {
-                            showAppSnackBar(context, '내 캘린더 연결 예정');
-                          },
-                          onTapFavorites: () {
-                            showAppSnackBar(context, '찜한 병원 연결 예정');
-                          },
-                          onTapInquiries: () {
-                            showAppSnackBar(context, '문의 내역 연결 예정');
-                          },
-                          onTapRecent: () {
-                            showAppSnackBar(context, '최근 본 병원 연결 예정');
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        _AccountSection(
-                          isLoggedIn: isLoggedIn,
-                          onTapLogout: () {
-                            AuthState.logOut();
+                Positioned(
+                  top: 42,
+                  left: -34,
+                  child: _BackgroundCircle(size: 96, opacity: 0.14),
+                ),
+                Positioned(
+                  top: 112,
+                  right: 42,
+                  child: _BackgroundCircle(size: 54, opacity: 0.12),
+                ),
+                SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      ScreenHeader(
+                        title: '마이페이지',
+                        titleFontSize: 21,
+                        onTapBack: () => Navigator.pop(context),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                        child: Column(
+                          children: [
+                            _ProfileCard(userName: userName),
+                            const SizedBox(height: 16),
+                            const _SummarySection(),
+                            const SizedBox(height: 16),
+                            _MenuSection(
+                              onTapCalendar: () {
+                                showAppSnackBar(context, '내 캘린더 연결 예정');
+                              },
+                              onTapFavorites: () {
+                                showAppSnackBar(context, '찜한 병원 연결 예정');
+                              },
+                              onTapInquiries: () {
+                                showAppSnackBar(context, '문의 내역 연결 예정');
+                              },
+                              onTapRecent: () {
+                                showAppSnackBar(context, '최근 본 병원 연결 예정');
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            _AccountSection(
+                              isLoggedIn: isLoggedIn,
+                              onTapLogout: () {
+                                AuthState.logOut();
 
-                            showAppSnackBar(context, '로그아웃 되었어요');
+                                showAppSnackBar(context, '로그아웃 되었어요');
 
-                            Navigator.pop(context);
-                          },
-                          onTapWithdraw: () {
-                            showAppSnackBar(context, '회원탈퇴 기능은 추후 연결 예정입니다.');
-                          },
+                                Navigator.pop(context);
+                              },
+                              onTapWithdraw: () {
+                                showAppSnackBar(
+                                  context,
+                                  '회원탈퇴 기능은 추후 연결 예정입니다.',
+                                );
+                              },
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -71,6 +94,27 @@ class MyPageScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _BackgroundCircle extends StatelessWidget {
+  final double size;
+  final double opacity;
+
+  const _BackgroundCircle({required this.size, required this.opacity});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: palette.primary.withValues(alpha: opacity),
+      ),
     );
   }
 }
@@ -86,7 +130,7 @@ class _ProfileCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
+      padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
       decoration: BoxDecoration(
         color: palette.surface,
         borderRadius: BorderRadius.circular(28),
@@ -102,8 +146,8 @@ class _ProfileCard extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            width: 96,
-            height: 96,
+            width: 78,
+            height: 78,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: palette.surfaceMuted,
@@ -111,15 +155,15 @@ class _ProfileCard extends StatelessWidget {
             ),
             child: Icon(
               Icons.person_outline_rounded,
-              size: 48,
+              size: 38,
               color: palette.primary,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
           Text(
             userName,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 15,
               fontWeight: FontWeight.w900,
               color: palette.textPrimary,
               letterSpacing: -0.4,
@@ -130,7 +174,7 @@ class _ProfileCard extends StatelessWidget {
             '내 활동과 저장한 정보를 한 번에 볼 수 있어요.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 11,
               height: 1.45,
               fontWeight: FontWeight.w600,
               color: palette.textSecondary,
@@ -193,7 +237,7 @@ class _SummaryCard extends StatelessWidget {
     final palette = context.palette;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
+      padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
       decoration: BoxDecoration(
         color: palette.surface,
         borderRadius: BorderRadius.circular(22),
@@ -202,19 +246,19 @@ class _SummaryCard extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               color: palette.surfaceMuted,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, size: 22, color: palette.primary),
+            child: Icon(icon, size: 18, color: palette.primary),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 9),
           Text(
             value,
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 17,
               fontWeight: FontWeight.w900,
               color: palette.textPrimary,
             ),
@@ -224,7 +268,7 @@ class _SummaryCard extends StatelessWidget {
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 10,
               height: 1.3,
               fontWeight: FontWeight.w700,
               color: palette.textSecondary,
@@ -255,7 +299,7 @@ class _MenuSection extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
       decoration: BoxDecoration(
         color: palette.surface,
         borderRadius: BorderRadius.circular(28),
@@ -268,13 +312,13 @@ class _MenuSection extends StatelessWidget {
             child: Text(
               '내 활동',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 15,
                 fontWeight: FontWeight.w900,
                 color: palette.textPrimary,
               ),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           _MenuTile(
             icon: Icons.calendar_month_rounded,
             title: '내 캘린더',
@@ -333,7 +377,7 @@ class _MenuTile extends StatelessWidget {
         onTap: onTap,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 13, 16, 13),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: palette.border),
@@ -341,13 +385,13 @@ class _MenuTile extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: palette.surfaceMuted,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, size: 22, color: palette.primary),
+                child: Icon(icon, size: 19, color: palette.primary),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -357,7 +401,7 @@ class _MenuTile extends StatelessWidget {
                     Text(
                       title,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 13,
                         fontWeight: FontWeight.w900,
                         color: palette.textPrimary,
                       ),
@@ -366,7 +410,7 @@ class _MenuTile extends StatelessWidget {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         height: 1.35,
                         fontWeight: FontWeight.w600,
                         color: palette.textSecondary,
@@ -378,7 +422,7 @@ class _MenuTile extends StatelessWidget {
               const SizedBox(width: 8),
               Icon(
                 Icons.chevron_right_rounded,
-                size: 24,
+                size: 22,
                 color: palette.textTertiary,
               ),
             ],
@@ -408,7 +452,7 @@ class _AccountSection extends StatelessWidget {
       children: [
         SizedBox(
           width: double.infinity,
-          height: 58,
+          height: 50,
           child: ElevatedButton(
             onPressed: isLoggedIn ? onTapLogout : null,
             style: ElevatedButton.styleFrom(
@@ -421,7 +465,7 @@ class _AccountSection extends StatelessWidget {
             ),
             child: const Text(
               '로그아웃',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
             ),
           ),
         ),
@@ -434,9 +478,9 @@ class _AccountSection extends StatelessWidget {
             child: Text(
               '회원탈퇴',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: palette.textTertiary,
+                color: palette.danger,
               ),
             ),
           ),

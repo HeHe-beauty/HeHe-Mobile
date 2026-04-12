@@ -37,7 +37,6 @@ class _ContentCarouselState extends State<ContentCarousel> {
             builder: (context, constraints) {
               const gap = 14.0;
               final cardWidth = (constraints.maxWidth - (gap * 2)) / 2.5;
-              final itemExtent = cardWidth + gap;
 
               return NotificationListener<ScrollNotification>(
                 onNotification: (notification) {
@@ -65,7 +64,8 @@ class _ContentCarouselState extends State<ContentCarousel> {
                   physics: const BouncingScrollPhysics(),
                   padding: EdgeInsets.zero,
                   itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: gap),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(width: gap),
                   itemBuilder: (context, index) {
                     final item = items[index];
 
