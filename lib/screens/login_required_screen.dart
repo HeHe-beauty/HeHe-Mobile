@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/auth/auth_state.dart';
 import '../theme/app_palette.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/app_snackbar.dart';
 
 class LoginRequiredScreen extends StatelessWidget {
@@ -22,7 +23,6 @@ class LoginRequiredScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final palette = context.palette;
 
     return Scaffold(
@@ -50,7 +50,6 @@ class LoginRequiredScreen extends StatelessWidget {
                       children: [
                         const SizedBox(height: 28),
                         _HeroSection(
-                          theme: theme,
                           title: title ?? '로그인이 필요해요',
                           description:
                               description ??
@@ -120,10 +119,8 @@ class _TopBar extends StatelessWidget {
           const Spacer(),
           Text(
             '로그인',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
+            style: AppTextStyles.homeSectionTitle.copyWith(
               color: palette.textPrimary,
-              letterSpacing: -0.2,
             ),
           ),
           const Spacer(),
@@ -135,15 +132,10 @@ class _TopBar extends StatelessWidget {
 }
 
 class _HeroSection extends StatelessWidget {
-  final ThemeData theme;
   final String title;
   final String description;
 
-  const _HeroSection({
-    required this.theme,
-    required this.title,
-    required this.description,
-  });
+  const _HeroSection({required this.title, required this.description});
 
   @override
   Widget build(BuildContext context) {
@@ -179,20 +171,17 @@ class _HeroSection extends StatelessWidget {
         Text(
           title,
           textAlign: TextAlign.center,
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w800,
+          style: AppTextStyles.homeHeadline.copyWith(
             color: palette.textPrimary,
-            letterSpacing: -0.5,
           ),
         ),
         const SizedBox(height: 10),
         Text(
           description,
           textAlign: TextAlign.center,
-          style: theme.textTheme.bodyMedium?.copyWith(
+          style: AppTextStyles.homeBody.copyWith(
             height: 1.55,
             color: palette.textSecondary,
-            fontWeight: FontWeight.w500,
           ),
         ),
       ],
@@ -237,8 +226,7 @@ class _LoginCard extends StatelessWidget {
           const SizedBox(height: 22),
           Text(
             '소셜 계정으로 계속하기',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
+            style: AppTextStyles.homeSectionTitle.copyWith(
               color: palette.textPrimary,
             ),
           ),
@@ -246,7 +234,7 @@ class _LoginCard extends StatelessWidget {
           Text(
             '처음 로그인하는 경우 자동으로 가입이 진행돼요.',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: AppTextStyles.homeBody.copyWith(
               height: 1.5,
               color: palette.textSecondary,
             ),
@@ -279,10 +267,9 @@ class _LoginCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     '로그인 시 서비스 이용약관 및 개인정보처리방침에 동의한 것으로 간주됩니다.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    style: AppTextStyles.homeCaption.copyWith(
                       color: palette.textSecondary,
                       height: 1.45,
-                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
@@ -307,18 +294,16 @@ class _BottomAgreementSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+    final style = AppTextStyles.homeCaption.copyWith(
       color: palette.textSecondary,
-      fontWeight: FontWeight.w600,
     );
 
     return Column(
       children: [
         Text(
           '안전한 사용을 위해 꼭 확인해주세요',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          style: AppTextStyles.homeCaption.copyWith(
             color: palette.textTertiary,
-            fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 10),
@@ -333,7 +318,7 @@ class _BottomAgreementSection extends StatelessWidget {
             ),
             Text(
               '·',
-              style: TextStyle(
+              style: AppTextStyles.homeCaption.copyWith(
                 color: palette.textTertiary,
                 fontWeight: FontWeight.w700,
               ),
@@ -411,9 +396,8 @@ class _SocialLoginButton extends StatelessWidget {
                 child: Text(
                   text,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: AppTextStyles.homeBodyStrong.copyWith(
                     color: foregroundColor,
-                    fontWeight: FontWeight.w800,
                     letterSpacing: -0.2,
                   ),
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_palette.dart';
+import '../theme/app_text_styles.dart';
 
 class HeaderBar extends StatelessWidget {
   final String title;
@@ -31,18 +32,14 @@ class HeaderBar extends StatelessWidget {
               padding: const EdgeInsets.only(top: 10),
               child: RichText(
                 text: TextSpan(
-                  style: TextStyle(
-                    fontSize: 21,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: -0.2,
-                    height: 1.32,
+                  style: AppTextStyles.homeHeadline.copyWith(
                     color: palette.textPrimary,
                   ),
                   children: const [
                     TextSpan(text: '시술 꿀팁부터\n병원 찾기까지\n'),
                     TextSpan(
                       text: '관리는 HeHe에서',
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                      style: AppTextStyles.homeHeadlineStrong,
                     ),
                   ],
                 ),
@@ -54,12 +51,11 @@ class HeaderBar extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _RoundIconButton(
+                _UtilityIconButton(
                   icon: Icons.person_outline_rounded,
                   onTap: onTapProfile,
                 ),
-                const SizedBox(width: 8),
-                _RoundIconButton(
+                _UtilityIconButton(
                   icon: Icons.settings_outlined,
                   onTap: onTapSettings,
                 ),
@@ -72,28 +68,26 @@ class HeaderBar extends StatelessWidget {
   }
 }
 
-class _RoundIconButton extends StatelessWidget {
+class _UtilityIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
 
-  const _RoundIconButton({required this.icon, this.onTap});
+  const _UtilityIconButton({required this.icon, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
 
-    return InkResponse(
-      onTap: onTap,
-      radius: 22,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: palette.surface,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: palette.border),
+    return SizedBox(
+      width: 38,
+      height: 44,
+      child: Material(
+        color: Colors.transparent,
+        child: InkResponse(
+          onTap: onTap,
+          radius: 22,
+          child: Icon(icon, size: 22, color: palette.textSecondary),
         ),
-        child: Icon(icon, size: 22, color: palette.icon),
       ),
     );
   }

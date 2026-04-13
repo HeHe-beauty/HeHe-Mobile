@@ -7,6 +7,7 @@ import '../core/auth/auth_state.dart';
 import '../models/calendar_schedule.dart';
 import '../models/content_item.dart';
 import '../theme/app_palette.dart';
+import '../theme/app_text_styles.dart';
 import '../data/calendar_schedule_store.dart';
 import '../data/home_catalog.dart';
 import '../data/equipment/equip_repository.dart';
@@ -233,6 +234,8 @@ class _HomeScreenState extends State<HomeScreen>
     final d1Name = _deviceName(d1, '아포지');
     final d2Name = _deviceName(d2, '클라리티2');
     final d0Asset = _deviceImageAsset(d0Name);
+    final d1Asset = _deviceImageAsset(d1Name);
+    final d2Asset = _deviceImageAsset(d2Name);
 
     return ValueListenableBuilder<bool>(
       valueListenable: AuthState.isLoggedIn,
@@ -333,6 +336,7 @@ class _HomeScreenState extends State<HomeScreen>
                                       children: [
                                         DeviceTile(
                                           title: d1Name,
+                                          imageAsset: d1Asset,
                                           height: 73,
                                           infoIcon: _DeviceInfoButton(
                                             key: _apogeeInfoKey,
@@ -352,6 +356,7 @@ class _HomeScreenState extends State<HomeScreen>
                                         const SizedBox(height: 14),
                                         DeviceTile(
                                           title: d2Name,
+                                          imageAsset: d2Asset,
                                           height: 73,
                                           infoIcon: _DeviceInfoButton(
                                             key: _clarityInfoKey,
@@ -374,11 +379,22 @@ class _HomeScreenState extends State<HomeScreen>
                                 ],
                               ),
                               const SizedBox(height: 12),
-                              Text(
-                                '💡 기기를 선택하면 주변 병원 위치를 확인할 수 있어요',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
+                              Text.rich(
+                                const TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: '💡 ',
+                                      style: TextStyle(
+                                        fontFamily: 'Tossface',
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: '기기를 선택하면 주변 병원 위치를 확인할 수 있어요',
+                                    ),
+                                  ],
+                                ),
+                                style: AppTextStyles.homeCaption.copyWith(
                                   color: palette.textSecondary,
                                 ),
                               ),
@@ -421,10 +437,7 @@ class _HomeScreenState extends State<HomeScreen>
                               const SizedBox(height: 24),
                               Text(
                                 '추천 콘텐츠',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: -0.2,
+                                style: AppTextStyles.homeSectionTitle.copyWith(
                                   color: palette.textPrimary,
                                 ),
                               ),

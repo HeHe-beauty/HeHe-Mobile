@@ -1,30 +1,42 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:hehe/main.dart';
+import 'package:hehe/screens/content_detail_screen.dart';
+import 'package:hehe/theme/app_theme.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('shows splash screen and navigates to home', (tester) async {
     await tester.pumpWidget(const MyApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.text('HeHe'), findsOneWidget);
+    expect(find.text('나에게 맞는 선택을 더 쉽게'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.pump(const Duration(seconds: 2));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('추천 콘텐츠'), findsOneWidget);
+    expect(
+      find.textContaining('관리는 HeHe에서', findRichText: true),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('renders content detail body from html', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: const ContentDetailScreen.content(
+          sourceLabel: 'HeHe',
+          title: 'HTML 렌더링 테스트',
+          htmlContent:
+              '<html><body><p><strong>기존 내용</strong></p></body></html>',
+        ),
+      ),
+    );
+
+    expect(find.text('HTML 렌더링 테스트'), findsOneWidget);
+    expect(find.textContaining('기존 내용', findRichText: true), findsOneWidget);
+    expect(find.textContaining('<html>', findRichText: true), findsNothing);
   });
 }

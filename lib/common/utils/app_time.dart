@@ -1,5 +1,4 @@
 import 'server_time_api.dart';
-import 'package:flutter/cupertino.dart';
 
 class AppTime {
   static DateTime? _serverBaseTimeKst;
@@ -26,8 +25,7 @@ class AppTime {
       return DateTime.now().toUtc().add(const Duration(hours: 9));
     }
 
-    final elapsed =
-    DateTime.now().toUtc().difference(_deviceTimeAtSync!);
+    final elapsed = DateTime.now().toUtc().difference(_deviceTimeAtSync!);
 
     return _serverBaseTimeKst!.add(elapsed);
   }
