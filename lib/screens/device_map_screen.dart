@@ -20,12 +20,12 @@ import '../theme/app_palette.dart';
 import '../utils/app_snackbar.dart';
 import '../utils/naver_reverse_geocode.dart';
 import '../widgets/cluster_count_marker.dart';
-import '../widgets/map_bottom_sheet.dart';
 import '../widgets/device_map_controls.dart';
+import '../widgets/map_bottom_sheet.dart';
 import '../widgets/map_side_panel.dart';
+import '../widgets/selected_hospital_marker.dart';
 import 'calendar_detail_screen.dart';
 import 'hospital_history_screen.dart';
-import 'login_required_screen.dart';
 import 'my_page_screen.dart';
 
 class DeviceMapScreen extends StatefulWidget {
@@ -330,103 +330,6 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     );
   }
 
-  Future<void> _showFavoriteLoginPromptSheet() async {
-    final palette = context.palette;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: palette.bottomSheetSurface,
-      barrierColor: palette.modalBarrier,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              14,
-              20,
-              bottomPadding > 0 ? bottomPadding + 8 : 12,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 52,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: palette.bottomSheetBorder,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  '로그인하면 찜한 병원을 모아볼 수 있어요',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: palette.textPrimary,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '찜한 병원은 로그인 후 저장하고 언제든 다시 확인할 수 있어요.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
-                    fontWeight: FontWeight.w700,
-                    color: palette.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 22),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _FavoritePromptButton(
-                        label: '나중에',
-                        isPrimary: false,
-                        onTap: () => Navigator.pop(sheetContext),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _FavoritePromptButton(
-                        label: '로그인하기',
-                        isPrimary: true,
-                        onTap: () async {
-                          Navigator.pop(sheetContext);
-                          if (!mounted) return;
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => LoginRequiredScreen(
-                                title: AuthPrompts.favorites.title,
-                                description: AuthPrompts.favorites.description,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _onMapReady(NaverMapController controller) async {
     _mapController = controller;
     _isMapReady = true;
@@ -474,6 +377,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
           position: NLatLng(place.latitude, place.longitude),
           icon: await _getSingleIcon(
             isSelected: _selectedPlace?.id == place.id,
+            label: place.name,
           ),
           anchor: const NPoint(0.5, 0.5),
           isFlat: true,
@@ -509,8 +413,8 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
       final marker = NMarker(
         id: selectedPlace.id,
         position: NLatLng(selectedPlace.latitude, selectedPlace.longitude),
-        icon: await _getSingleIcon(isSelected: true),
-        anchor: const NPoint(0.5, 0.5),
+        icon: await _getSingleIcon(isSelected: true, label: selectedPlace.name),
+        anchor: const NPoint(0.5, 1),
         isFlat: true,
       );
 
@@ -939,13 +843,34 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     _scheduleRegionLabelUpdate(target, force: true);
   }
 
-  Future<NOverlayImage> _getSingleIcon({required bool isSelected}) {
+  Future<NOverlayImage> _getSingleIcon({
+    required bool isSelected,
+    String? label,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeKey = isDark ? 'dark' : 'light';
-    final key = 'single_${themeKey}_${isSelected ? 'selected' : 'default'}';
-    final markerSize = isSelected
-        ? ClusterCountMarker.singleSelectedSize
-        : ClusterCountMarker.singleDefaultSize;
+    final resolvedLabel = (label == null || label.trim().isEmpty)
+        ? '병원'
+        : label.trim();
+    final key = isSelected
+        ? 'single_${themeKey}_selected_$resolvedLabel'
+        : 'single_${themeKey}_default';
+
+    if (isSelected) {
+      return _iconCache.putIfAbsent(
+        key,
+        () => NOverlayImage.fromWidget(
+          context: context,
+          size: const Size(
+            SelectedHospitalMarker.width,
+            SelectedHospitalMarker.height,
+          ),
+          widget: SelectedHospitalMarker(name: resolvedLabel),
+        ),
+      );
+    }
+
+    const markerSize = ClusterCountMarker.singleDefaultSize;
 
     return _iconCache.putIfAbsent(
       key,
@@ -1089,10 +1014,16 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   }
 
   void _toggleBookmark(PlaceItem place) {
-    if (!AuthState.isLoggedIn.value) {
-      _showFavoriteLoginPromptSheet();
-      return;
-    }
+    unawaited(_toggleBookmarkAfterLogin(place));
+  }
+
+  Future<void> _toggleBookmarkAfterLogin(PlaceItem place) async {
+    final allowed = await AuthGate.ensureLoggedInWithPrompt(
+      context,
+      prompt: AuthPrompts.favorites,
+    );
+
+    if (!allowed || !mounted) return;
 
     _favoriteStore.toggleFavorite(place.id);
   }
@@ -1166,7 +1097,6 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
                   topInset: 76,
                   userName: isLoggedIn ? '노명욱님' : '로그인 / 회원가입',
                   isLoggedIn: isLoggedIn,
-                  onClose: _closeSidePanel,
                   onTapMyPage: _openProtectedMyPage,
                   onTapRecent: () => _openProtectedHistoryPage(
                     0,
@@ -1524,52 +1454,6 @@ PlaceItem _placeItemFromHospitalDetail(
     latitude: hospital.lat,
     longitude: hospital.lng,
   );
-}
-
-class _FavoritePromptButton extends StatelessWidget {
-  final String label;
-  final bool isPrimary;
-  final VoidCallback onTap;
-
-  const _FavoritePromptButton({
-    required this.label,
-    required this.isPrimary,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Material(
-      color: isPrimary ? palette.primarySoft : palette.bottomSheetInnerSurface,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          height: 48,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: isPrimary
-                  ? palette.primarySoft
-                  : palette.bottomSheetBorder,
-            ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: isPrimary ? palette.primaryStrong : palette.textSecondary,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _CurrentLocationMarker extends StatelessWidget {

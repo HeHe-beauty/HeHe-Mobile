@@ -41,7 +41,6 @@ class MyPageScreen extends StatelessWidget {
                     children: [
                       ScreenHeader(
                         title: '마이페이지',
-                        titleFontSize: 21,
                         onTapBack: () => Navigator.pop(context),
                       ),
                       Padding(

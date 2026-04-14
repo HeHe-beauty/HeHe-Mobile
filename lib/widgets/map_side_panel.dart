@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import '../theme/app_palette.dart';
+import '../theme/app_text_styles.dart';
 
 class MapSidePanel extends StatelessWidget {
   final bool isOpen;
   final double topInset;
   final String userName;
   final bool isLoggedIn;
-  final VoidCallback? onClose;
   final VoidCallback onTapMyPage;
   final VoidCallback onTapRecent;
   final VoidCallback onTapFavorite;
@@ -21,7 +21,6 @@ class MapSidePanel extends StatelessWidget {
     required this.topInset,
     required this.userName,
     required this.isLoggedIn,
-    this.onClose,
     required this.onTapMyPage,
     required this.onTapRecent,
     required this.onTapFavorite,
@@ -40,8 +39,8 @@ class MapSidePanel extends StatelessWidget {
       curve: Curves.easeInOut,
       top: topInset,
       bottom: 0,
-      right: isOpen ? 0 : -260,
-      width: 260,
+      right: isOpen ? 0 : -238,
+      width: 238,
       child: Material(
         color: palette.surface.withValues(alpha: 0),
         child: Container(
@@ -60,7 +59,7 @@ class MapSidePanel extends StatelessWidget {
           child: SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 18, 16, 20),
+              padding: const EdgeInsets.fromLTRB(14, 16, 14, 18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -74,20 +73,19 @@ class MapSidePanel extends StatelessWidget {
                         child: Row(
                           children: [
                             CircleAvatar(
-                              radius: 20,
+                              radius: 18,
                               backgroundColor: palette.surfaceMuted,
                               child: Icon(
                                 Icons.person_outline_rounded,
+                                size: 20,
                                 color: palette.primary,
                               ),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 9),
                             Expanded(
                               child: Text(
                                 userName,
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w900,
+                                style: AppTextStyles.homeSectionTitle.copyWith(
                                   color: palette.textPrimary,
                                 ),
                               ),
@@ -97,22 +95,6 @@ class MapSidePanel extends StatelessWidget {
                               size: 22,
                               color: palette.textTertiary,
                             ),
-                            if (onClose != null)
-                              Material(
-                                color: palette.surface.withValues(alpha: 0),
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(999),
-                                  onTap: onClose,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(6),
-                                    child: Icon(
-                                      Icons.close_rounded,
-                                      size: 22,
-                                      color: palette.textSecondary,
-                                    ),
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                       ),
@@ -121,32 +103,31 @@ class MapSidePanel extends StatelessWidget {
                   const SizedBox(height: 10),
                   Text(
                     '내 병원 활동',
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: AppTextStyles.homeCaption.copyWith(
                       fontWeight: FontWeight.w700,
                       color: palette.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
                   _MenuCard(
                     title: '최근 본 병원',
                     subtitle: '최근 확인했던 병원 목록을 볼 수 있어요.',
                     onTap: onTapRecent,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 9),
                   _MenuCard(
                     title: '찜한 병원',
                     subtitle: '저장해둔 병원 목록을 모아볼 수 있어요.',
                     onTap: onTapFavorite,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 9),
                   _MenuCard(
                     title: '문의한 병원',
                     subtitle: '문의했던 병원 내역을 확인할 수 있어요.',
                     onTap: onTapInquiry,
                   ),
                   if (isLoggedIn) ...[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 9),
                     _MenuCard(
                       title: '내 캘린더',
                       subtitle: '등록한 병원 일정과 체크리스트를 볼 수 있어요.',
@@ -167,8 +148,7 @@ class MapSidePanel extends StatelessWidget {
                         ),
                         Text(
                           '·',
-                          style: TextStyle(
-                            fontSize: 12,
+                          style: AppTextStyles.homeCaption.copyWith(
                             fontWeight: FontWeight.w700,
                             color: palette.textTertiary,
                           ),
@@ -208,15 +188,15 @@ class _MenuCard extends StatelessWidget {
 
     return Material(
       color: palette.surfaceSoft,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(color: palette.border),
           ),
           child: Column(
@@ -224,18 +204,14 @@ class _MenuCard extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
+                style: AppTextStyles.homeBodyStrong.copyWith(
                   color: palette.textPrimary,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 5),
               Text(
                 subtitle,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                style: AppTextStyles.homeCaption.copyWith(
                   color: palette.textSecondary,
                   height: 1.35,
                 ),
@@ -277,8 +253,7 @@ class _BottomTextButton extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12,
+                style: AppTextStyles.homeCaption.copyWith(
                   fontWeight: FontWeight.w700,
                   color: palette.textSecondary,
                 ),

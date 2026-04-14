@@ -16,9 +16,9 @@ class AppIconCircleButton extends StatelessWidget {
     required this.icon,
     this.onTap,
     this.backgroundColor,
-    this.size = 52,
-    this.iconSize = 24,
-    this.showBorder = true,
+    this.size = 44,
+    this.iconSize = 18,
+    this.showBorder = false,
     this.showShadow = true,
   });
 
@@ -28,24 +28,17 @@ class AppIconCircleButton extends StatelessWidget {
 
     return Material(
       color: backgroundColor ?? palette.surface,
-      shape: const CircleBorder(),
+      borderRadius: BorderRadius.circular(14),
+      elevation: showShadow ? 0.5 : 0,
       child: InkWell(
-        customBorder: const CircleBorder(),
+        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Container(
           width: size,
           height: size,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
+            borderRadius: BorderRadius.circular(14),
             border: showBorder ? Border.all(color: palette.border) : null,
-            boxShadow: [
-              if (showShadow)
-                BoxShadow(
-                  color: palette.shadow,
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                ),
-            ],
           ),
           child: Icon(icon, size: iconSize, color: palette.icon),
         ),

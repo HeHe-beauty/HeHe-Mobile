@@ -99,15 +99,7 @@ class _ContentHeader extends StatelessWidget {
             ),
           ),
         ),
-        AppIconCircleButton(
-          icon: Icons.close_rounded,
-          size: 44,
-          iconSize: 22,
-          showBorder: false,
-          showShadow: false,
-          backgroundColor: palette.surfaceSoft,
-          onTap: onClose,
-        ),
+        AppIconCircleButton(icon: Icons.close_rounded, onTap: onClose),
       ],
     );
   }

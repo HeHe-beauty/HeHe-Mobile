@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/place_item.dart';
 import '../theme/app_palette.dart';
+import '../theme/app_text_styles.dart';
 import 'place_card.dart';
 
 const double _kMapSheetRadius = 28;
@@ -601,25 +602,35 @@ class _SinglePlaceSection extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final stackActions = constraints.maxWidth < 340;
+          final visibleTags = place.tags.take(4).toList();
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 place.name,
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.homeSectionTitle.copyWith(
                   color: palette.textPrimary,
-                  height: 1.12,
-                  letterSpacing: -0.6,
+                  height: 1.2,
                 ),
               ),
-              const SizedBox(height: 16),
+              if (visibleTags.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: visibleTags
+                      .map((tag) => _HospitalTagChip(label: tag))
+                      .toList(),
+                ),
+              ],
+              const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
+                  horizontal: 14,
+                  vertical: 12,
                 ),
                 decoration: BoxDecoration(
                   color: palette.bottomSheetInnerSurface,
@@ -642,43 +653,41 @@ class _SinglePlaceSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: 34,
+                      height: 34,
                       decoration: BoxDecoration(
                         color: palette.surfaceMuted,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         Icons.location_on_rounded,
-                        size: 20,
+                        size: 18,
                         color: palette.primary,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         place.address,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                        style: AppTextStyles.homeBody.copyWith(
                           color: palette.textSecondary,
-                          height: 1.4,
+                          height: 1.35,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               if (stackActions) ...[
                 _PrimaryActionButton(
                   icon: Icons.call_rounded,
                   label: '문의하기',
                   onTap: onTapInquiry,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 _SecondaryActionButton(
                   icon: place.isBookmarked
                       ? Icons.star_rounded
@@ -697,7 +706,7 @@ class _SinglePlaceSection extends StatelessWidget {
                         onTap: onTapInquiry,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: _SecondaryActionButton(
                         icon: place.isBookmarked
@@ -733,9 +742,7 @@ class _PrimaryActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final buttonTextStyle = TextStyle(
-      fontSize: 15,
-      fontWeight: FontWeight.w800,
+    final buttonTextStyle = AppTextStyles.homeBodyStrong.copyWith(
       color: palette.surface,
       height: 1,
     );
@@ -747,7 +754,7 @@ class _PrimaryActionButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(_kMapSheetInnerRadius),
         onTap: onTap,
         child: Ink(
-          height: 54,
+          height: 48,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(_kMapSheetInnerRadius),
             gradient: LinearGradient(
@@ -768,8 +775,8 @@ class _PrimaryActionButton extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 20, color: palette.surface),
-                const SizedBox(width: 8),
+                Icon(icon, size: 18, color: palette.surface),
+                const SizedBox(width: 7),
                 Text(label, style: buttonTextStyle),
               ],
             ),
@@ -823,7 +830,7 @@ class _SecondaryActionButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(_kMapSheetInnerRadius),
         onTap: onTap,
         child: Ink(
-          height: 54,
+          height: 48,
           decoration: BoxDecoration(
             color: isActive
                 ? palette.primarySoft
@@ -851,15 +858,13 @@ class _SecondaryActionButton extends StatelessWidget {
               children: [
                 Icon(
                   icon,
-                  size: 20,
+                  size: 18,
                   color: isActive ? palette.primary : palette.textSecondary,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 7),
                 Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
+                  style: AppTextStyles.homeBodyStrong.copyWith(
                     color: labelColor,
                     height: 1,
                   ),
@@ -867,6 +872,36 @@ class _SecondaryActionButton extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HospitalTagChip extends StatelessWidget {
+  final String label;
+
+  const _HospitalTagChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: palette.primarySoft.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: palette.primary.withValues(alpha: 0.12)),
+      ),
+      child: Text(
+        '#$label',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: AppTextStyles.homeCaption.copyWith(
+          color: palette.primaryStrong,
+          fontWeight: FontWeight.w700,
+          height: 1,
         ),
       ),
     );

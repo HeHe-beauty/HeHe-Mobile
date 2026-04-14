@@ -11,7 +11,7 @@ class MapCircleButton extends StatelessWidget {
     super.key,
     required this.onTap,
     required this.child,
-    this.size = 56,
+    this.size = 44,
   });
 
   @override
@@ -20,24 +20,15 @@ class MapCircleButton extends StatelessWidget {
 
     return Material(
       color: palette.surface,
-      shape: const CircleBorder(),
+      borderRadius: BorderRadius.circular(14),
+      elevation: 0.5,
       child: InkWell(
-        customBorder: const CircleBorder(),
+        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Container(
           width: size,
           height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: palette.border),
-            boxShadow: [
-              BoxShadow(
-                color: palette.shadow,
-                blurRadius: 14,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(14)),
           child: Center(child: child),
         ),
       ),

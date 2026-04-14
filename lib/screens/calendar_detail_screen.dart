@@ -23,7 +23,8 @@ class CalendarDetailScreen extends StatefulWidget {
   State<CalendarDetailScreen> createState() => _CalendarDetailScreenState();
 }
 
-class _CalendarDetailScreenState extends State<CalendarDetailScreen> with WidgetsBindingObserver, DateRefreshMixin {
+class _CalendarDetailScreenState extends State<CalendarDetailScreen>
+    with WidgetsBindingObserver, DateRefreshMixin {
   late DateTime _focusedMonth;
   late DateTime _selectedDate;
   final Map<DateTime, List<CalendarSchedule>> _scheduleMap = {};
@@ -402,9 +403,6 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> with Widget
                   ),
                   AppIconCircleButton(
                     icon: Icons.close_rounded,
-                    backgroundColor: palette.surface.withValues(alpha: 0.88),
-                    showBorder: false,
-                    showShadow: false,
                     onTap: () => Navigator.pop(context),
                   ),
                 ],

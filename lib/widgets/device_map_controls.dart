@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_palette.dart';
 import 'map_circle_button.dart';
 
-const double _kMapControlRadius = 22;
+const double _kMapControlRadius = 14;
 
 class DeviceMapTopBar extends StatelessWidget {
   final TextEditingController searchController;
@@ -38,7 +38,7 @@ class DeviceMapTopBar extends StatelessWidget {
             onTap: onTapBack,
             child: Icon(
               Icons.arrow_back_ios_new_rounded,
-              size: 28,
+              size: 18,
               color: palette.icon,
             ),
           ),
@@ -48,34 +48,33 @@ class DeviceMapTopBar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: palette.surface,
                 borderRadius: BorderRadius.circular(_kMapControlRadius),
-                border: Border.all(color: palette.border),
                 boxShadow: [
                   BoxShadow(
                     color: palette.shadow,
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    blurRadius: 1,
+                    offset: const Offset(0, 0.5),
                   ),
                 ],
               ),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 56),
+                constraints: const BoxConstraints(minHeight: 44),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox(
-                        width: 22,
-                        height: 22,
+                        width: 20,
+                        height: 20,
                         child: Center(
                           child: Icon(
                             Icons.search_rounded,
-                            size: 20,
+                            size: 18,
                             color: palette.primary,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: TextField(
                           controller: searchController,
@@ -88,19 +87,20 @@ class DeviceMapTopBar extends StatelessWidget {
                           decoration: InputDecoration(
                             hintText: '지하철역 검색',
                             hintStyle: TextStyle(
-                              fontSize: 15,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: palette.textSecondary,
-                              height: 1.2,
+                              height: 1,
                             ),
                             border: InputBorder.none,
                             isDense: true,
+                            contentPadding: EdgeInsets.zero,
                           ),
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: palette.textPrimary,
-                            height: 1.2,
+                            height: 1,
                           ),
                         ),
                       ),
@@ -113,7 +113,7 @@ class DeviceMapTopBar extends StatelessWidget {
           const SizedBox(width: 12),
           MapCircleButton(
             onTap: onTapMenu,
-            child: Icon(Icons.menu_rounded, size: 28, color: palette.icon),
+            child: Icon(Icons.menu_rounded, size: 22, color: palette.icon),
           ),
         ],
       ),
@@ -136,12 +136,11 @@ class DeviceMapMyLocationButton extends StatelessWidget {
     final palette = context.palette;
 
     return MapCircleButton(
-      size: 54,
       onTap: onTap,
       child: isLoading
           ? SizedBox(
-              width: 20,
-              height: 20,
+              width: 18,
+              height: 18,
               child: CircularProgressIndicator(
                 strokeWidth: 2.2,
                 valueColor: AlwaysStoppedAnimation<Color>(palette.primary),
@@ -153,7 +152,7 @@ class DeviceMapMyLocationButton extends StatelessWidget {
               child: Center(
                 child: Icon(
                   Icons.my_location_rounded,
-                  size: 22,
+                  size: 20,
                   color: palette.primary,
                 ),
               ),

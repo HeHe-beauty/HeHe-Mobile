@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_palette.dart';
-import 'app_icon_circle_button.dart';
+import '../theme/app_text_styles.dart';
 
 class ScreenHeader extends StatelessWidget {
   final String title;
@@ -24,29 +24,48 @@ class ScreenHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    final trailingWidget = SizedBox(width: 44, child: trailing);
 
     return Padding(
       padding: padding,
       child: Row(
         children: [
-          AppIconCircleButton(
-            icon: leadingIcon,
-            iconSize: 22,
-            onTap: onTapBack,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: titleFontSize ?? 24,
-                fontWeight: FontWeight.w900,
-                color: palette.textPrimary,
-                letterSpacing: -0.3,
+          Material(
+            color: palette.surface,
+            borderRadius: BorderRadius.circular(14),
+            elevation: 0.5,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: onTapBack,
+              child: Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                child: Icon(leadingIcon, size: 18, color: palette.icon),
               ),
             ),
           ),
-          if (trailing != null) ...[const SizedBox(width: 12), trailing!],
+          const Spacer(),
+          Expanded(
+            child: SizedBox(
+              height: 44,
+              child: Center(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.homeSectionTitle.copyWith(
+                    fontSize: titleFontSize,
+                    height: 1,
+                    color: palette.textPrimary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const Spacer(),
+          trailingWidget,
         ],
       ),
     );

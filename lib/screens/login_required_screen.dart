@@ -86,42 +86,34 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
                   horizontal: 24,
                   vertical: 12,
                 ),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: MediaQuery.of(context).size.height - 120,
-                  ),
-                  child: IntrinsicHeight(
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 28),
-                        _HeroSection(
-                          title: widget.title ?? '로그인이 필요해요',
-                          description:
-                              widget.description ??
-                              '찜한 병원, 문의 내역, 내 캘린더 기능은\n로그인 후 이용할 수 있어요.',
-                        ),
-                        const SizedBox(height: 36),
-                        _LoginCard(
-                          loadingProvider: _loadingProvider,
-                          onTapKakao: () =>
-                              _loginWithProvider(SocialLoginProvider.kakao),
-                          onTapNaver: () =>
-                              _loginWithProvider(SocialLoginProvider.naver),
-                        ),
-                        const Spacer(),
-                        const SizedBox(height: 28),
-                        _BottomAgreementSection(
-                          onTapPrivacy: () {
-                            showAppSnackBar(context, '개인정보처리방침 페이지 연결 예정');
-                          },
-                          onTapTerms: () {
-                            showAppSnackBar(context, '이용약관 페이지 연결 예정');
-                          },
-                        ),
-                        const SizedBox(height: 20),
-                      ],
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    _HeroSection(
+                      title: widget.title ?? '로그인이 필요해요',
+                      description:
+                          widget.description ??
+                          '찜한 병원, 문의 내역, 내 캘린더 기능은\n로그인 후 이용할 수 있어요.',
                     ),
-                  ),
+                    const SizedBox(height: 28),
+                    _LoginCard(
+                      loadingProvider: _loadingProvider,
+                      onTapKakao: () =>
+                          _loginWithProvider(SocialLoginProvider.kakao),
+                      onTapNaver: () =>
+                          _loginWithProvider(SocialLoginProvider.naver),
+                    ),
+                    const SizedBox(height: 18),
+                    _BottomAgreementSection(
+                      onTapPrivacy: () {
+                        showAppSnackBar(context, '개인정보처리방침 페이지 연결 예정');
+                      },
+                      onTapTerms: () {
+                        showAppSnackBar(context, '이용약관 페이지 연결 예정');
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                  ],
                 ),
               ),
             ),
@@ -165,10 +157,16 @@ class _TopBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          Text(
-            '로그인',
-            style: AppTextStyles.homeSectionTitle.copyWith(
-              color: palette.textPrimary,
+          SizedBox(
+            height: 44,
+            child: Center(
+              child: Text(
+                '로그인',
+                style: AppTextStyles.homeSectionTitle.copyWith(
+                  height: 1,
+                  color: palette.textPrimary,
+                ),
+              ),
             ),
           ),
           const Spacer(),
@@ -192,10 +190,10 @@ class _HeroSection extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 92,
-          height: 92,
+          width: 72,
+          height: 72,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(22),
             gradient: LinearGradient(
               colors: [palette.primaryStrong, palette.primary],
               begin: Alignment.topLeft,
@@ -204,18 +202,18 @@ class _HeroSection extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: palette.shadow,
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: Icon(
             Icons.lock_outline_rounded,
             color: palette.surface,
-            size: 38,
+            size: 30,
           ),
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 18),
         Text(
           title,
           textAlign: TextAlign.center,
