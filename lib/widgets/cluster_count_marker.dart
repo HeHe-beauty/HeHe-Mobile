@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../theme/app_palette.dart';
 
 class ClusterCountMarker extends StatelessWidget {
+  static const double singleDefaultSize = 30;
+  static const double singleSelectedSize = 38;
+
   final int count;
   final bool isSelected;
   final bool isSingle;
@@ -15,15 +18,17 @@ class ClusterCountMarker extends StatelessWidget {
   });
 
   double get _size {
-    if (isSingle) return isSelected ? 30 : 24;
+    if (isSingle) {
+      return isSelected ? singleSelectedSize : singleDefaultSize;
+    }
 
-    final scaledSize = 56 + (((count - 2).clamp(0, 48) / 3) * 4.0);
-    return scaledSize.clamp(56.0, 104.0);
+    final scaledSize = 68 + (((count - 2).clamp(0, 48) / 3) * 5.0);
+    return scaledSize.clamp(68.0, 128.0);
   }
 
   double get _fontSize {
-    final scaledSize = 20 + (((count - 2).clamp(0, 48) / 3) * 0.5);
-    return scaledSize.clamp(20.0, 27.0);
+    final scaledSize = 20 + (((count - 2).clamp(0, 48) / 3) * 0.55);
+    return scaledSize.clamp(20.0, 29.0);
   }
 
   @override
@@ -36,6 +41,7 @@ class ClusterCountMarker extends StatelessWidget {
       palette: palette,
       isDark: isDark,
       isSelected: isSelected,
+      isSingle: isSingle,
     );
 
     if (isSingle) {
@@ -51,20 +57,20 @@ class ClusterCountMarker extends StatelessWidget {
           ),
           border: Border.all(
             color: tone.borderColor,
-            width: isSelected ? 3.4 : 2.2,
+            width: isSelected ? 3.2 : 2,
           ),
           boxShadow: [
             BoxShadow(
               color: tone.shadowColor,
-              blurRadius: isSelected ? 15 : 7,
+              blurRadius: isSelected ? 17 : 9,
               offset: const Offset(0, 5),
             ),
           ],
         ),
         child: Center(
           child: Container(
-            width: isSelected ? 9 : 7,
-            height: isSelected ? 9 : 7,
+            width: isSelected ? 11 : 8,
+            height: isSelected ? 11 : 8,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: tone.dotColor,
@@ -96,43 +102,26 @@ class ClusterCountMarker extends StatelessWidget {
           ),
         ],
       ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned(
-            top: size * 0.17,
-            child: Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: tone.dotColor,
-                shape: BoxShape.circle,
+      child: Center(
+        child: Text(
+          '$count',
+          style: TextStyle(
+            fontSize: _fontSize,
+            fontWeight: FontWeight.w900,
+            color: tone.textColor,
+            letterSpacing: -0.5,
+            height: 1,
+            shadows: [
+              Shadow(
+                color: palette.textPrimary.withValues(
+                  alpha: isSelected ? 0.14 : 0.08,
+                ),
+                blurRadius: 3,
+                offset: const Offset(0, 1),
               ),
-            ),
+            ],
           ),
-          Positioned(
-            top: size * 0.34,
-            child: Text(
-              '$count',
-              style: TextStyle(
-                fontSize: _fontSize,
-                fontWeight: FontWeight.w900,
-                color: tone.textColor,
-                letterSpacing: -0.5,
-                height: 1,
-                shadows: [
-                  Shadow(
-                    color: palette.textPrimary.withValues(
-                      alpha: isSelected ? 0.14 : 0.08,
-                    ),
-                    blurRadius: 3,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -141,43 +130,102 @@ class ClusterCountMarker extends StatelessWidget {
     required AppPalette palette,
     required bool isDark,
     required bool isSelected,
+    required bool isSingle,
   }) {
     if (isDark) {
       if (isSelected) {
+        if (isSingle) {
+          return _MarkerTone(
+            gradient: [
+              palette.mapMarkerDarkSelectedStart,
+              palette.primaryStrong,
+            ],
+            borderColor: palette.surface.withValues(alpha: 0.96),
+            shadowColor: palette.primary.withValues(alpha: 0.34),
+            textColor: palette.surface,
+            dotColor: palette.surface.withValues(alpha: 0.98),
+          );
+        }
+
         return _MarkerTone(
-          gradient: [palette.mapMarkerDarkSelectedStart, palette.primary],
-          borderColor: palette.surface.withValues(alpha: 0.92),
-          shadowColor: palette.primary.withValues(alpha: 0.34),
+          gradient: [
+            palette.mapMarkerDarkSelectedStart.withValues(alpha: 0.88),
+            palette.primary.withValues(alpha: 0.78),
+          ],
+          borderColor: palette.surface.withValues(alpha: 0.74),
+          shadowColor: palette.primary.withValues(alpha: 0.2),
+          textColor: palette.surface,
+          dotColor: palette.surface.withValues(alpha: 0.76),
+        );
+      }
+
+      if (isSingle) {
+        return _MarkerTone(
+          gradient: [palette.mapMarkerDarkStart, palette.mapMarkerDarkEnd],
+          borderColor: palette.surface.withValues(alpha: 0.84),
+          shadowColor: palette.primary.withValues(alpha: 0.24),
           textColor: palette.surface,
           dotColor: palette.surface.withValues(alpha: 0.95),
         );
       }
 
       return _MarkerTone(
-        gradient: [palette.mapMarkerDarkStart, palette.mapMarkerDarkEnd],
-        borderColor: palette.surface.withValues(alpha: 0.55),
-        shadowColor: palette.textPrimary.withValues(alpha: 0.16),
-        textColor: palette.textPrimary,
-        dotColor: palette.surface.withValues(alpha: 0.74),
+        gradient: [
+          palette.mapMarkerDarkStart.withValues(alpha: 0.72),
+          palette.mapMarkerDarkEnd.withValues(alpha: 0.62),
+        ],
+        borderColor: palette.surface.withValues(alpha: 0.54),
+        shadowColor: palette.primary.withValues(alpha: 0.12),
+        textColor: palette.surface,
+        dotColor: palette.surface.withValues(alpha: 0.68),
       );
     }
 
     if (isSelected) {
+      if (isSingle) {
+        return _MarkerTone(
+          gradient: [
+            palette.mapMarkerLightSelectedStart,
+            palette.primaryStrong,
+          ],
+          borderColor: palette.surface.withValues(alpha: 0.98),
+          shadowColor: palette.primary.withValues(alpha: 0.28),
+          textColor: palette.surface,
+          dotColor: palette.surface.withValues(alpha: 0.98),
+        );
+      }
+
       return _MarkerTone(
-        gradient: [palette.mapMarkerLightSelectedStart, palette.primary],
-        borderColor: palette.surface.withValues(alpha: 0.98),
-        shadowColor: palette.textPrimary.withValues(alpha: 0.14),
+        gradient: [
+          palette.mapMarkerLightSelectedStart.withValues(alpha: 0.9),
+          palette.primary.withValues(alpha: 0.78),
+        ],
+        borderColor: palette.surface.withValues(alpha: 0.82),
+        shadowColor: palette.primary.withValues(alpha: 0.18),
         textColor: palette.surface,
-        dotColor: palette.surface.withValues(alpha: 0.98),
+        dotColor: palette.surface.withValues(alpha: 0.78),
+      );
+    }
+
+    if (isSingle) {
+      return _MarkerTone(
+        gradient: [palette.mapMarkerLightStart, palette.mapMarkerLightEnd],
+        borderColor: palette.surface.withValues(alpha: 0.94),
+        shadowColor: palette.primary.withValues(alpha: 0.2),
+        textColor: palette.surface,
+        dotColor: palette.surface.withValues(alpha: 0.96),
       );
     }
 
     return _MarkerTone(
-      gradient: [palette.mapMarkerLightStart, palette.mapMarkerLightEnd],
-      borderColor: palette.surface.withValues(alpha: 0.72),
-      shadowColor: palette.textPrimary.withValues(alpha: 0.08),
-      textColor: palette.surface.withValues(alpha: 0.96),
-      dotColor: palette.surface.withValues(alpha: 0.82),
+      gradient: [
+        palette.mapMarkerLightStart.withValues(alpha: 0.74),
+        palette.mapMarkerLightEnd.withValues(alpha: 0.64),
+      ],
+      borderColor: palette.surface.withValues(alpha: 0.58),
+      shadowColor: palette.primary.withValues(alpha: 0.1),
+      textColor: palette.surface,
+      dotColor: palette.surface.withValues(alpha: 0.7),
     );
   }
 }

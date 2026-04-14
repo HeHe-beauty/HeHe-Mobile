@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:flutter/services.dart';
 
 import '../core/common/app_settings_state.dart';
 import 'core/auth/social_login_service.dart';
@@ -11,6 +12,8 @@ import 'common/utils/app_time.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint('🔥 main start');
+
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   await FlutterNaverMap().init(clientId: 'yi5mqthvb4');
   debugPrint('🔥 naver map init done');

@@ -458,8 +458,14 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     await controller.clearOverlays();
 
     final overlays = <NAddableOverlay<NOverlay<void>>>{};
+    final selectedPlace = _selectedPlace;
 
     for (final node in nodes) {
+      if (selectedPlace != null &&
+          _shouldHideNodeBehindSelectedPlace(node, selectedPlace)) {
+        continue;
+      }
+
       final place = node.place;
 
       if (place != null) {
@@ -499,7 +505,6 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
       overlays.add(marker);
     }
 
-    final selectedPlace = _selectedPlace;
     if (selectedPlace != null) {
       final marker = NMarker(
         id: selectedPlace.id,
@@ -530,6 +535,41 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     }
 
     await controller.addOverlayAll(overlays);
+  }
+
+  bool _shouldHideNodeBehindSelectedPlace(
+    _HospitalMarkerNode node,
+    PlaceItem selectedPlace,
+  ) {
+    final nodePlace = node.place;
+    if (nodePlace != null) {
+      return _isSamePlace(nodePlace, selectedPlace);
+    }
+
+    final nodePoint = _worldPixelFor(
+      latitude: node.latitude,
+      longitude: node.longitude,
+      zoom: _currentZoom,
+    );
+    final selectedPoint = _worldPixelFor(
+      latitude: selectedPlace.latitude,
+      longitude: selectedPlace.longitude,
+      zoom: _currentZoom,
+    );
+
+    final hideRadius = math.max(_clusterMarkerIconSize(node.count), 92.0);
+    return (nodePoint - selectedPoint).distance <= hideRadius;
+  }
+
+  bool _isSamePlace(PlaceItem a, PlaceItem b) {
+    final aHospitalId = a.hospitalId;
+    final bHospitalId = b.hospitalId;
+
+    if (aHospitalId != null && bHospitalId != null) {
+      return aHospitalId == bHospitalId;
+    }
+
+    return a.id == b.id;
   }
 
   Future<List<_HospitalMarkerNode>> _loadHospitalClusterNodes(
@@ -691,7 +731,10 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
 
   Future<void> _onTapHospitalMarker(PlaceItem place) async {
     _closeSidePanel();
-    final resolvedPlace = await _resolvePlaceDetail(place);
+    final resolvedPlace = await _resolvePlaceDetail(
+      place,
+      showFallbackError: false,
+    );
 
     if (!mounted) return;
 
@@ -702,23 +745,19 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
       _sheetPlaces = [resolvedPlace];
     });
 
+    _expandSinglePlaceSheet();
+
     await _refreshMarkers();
     await _moveCameraToPlace(resolvedPlace, zoom: 16.2);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted || !_sheetController.isAttached) return;
-
-      await _sheetController.animateTo(
-        0.36,
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-      );
-    });
+    _expandSinglePlaceSheet();
   }
 
   Future<void> _onTapPlaceCard(PlaceItem place) async {
     _closeSidePanel();
-    final resolvedPlace = await _resolvePlaceDetail(place);
+    final resolvedPlace = await _resolvePlaceDetail(
+      place,
+      showFallbackError: false,
+    );
 
     if (!mounted) return;
 
@@ -729,9 +768,14 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
       _sheetPlaces = [resolvedPlace];
     });
 
+    _expandSinglePlaceSheet();
+
     await _refreshMarkers();
     await _moveCameraToPlace(resolvedPlace, zoom: 16.2);
+    _expandSinglePlaceSheet();
+  }
 
+  void _expandSinglePlaceSheet() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted || !_sheetController.isAttached) return;
 
@@ -750,7 +794,10 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     await _onTapPlaceCard(place);
   }
 
-  Future<PlaceItem> _resolvePlaceDetail(PlaceItem place) async {
+  Future<PlaceItem> _resolvePlaceDetail(
+    PlaceItem place, {
+    bool showFallbackError = true,
+  }) async {
     final hospitalId = place.hospitalId;
     if (hospitalId == null) {
       return place;
@@ -760,7 +807,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
       final detail = await HospitalRepository.getHospitalDetail(hospitalId);
       return _placeItemFromHospitalDetail(detail, fallbackPlace: place);
     } catch (e) {
-      if (mounted) {
+      if (mounted && showFallbackError) {
         showTopAppSnackBar(context, '병원 정보를 불러오지 못했어요');
       }
       return place;
@@ -896,7 +943,9 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeKey = isDark ? 'dark' : 'light';
     final key = 'single_${themeKey}_${isSelected ? 'selected' : 'default'}';
-    final markerSize = isSelected ? 30.0 : 24.0;
+    final markerSize = isSelected
+        ? ClusterCountMarker.singleSelectedSize
+        : ClusterCountMarker.singleDefaultSize;
 
     return _iconCache.putIfAbsent(
       key,
@@ -1258,8 +1307,8 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
 }
 
 double _clusterMarkerIconSize(int count) {
-  final scaledSize = 56 + (((count - 2).clamp(0, 48) / 3) * 4.0);
-  return scaledSize.clamp(56.0, 104.0);
+  final scaledSize = 68 + (((count - 2).clamp(0, 48) / 3) * 5.0);
+  return scaledSize.clamp(68.0, 128.0);
 }
 
 class _HospitalMarkerNode {
