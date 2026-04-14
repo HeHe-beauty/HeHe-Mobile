@@ -1,18 +1,63 @@
 import 'package:flutter/material.dart';
 import '../core/auth/auth_state.dart';
+import '../core/auth/social_login_service.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/app_snackbar.dart';
 
-class LoginRequiredScreen extends StatelessWidget {
+class LoginRequiredScreen extends StatefulWidget {
   final String? title;
   final String? description;
 
   const LoginRequiredScreen({super.key, this.title, this.description});
 
-  void _completeTestLogin(BuildContext context) {
+  @override
+  State<LoginRequiredScreen> createState() => _LoginRequiredScreenState();
+}
+
+class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
+  SocialLoginProvider? _loadingProvider;
+
+  Future<void> _loginWithProvider(SocialLoginProvider provider) async {
+    if (_loadingProvider != null) return;
+
+    setState(() {
+      _loadingProvider = provider;
+    });
+
+    try {
+      final credential = switch (provider) {
+        SocialLoginProvider.kakao => await SocialLoginService.loginWithKakao(),
+        SocialLoginProvider.naver => await SocialLoginService.loginWithNaver(),
+      };
+
+      // TODO: Exchange this provider credential with the backend auth API
+      // and persist the app session token when the endpoint is available.
+      credential.toJson();
+
+      if (!mounted) return;
+
+      _completeLogin(context);
+    } on SocialLoginException catch (e) {
+      if (mounted) {
+        showAppSnackBar(context, e.message);
+      }
+    } catch (e) {
+      if (mounted) {
+        showAppSnackBar(context, '로그인에 실패했어요. 잠시 후 다시 시도해주세요.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingProvider = null;
+        });
+      }
+    }
+  }
+
+  void _completeLogin(BuildContext context) {
     AuthState.logIn();
-    showAppSnackBar(context, '테스트 로그인 완료');
+    showAppSnackBar(context, '로그인 완료');
 
     Future.delayed(const Duration(milliseconds: 200), () {
       if (context.mounted) {
@@ -50,15 +95,18 @@ class LoginRequiredScreen extends StatelessWidget {
                       children: [
                         const SizedBox(height: 28),
                         _HeroSection(
-                          title: title ?? '로그인이 필요해요',
+                          title: widget.title ?? '로그인이 필요해요',
                           description:
-                              description ??
+                              widget.description ??
                               '찜한 병원, 문의 내역, 내 캘린더 기능은\n로그인 후 이용할 수 있어요.',
                         ),
                         const SizedBox(height: 36),
                         _LoginCard(
-                          onTapKakao: () => _completeTestLogin(context),
-                          onTapNaver: () => _completeTestLogin(context),
+                          loadingProvider: _loadingProvider,
+                          onTapKakao: () =>
+                              _loginWithProvider(SocialLoginProvider.kakao),
+                          onTapNaver: () =>
+                              _loginWithProvider(SocialLoginProvider.naver),
                         ),
                         const Spacer(),
                         const SizedBox(height: 28),
@@ -192,8 +240,13 @@ class _HeroSection extends StatelessWidget {
 class _LoginCard extends StatelessWidget {
   final VoidCallback onTapKakao;
   final VoidCallback onTapNaver;
+  final SocialLoginProvider? loadingProvider;
 
-  const _LoginCard({required this.onTapKakao, required this.onTapNaver});
+  const _LoginCard({
+    required this.onTapKakao,
+    required this.onTapNaver,
+    required this.loadingProvider,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -240,9 +293,19 @@ class _LoginCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          _SocialLoginButton.kakao(onTap: onTapKakao),
+          _SocialLoginImageButton(
+            assetPath: 'assets/images/kakao_login_medium_wide.png',
+            progressColor: const Color(0xFF191919),
+            onTap: loadingProvider == null ? onTapKakao : null,
+            isLoading: loadingProvider == SocialLoginProvider.kakao,
+          ),
           const SizedBox(height: 12),
-          _SocialLoginButton.naver(onTap: onTapNaver),
+          _SocialLoginImageButton(
+            assetPath: 'assets/images/naver_login_medium_wide.png',
+            progressColor: Colors.white,
+            onTap: loadingProvider == null ? onTapNaver : null,
+            isLoading: loadingProvider == SocialLoginProvider.naver,
+          ),
           const SizedBox(height: 18),
           Container(
             width: double.infinity,
@@ -334,129 +397,55 @@ class _BottomAgreementSection extends StatelessWidget {
   }
 }
 
-class _SocialLoginButton extends StatelessWidget {
-  final VoidCallback onTap;
-  final Color backgroundColor;
-  final Color foregroundColor;
-  final Widget leading;
-  final String text;
-  final Border? border;
+class _SocialLoginImageButton extends StatelessWidget {
+  static const double _kakaoWideAspectRatio = 300 / 45;
 
-  const _SocialLoginButton({
+  final String assetPath;
+  final Color progressColor;
+  final VoidCallback? onTap;
+  final bool isLoading;
+
+  const _SocialLoginImageButton({
+    required this.assetPath,
+    required this.progressColor,
     required this.onTap,
-    required this.backgroundColor,
-    required this.foregroundColor,
-    required this.leading,
-    required this.text,
-    this.border,
+    required this.isLoading,
   });
-
-  factory _SocialLoginButton.kakao({required VoidCallback onTap}) {
-    return _SocialLoginButton(
-      onTap: onTap,
-      backgroundColor: AppPalette.light.kakaoBackground,
-      foregroundColor: AppPalette.light.kakaoForeground,
-      text: '카카오로 계속하기',
-      border: null,
-      leading: const _KakaoMark(),
-    );
-  }
-
-  factory _SocialLoginButton.naver({required VoidCallback onTap}) {
-    return _SocialLoginButton(
-      onTap: onTap,
-      backgroundColor: AppPalette.light.naverBackground,
-      foregroundColor: AppPalette.light.surface,
-      text: '네이버로 계속하기',
-      border: null,
-      leading: const _NaverMark(),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(18),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(6),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: border,
-          ),
-          child: Row(
+        child: AspectRatio(
+          aspectRatio: _kakaoWideAspectRatio,
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              leading,
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  text,
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.homeBodyStrong.copyWith(
-                    color: foregroundColor,
-                    letterSpacing: -0.2,
+              Positioned.fill(child: Image.asset(assetPath, fit: BoxFit.fill)),
+              if (isLoading)
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.08),
+                    ),
+                    child: Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.4,
+                          color: progressColor,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 26),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _KakaoMark extends StatelessWidget {
-  const _KakaoMark();
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Container(
-      width: 26,
-      height: 26,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: palette.kakaoForeground,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(
-        Icons.chat_bubble_rounded,
-        size: 15,
-        color: palette.kakaoBackground,
-      ),
-    );
-  }
-}
-
-class _NaverMark extends StatelessWidget {
-  const _NaverMark();
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Container(
-      width: 26,
-      height: 26,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: palette.naverOverlay,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        'N',
-        style: TextStyle(
-          color: palette.surface,
-          fontSize: 15,
-          fontWeight: FontWeight.w900,
-          height: 1.0,
         ),
       ),
     );

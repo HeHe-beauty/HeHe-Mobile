@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 
 import '../core/common/app_settings_state.dart';
+import 'core/auth/social_login_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 
@@ -11,10 +12,16 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint('🔥 main start');
 
-  await FlutterNaverMap().init(
-    clientId: 'yi5mqthvb4',
-  );
+  await FlutterNaverMap().init(clientId: 'yi5mqthvb4');
   debugPrint('🔥 naver map init done');
+
+  try {
+    await SocialLoginService.initialize();
+    debugPrint('🔥 social login init done');
+  } catch (e, stack) {
+    debugPrint('🔥 social login init error: $e');
+    debugPrint('$stack');
+  }
 
   try {
     await AppTime.initialize();

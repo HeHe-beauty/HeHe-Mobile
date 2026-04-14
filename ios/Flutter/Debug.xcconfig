@@ -1,2 +1,4 @@
 #include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
 #include "Generated.xcconfig"
+KAKAO_URL_SCHEME=kakao_missing_native_app_key
+NAVER_URL_SCHEME=naver_missing_url_scheme

@@ -38,6 +38,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_naver_map: ^1.4.4
   flutter_html: ^3.0.0
+  kakao_flutter_sdk_user: ^2.0.0+1
+  naver_login_sdk: ^3.2.1
 
 dependency_overrides:
   path_provider_foundation: 2.5.1
@@ -70,6 +72,8 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
     - assets/images/logo.png
+    - assets/images/kakao_login_medium_wide.png
+    - assets/images/naver_login_medium_wide.png
     - assets/images/
     - assets/data/subway/seoul_stations.json
 

@@ -1,6 +1,9 @@
 # OS
 .DS_Store
 
+# env
+env/
+
 # Flutter / Dart
 .dart_tool/
 .flutter-plugins
