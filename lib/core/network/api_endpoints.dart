@@ -10,4 +10,10 @@ class ApiEndpoints {
   /// 추천 콘텐츠와 관련된 api 목록
   static const String articleList = '/api/v1/articles';
   static String articleDetail(int articleId) => '/api/v1/articles/$articleId';
+
+  /// 병원과 관련된 api 목록
+  static const String hospitalList = '/api/v1/hospitals';
+  static const String hospitalMap = '/api/v1/hospitals/map';
+  static String hospitalDetail(int hospitalId) =>
+      '/api/v1/hospitals/$hospitalId';
 }

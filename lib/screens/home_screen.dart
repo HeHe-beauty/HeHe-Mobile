@@ -156,11 +156,12 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  void _openDeviceMap(BuildContext context, String deviceName) {
+  void _openDeviceMap(BuildContext context, String deviceName, {int? equipId}) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => DeviceMapScreen(deviceName: deviceName),
+        builder: (_) =>
+            DeviceMapScreen(deviceName: deviceName, equipId: equipId),
       ),
     );
   }
@@ -379,8 +380,11 @@ class _HomeScreenState extends State<HomeScreen>
                                           ),
                                         ),
                                       ),
-                                      onTap: () =>
-                                          _openDeviceMap(context, d0Name),
+                                      onTap: () => _openDeviceMap(
+                                        context,
+                                        d0Name,
+                                        equipId: d0?.equipId,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 14),
@@ -403,8 +407,11 @@ class _HomeScreenState extends State<HomeScreen>
                                               ),
                                             ),
                                           ),
-                                          onTap: () =>
-                                              _openDeviceMap(context, d1Name),
+                                          onTap: () => _openDeviceMap(
+                                            context,
+                                            d1Name,
+                                            equipId: d1?.equipId,
+                                          ),
                                         ),
                                         const SizedBox(height: 14),
                                         DeviceTile(
@@ -423,8 +430,11 @@ class _HomeScreenState extends State<HomeScreen>
                                               ),
                                             ),
                                           ),
-                                          onTap: () =>
-                                              _openDeviceMap(context, d2Name),
+                                          onTap: () => _openDeviceMap(
+                                            context,
+                                            d2Name,
+                                            equipId: d2?.equipId,
+                                          ),
                                         ),
                                       ],
                                     ),

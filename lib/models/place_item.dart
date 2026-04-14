@@ -1,4 +1,5 @@
 class PlaceItem {
+  final int? hospitalId;
   final String id;
   final String name;
   final List<String> tags;
@@ -9,6 +10,7 @@ class PlaceItem {
   final double longitude;
 
   const PlaceItem({
+    this.hospitalId,
     required this.id,
     required this.name,
     required this.tags,
@@ -20,6 +22,7 @@ class PlaceItem {
   });
 
   PlaceItem copyWith({
+    int? hospitalId,
     String? id,
     String? name,
     List<String>? tags,
@@ -30,6 +33,7 @@ class PlaceItem {
     double? longitude,
   }) {
     return PlaceItem(
+      hospitalId: hospitalId ?? this.hospitalId,
       id: id ?? this.id,
       name: name ?? this.name,
       tags: tags ?? this.tags,

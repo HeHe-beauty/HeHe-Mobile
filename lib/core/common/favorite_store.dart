@@ -36,8 +36,19 @@ class FavoriteStore extends ChangeNotifier {
     return null;
   }
 
+  PlaceItem? findByHospitalId(int hospitalId) {
+    final place = _findRawByHospitalId(hospitalId);
+    return place == null ? null : applyFavoriteState(place);
+  }
+
   PlaceItem applyFavoriteState(PlaceItem place) {
-    return place.copyWith(isBookmarked: isFavorite(place.id));
+    final storedPlace = place.hospitalId == null
+        ? null
+        : _findRawByHospitalId(place.hospitalId!);
+
+    return place.copyWith(
+      isBookmarked: isFavorite(storedPlace?.id ?? place.id),
+    );
   }
 
   List<PlaceItem> applyFavoriteStateToAll(Iterable<PlaceItem> places) {
@@ -54,5 +65,14 @@ class FavoriteStore extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  PlaceItem? _findRawByHospitalId(int hospitalId) {
+    for (final place in _allPlaces) {
+      if (place.hospitalId == hospitalId) {
+        return place;
+      }
+    }
+    return null;
   }
 }

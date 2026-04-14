@@ -7,14 +7,16 @@ import '../core/auth/auth_gate.dart';
 import '../core/auth/auth_prompt.dart';
 import '../core/auth/auth_state.dart';
 import '../core/common/favorite_store.dart';
-import '../models/place_cluster_node.dart';
+import '../data/hospital/hospital_repository.dart';
+import '../dtos/common/hospital/hospital_detail_dto.dart';
+import '../dtos/common/hospital/hospital_dto.dart';
+import '../dtos/common/hospital/hospital_map_cluster_dto.dart';
 import '../models/place_item.dart';
 import '../models/subway_station.dart';
 import '../repositories/subway_station_repository.dart';
 import '../theme/app_palette.dart';
 import '../utils/app_snackbar.dart';
 import '../utils/naver_reverse_geocode.dart';
-import '../utils/place_cluster_builder.dart';
 import '../widgets/cluster_count_marker.dart';
 import '../widgets/map_bottom_sheet.dart';
 import '../widgets/device_map_controls.dart';
@@ -26,8 +28,9 @@ import 'my_page_screen.dart';
 
 class DeviceMapScreen extends StatefulWidget {
   final String deviceName;
+  final int? equipId;
 
-  const DeviceMapScreen({super.key, required this.deviceName});
+  const DeviceMapScreen({super.key, required this.deviceName, this.equipId});
 
   @override
   State<DeviceMapScreen> createState() => _DeviceMapScreenState();
@@ -52,10 +55,10 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   bool _isSheetHidden = false;
   bool _isSuggestionVisible = false;
   bool _isStationDataReady = false;
+  bool _hasShownHospitalMapError = false;
   double _currentZoom = 13.2;
   String _currentRegionLabel = '역삼동';
 
-  late List<PlaceItem> _places = _favoriteStore.allPlaces;
   List<PlaceItem> _sheetPlaces = [];
   List<SubwayStation> _stationSuggestions = [];
 
@@ -64,6 +67,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   String? _lastRegionRequestKey;
   String? _lastResolvedRegionKey;
   int _regionRequestToken = 0;
+  int _hospitalListRequestToken = 0;
 
   final Map<String, Future<NOverlayImage>> _iconCache = {};
 
@@ -105,7 +109,6 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     if (!mounted) return;
 
     setState(() {
-      _places = _favoriteStore.allPlaces;
       _sheetPlaces = _favoriteStore.applyFavoriteStateToAll(_sheetPlaces);
       if (_selectedPlace != null) {
         _selectedPlace = _favoriteStore.findById(_selectedPlace!.id);
@@ -446,49 +449,46 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     final controller = _mapController;
     if (!_isMapReady || controller == null) return;
 
-    final nodes = buildPlaceClusterNodes(_places, _currentZoom);
+    final nodes = await _loadHospitalClusterNodes(controller);
 
     await controller.clearOverlays();
 
     final overlays = <NAddableOverlay<NOverlay<void>>>{};
 
     for (final node in nodes) {
-      if (node.isCluster) {
-        final marker = NMarker(
-          id: node.id,
-          position: NLatLng(node.latitude, node.longitude),
-          icon: await _getClusterIcon(
-            node.count,
-            isSelected: _selectedClusterId == node.id,
-          ),
-          anchor: const NPoint(0.5, 0.5),
-          isFlat: true,
-        );
+      final marker = NMarker(
+        id: node.id,
+        position: NLatLng(node.latitude, node.longitude),
+        icon: await _getClusterIcon(
+          node.count,
+          isSelected: _selectedClusterId == node.id,
+        ),
+        anchor: const NPoint(0.5, 0.5),
+        isFlat: true,
+      );
 
-        marker.setOnTapListener((overlay) {
-          _onTapCluster(node);
-        });
+      marker.setOnTapListener((overlay) {
+        _onTapHospitalCluster(node);
+      });
 
-        overlays.add(marker);
-      } else {
-        final place = node.places.first;
+      overlays.add(marker);
+    }
 
-        final marker = NMarker(
-          id: place.id,
-          position: NLatLng(place.latitude, place.longitude),
-          icon: await _getSingleIcon(
-            isSelected: _selectedPlace?.id == place.id,
-          ),
-          anchor: const NPoint(0.5, 0.5),
-          isFlat: true,
-        );
+    final selectedPlace = _selectedPlace;
+    if (selectedPlace != null) {
+      final marker = NMarker(
+        id: selectedPlace.id,
+        position: NLatLng(selectedPlace.latitude, selectedPlace.longitude),
+        icon: await _getSingleIcon(isSelected: true),
+        anchor: const NPoint(0.5, 0.5),
+        isFlat: true,
+      );
 
-        marker.setOnTapListener((overlay) {
-          _onTapHospitalMarker(place);
-        });
+      marker.setOnTapListener((overlay) {
+        _onTapHospitalMarker(selectedPlace);
+      });
 
-        overlays.add(marker);
-      }
+      overlays.add(marker);
     }
 
     final currentLocation = _currentLocation;
@@ -507,14 +507,46 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     await controller.addOverlayAll(overlays);
   }
 
-  Future<void> _onTapCluster(PlaceClusterNode node) async {
+  Future<List<_HospitalMarkerNode>> _loadHospitalClusterNodes(
+    NaverMapController controller,
+  ) async {
+    try {
+      final bounds = await controller.getContentBounds();
+      final position = await controller.getCameraPosition();
+      final mapData = await HospitalRepository.getHospitalMap(
+        swLat: bounds.southWest.latitude,
+        swLng: bounds.southWest.longitude,
+        neLat: bounds.northEast.latitude,
+        neLng: bounds.northEast.longitude,
+        zoomLevel: position.zoom.round().clamp(1, 21),
+        equipId: widget.equipId,
+      );
+
+      _currentZoom = position.zoom;
+      _hasShownHospitalMapError = false;
+
+      return mapData.items
+          .map((item) => _HospitalMarkerNode.fromMap(item, mapData.precision))
+          .toList();
+    } catch (e) {
+      if (mounted && !_hasShownHospitalMapError) {
+        _hasShownHospitalMapError = true;
+        showTopAppSnackBar(context, '병원 정보를 불러오지 못했어요');
+      }
+
+      return const [];
+    }
+  }
+
+  Future<void> _onTapHospitalCluster(_HospitalMarkerNode node) async {
     _closeSidePanel();
+    final requestToken = ++_hospitalListRequestToken;
 
     setState(() {
       _isSheetHidden = false;
       _selectedPlace = null;
       _selectedClusterId = node.id;
-      _sheetPlaces = List.of(node.places);
+      _sheetPlaces = [];
     });
 
     if (_sheetController.isAttached) {
@@ -526,7 +558,34 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     }
 
     await _refreshMarkers();
-    await _moveCameraToCluster(node, zoomOffset: 0.8, maxZoom: 15.2);
+    await _moveCameraToHospitalCluster(node, zoomOffset: 0.8, maxZoom: 15.2);
+
+    try {
+      final hospitals = await HospitalRepository.getHospitals(
+        lat: node.latitude,
+        lng: node.longitude,
+        precision: node.precision,
+        equipId: widget.equipId,
+      );
+
+      if (!mounted || requestToken != _hospitalListRequestToken) return;
+
+      setState(() {
+        _sheetPlaces = hospitals
+            .map(
+              (hospital) => _placeItemFromHospital(
+                hospital,
+                latitude: node.latitude,
+                longitude: node.longitude,
+              ),
+            )
+            .toList();
+      });
+    } catch (e) {
+      if (!mounted || requestToken != _hospitalListRequestToken) return;
+
+      showTopAppSnackBar(context, '병원 정보를 불러오지 못했어요');
+    }
   }
 
   Future<void> _onTapHospitalMarker(PlaceItem place) async {
@@ -555,16 +614,19 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
 
   Future<void> _onTapPlaceCard(PlaceItem place) async {
     _closeSidePanel();
+    final resolvedPlace = await _resolvePlaceDetail(place);
+
+    if (!mounted) return;
 
     setState(() {
       _isSheetHidden = false;
-      _selectedPlace = place;
+      _selectedPlace = resolvedPlace;
       _selectedClusterId = null;
-      _sheetPlaces = [place];
+      _sheetPlaces = [resolvedPlace];
     });
 
     await _refreshMarkers();
-    await _moveCameraToPlace(place, zoom: 16.2);
+    await _moveCameraToPlace(resolvedPlace, zoom: 16.2);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted || !_sheetController.isAttached) return;
@@ -581,11 +643,24 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     final place = _favoriteStore.findById(placeId);
     if (place == null) return;
 
-    setState(() {
-      _places = _favoriteStore.allPlaces;
-    });
-
     await _onTapPlaceCard(place);
+  }
+
+  Future<PlaceItem> _resolvePlaceDetail(PlaceItem place) async {
+    final hospitalId = place.hospitalId;
+    if (hospitalId == null) {
+      return place;
+    }
+
+    try {
+      final detail = await HospitalRepository.getHospitalDetail(hospitalId);
+      return _placeItemFromHospitalDetail(detail, fallbackPlace: place);
+    } catch (e) {
+      if (mounted) {
+        showTopAppSnackBar(context, '병원 정보를 불러오지 못했어요');
+      }
+      return place;
+    }
   }
 
   Future<void> _clearSelection() async {
@@ -833,8 +908,8 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     await controller.updateCamera(update);
   }
 
-  Future<void> _moveCameraToCluster(
-    PlaceClusterNode node, {
+  Future<void> _moveCameraToHospitalCluster(
+    _HospitalMarkerNode node, {
     double zoomOffset = 0.8,
     double maxZoom = 15.2,
   }) async {
@@ -1076,6 +1151,70 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
       ),
     );
   }
+}
+
+class _HospitalMarkerNode {
+  final String id;
+  final double latitude;
+  final double longitude;
+  final int count;
+  final int precision;
+
+  const _HospitalMarkerNode({
+    required this.id,
+    required this.latitude,
+    required this.longitude,
+    required this.count,
+    required this.precision,
+  });
+
+  factory _HospitalMarkerNode.fromMap(
+    HospitalMapClusterDto item,
+    int precision,
+  ) {
+    return _HospitalMarkerNode(
+      id: 'hospital_cluster_${precision}_${item.lat}_${item.lng}_${item.count}',
+      latitude: item.lat,
+      longitude: item.lng,
+      count: item.count,
+      precision: precision,
+    );
+  }
+}
+
+PlaceItem _placeItemFromHospital(
+  HospitalDto hospital, {
+  required double latitude,
+  required double longitude,
+}) {
+  return PlaceItem(
+    hospitalId: hospital.hospitalId,
+    id: 'hospital_${hospital.hospitalId}',
+    name: hospital.name,
+    tags: hospital.tags,
+    description: '',
+    address: hospital.address,
+    isBookmarked: false,
+    latitude: latitude,
+    longitude: longitude,
+  );
+}
+
+PlaceItem _placeItemFromHospitalDetail(
+  HospitalDetailDto hospital, {
+  required PlaceItem fallbackPlace,
+}) {
+  return PlaceItem(
+    hospitalId: hospital.hospitalId,
+    id: fallbackPlace.id,
+    name: hospital.name,
+    tags: hospital.tags,
+    description: fallbackPlace.description,
+    address: hospital.address,
+    isBookmarked: fallbackPlace.isBookmarked,
+    latitude: hospital.lat,
+    longitude: hospital.lng,
+  );
 }
 
 class _FavoritePromptButton extends StatelessWidget {
