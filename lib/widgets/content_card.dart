@@ -35,7 +35,7 @@ class ContentCard extends StatelessWidget {
                     color: palette.surfaceMuted,
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: Icon(item.icon, size: 28, color: palette.primary),
+                  child: _ContentThumbnail(item: item),
                 ),
                 const SizedBox(height: 10),
                 _WordWrappedTitle(
@@ -51,6 +51,33 @@ class ContentCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ContentThumbnail extends StatelessWidget {
+  final ContentItem item;
+
+  const _ContentThumbnail({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final thumbnailUrl = item.thumbnailUrl;
+
+    if (thumbnailUrl == null || thumbnailUrl.isEmpty) {
+      return Icon(item.icon, size: 28, color: palette.primary);
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: Image.network(
+        thumbnailUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Icon(item.icon, size: 28, color: palette.primary);
+        },
       ),
     );
   }

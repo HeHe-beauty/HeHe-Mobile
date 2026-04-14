@@ -8,11 +8,14 @@ import '../models/calendar_schedule.dart';
 import '../models/content_item.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_text_styles.dart';
+import '../data/article/article_repository.dart';
 import '../data/calendar_schedule_store.dart';
 import '../data/home_catalog.dart';
 import '../data/equipment/equip_repository.dart';
+import '../dtos/common/article/article_dto.dart';
 import '../dtos/common/equipment/equip_dto.dart';
 import '../utils/calendar_schedule_utils.dart';
+import '../utils/app_snackbar.dart';
 import '../widgets/calendar_card.dart';
 import '../widgets/content_carousel.dart';
 import '../widgets/device_tile.dart';
@@ -36,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen>
   static const int _maxVisibleReservations = 2;
   static const double _deviceTooltipWidth = 244;
   List<EquipDto> _devices = [];
+  List<ContentItem> _contents = HomeCatalog.contents;
   final GlobalKey _homeStackKey = GlobalKey();
   final GlobalKey _gentleInfoKey = GlobalKey();
   final GlobalKey _apogeeInfoKey = GlobalKey();
@@ -108,11 +112,41 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  void _openContentDetail(BuildContext context, ContentItem item) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => ContentDetailScreen(item: item)),
-    );
+  Future<void> _openContentDetail(
+    BuildContext context,
+    ContentItem item,
+  ) async {
+    final articleId = item.articleId;
+
+    if (articleId == null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ContentDetailScreen(item: item)),
+      );
+      return;
+    }
+
+    try {
+      final detail = await ArticleRepository.getArticleDetail(articleId);
+
+      if (!context.mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ContentDetailScreen.content(
+            sourceLabel: item.author,
+            title: detail.title,
+            htmlContent: detail.content,
+            icon: item.icon,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      showAppSnackBar(context, '콘텐츠를 불러오지 못했어요');
+    }
   }
 
   void _openSettings(BuildContext context) {
@@ -158,6 +192,7 @@ class _HomeScreenState extends State<HomeScreen>
   void initState() {
     super.initState();
     _loadDevices();
+    _loadArticles();
   }
 
   Future<void> _loadDevices() async {
@@ -174,6 +209,24 @@ class _HomeScreenState extends State<HomeScreen>
 
       setState(() {
         _devices = [];
+      });
+    }
+  }
+
+  Future<void> _loadArticles() async {
+    try {
+      final articles = await ArticleRepository.getArticles();
+
+      if (!mounted) return;
+
+      setState(() {
+        _contents = articles.map(_contentItemFromArticle).toList();
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _contents = HomeCatalog.contents;
       });
     }
   }
@@ -225,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final contents = HomeCatalog.contents;
+    final contents = _contents;
     final d0 = _device(0);
     final d1 = _device(1);
     final d2 = _device(2);
@@ -444,8 +497,9 @@ class _HomeScreenState extends State<HomeScreen>
                               const SizedBox(height: 14),
                               ContentCarousel(
                                 items: contents,
-                                onTapItem: (item) =>
-                                    _openContentDetail(context, item),
+                                onTapItem: (item) {
+                                  _openContentDetail(context, item);
+                                },
                               ),
                               const SizedBox(height: 14),
                             ],
@@ -720,4 +774,16 @@ String _deviceImageAsset(String deviceName) {
     return 'assets/images/clarity2.png';
   }
   return 'assets/images/logo.png';
+}
+
+ContentItem _contentItemFromArticle(ArticleDto article) {
+  return ContentItem(
+    articleId: article.articleId,
+    title: article.title,
+    subTitle: article.subTitle,
+    thumbnailUrl: article.thumbnailUrl,
+    htmlContent: null,
+    icon: Icons.article_rounded,
+    author: 'HeHe',
+  );
 }
