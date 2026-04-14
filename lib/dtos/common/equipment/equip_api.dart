@@ -19,4 +19,12 @@ class EquipApi {
 
     return list;
   }
+
+  static Future<EquipDto> fetchEquipDetail(int equipId) async {
+    final body = await _apiClient.get(ApiEndpoints.equipDetail(equipId));
+
+    final data = body['data'] as Map<String, dynamic>;
+
+    return EquipDto.fromJson(data);
+  }
 }

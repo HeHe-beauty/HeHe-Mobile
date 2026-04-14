@@ -5,9 +5,9 @@ class ApiEndpoints {
 
   /// 장비와 관련된 api 목록
   static const String equipList = '/api/v1/equipments/main';
+  static String equipDetail(int equipId) => '/api/v1/equipments/$equipId';
 
   /// 추천 콘텐츠와 관련된 api 목록
   static const String articleList = '/api/v1/articles';
-
   static String articleDetail(int articleId) => '/api/v1/articles/$articleId';
 }
