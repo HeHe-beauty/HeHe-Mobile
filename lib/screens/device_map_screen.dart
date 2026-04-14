@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -37,6 +39,8 @@ class DeviceMapScreen extends StatefulWidget {
 }
 
 class _DeviceMapScreenState extends State<DeviceMapScreen> {
+  static const double _individualMarkerZoom = 16.0;
+
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
   final TextEditingController _searchController = TextEditingController();
@@ -456,6 +460,27 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     final overlays = <NAddableOverlay<NOverlay<void>>>{};
 
     for (final node in nodes) {
+      final place = node.place;
+
+      if (place != null) {
+        final marker = NMarker(
+          id: place.id,
+          position: NLatLng(place.latitude, place.longitude),
+          icon: await _getSingleIcon(
+            isSelected: _selectedPlace?.id == place.id,
+          ),
+          anchor: const NPoint(0.5, 0.5),
+          isFlat: true,
+        );
+
+        marker.setOnTapListener((overlay) {
+          _onTapHospitalMarker(place);
+        });
+
+        overlays.add(marker);
+        continue;
+      }
+
       final marker = NMarker(
         id: node.id,
         position: NLatLng(node.latitude, node.longitude),
@@ -525,9 +550,25 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
       _currentZoom = position.zoom;
       _hasShownHospitalMapError = false;
 
-      return mapData.items
-          .map((item) => _HospitalMarkerNode.fromMap(item, mapData.precision))
-          .toList();
+      final nodes = _mergeHospitalMapItems(
+        mapData.items,
+        precision: mapData.precision,
+        zoom: position.zoom,
+      );
+
+      final hasSingleHospitalNode = nodes.any(
+        (node) => node.count == 1 && node.sources.length == 1,
+      );
+
+      if (position.zoom < _individualMarkerZoom && !hasSingleHospitalNode) {
+        return nodes;
+      }
+
+      final resolvedNodes = await Future.wait(
+        nodes.map(_resolveSingleHospitalMarkerNode),
+      );
+
+      return resolvedNodes;
     } catch (e) {
       if (mounted && !_hasShownHospitalMapError) {
         _hasShownHospitalMapError = true;
@@ -538,7 +579,72 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     }
   }
 
+  Future<_HospitalMarkerNode> _resolveSingleHospitalMarkerNode(
+    _HospitalMarkerNode node,
+  ) async {
+    if (node.count != 1 || node.sources.length != 1) {
+      return node;
+    }
+
+    try {
+      final hospitals = await _loadHospitalsForClusterNode(node);
+      if (hospitals.length != 1) {
+        return node.copyWith(place: _placeItemFromClusterNode(node));
+      }
+
+      final summaryPlace = _placeItemFromHospital(
+        hospitals.first,
+        latitude: node.latitude,
+        longitude: node.longitude,
+      );
+
+      try {
+        final detail = await HospitalRepository.getHospitalDetail(
+          hospitals.first.hospitalId,
+        );
+
+        return node.copyWith(
+          place: _placeItemFromHospitalDetail(
+            detail,
+            fallbackPlace: summaryPlace,
+          ),
+        );
+      } catch (e) {
+        return node.copyWith(place: summaryPlace);
+      }
+    } catch (e) {
+      return node.copyWith(place: _placeItemFromClusterNode(node));
+    }
+  }
+
+  Future<List<HospitalDto>> _loadHospitalsForClusterNode(
+    _HospitalMarkerNode node,
+  ) async {
+    final byId = <int, HospitalDto>{};
+
+    for (final source in node.sources) {
+      final hospitals = await HospitalRepository.getHospitals(
+        lat: source.latitude,
+        lng: source.longitude,
+        precision: source.precision,
+        equipId: widget.equipId,
+      );
+
+      for (final hospital in hospitals) {
+        byId[hospital.hospitalId] = hospital;
+      }
+    }
+
+    return byId.values.toList();
+  }
+
   Future<void> _onTapHospitalCluster(_HospitalMarkerNode node) async {
+    final place = node.place;
+    if (place != null) {
+      await _onTapHospitalMarker(place);
+      return;
+    }
+
     _closeSidePanel();
     final requestToken = ++_hospitalListRequestToken;
 
@@ -561,12 +667,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     await _moveCameraToHospitalCluster(node, zoomOffset: 0.8, maxZoom: 15.2);
 
     try {
-      final hospitals = await HospitalRepository.getHospitals(
-        lat: node.latitude,
-        lng: node.longitude,
-        precision: node.precision,
-        equipId: widget.equipId,
-      );
+      final hospitals = await _loadHospitalsForClusterNode(node);
 
       if (!mounted || requestToken != _hospitalListRequestToken) return;
 
@@ -590,16 +691,19 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
 
   Future<void> _onTapHospitalMarker(PlaceItem place) async {
     _closeSidePanel();
+    final resolvedPlace = await _resolvePlaceDetail(place);
+
+    if (!mounted) return;
 
     setState(() {
       _isSheetHidden = false;
-      _selectedPlace = place;
+      _selectedPlace = resolvedPlace;
       _selectedClusterId = null;
-      _sheetPlaces = [place];
+      _sheetPlaces = [resolvedPlace];
     });
 
     await _refreshMarkers();
-    await _moveCameraToPlace(place, zoom: 16.2);
+    await _moveCameraToPlace(resolvedPlace, zoom: 16.2);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted || !_sheetController.isAttached) return;
@@ -866,7 +970,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   }
 
   Future<NOverlayImage> _getClusterIcon(int count, {required bool isSelected}) {
-    final size = count >= 100 ? 78.0 : (count >= 10 ? 68.0 : 60.0);
+    final size = _clusterMarkerIconSize(count);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeKey = isDark ? 'dark' : 'light';
@@ -1153,33 +1257,176 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   }
 }
 
+double _clusterMarkerIconSize(int count) {
+  final scaledSize = 56 + (((count - 2).clamp(0, 48) / 3) * 4.0);
+  return scaledSize.clamp(56.0, 104.0);
+}
+
 class _HospitalMarkerNode {
   final String id;
   final double latitude;
   final double longitude;
   final int count;
-  final int precision;
+  final List<_HospitalClusterSource> sources;
+  final PlaceItem? place;
 
   const _HospitalMarkerNode({
     required this.id,
     required this.latitude,
     required this.longitude,
     required this.count,
+    required this.sources,
+    this.place,
+  });
+
+  factory _HospitalMarkerNode.fromSources(
+    List<_HospitalClusterSource> sources,
+  ) {
+    final count = sources.fold<int>(0, (sum, source) => sum + source.count);
+    final weightedLat =
+        sources.fold<double>(
+          0,
+          (sum, source) => sum + (source.latitude * source.count),
+        ) /
+        count;
+    final weightedLng =
+        sources.fold<double>(
+          0,
+          (sum, source) => sum + (source.longitude * source.count),
+        ) /
+        count;
+    final id = sources.map((source) => source.id).join('|');
+
+    return _HospitalMarkerNode(
+      id: 'hospital_cluster_$id',
+      latitude: weightedLat,
+      longitude: weightedLng,
+      count: count,
+      sources: sources,
+    );
+  }
+
+  _HospitalMarkerNode copyWith({PlaceItem? place}) {
+    return _HospitalMarkerNode(
+      id: id,
+      latitude: place?.latitude ?? latitude,
+      longitude: place?.longitude ?? longitude,
+      count: count,
+      sources: sources,
+      place: place ?? this.place,
+    );
+  }
+}
+
+class _HospitalClusterSource {
+  final String id;
+  final int count;
+  final double latitude;
+  final double longitude;
+  final int precision;
+
+  const _HospitalClusterSource({
+    required this.id,
+    required this.count,
+    required this.latitude,
+    required this.longitude,
     required this.precision,
   });
 
-  factory _HospitalMarkerNode.fromMap(
+  factory _HospitalClusterSource.fromMap(
     HospitalMapClusterDto item,
     int precision,
   ) {
-    return _HospitalMarkerNode(
-      id: 'hospital_cluster_${precision}_${item.lat}_${item.lng}_${item.count}',
+    return _HospitalClusterSource(
+      id: '${precision}_${item.lat}_${item.lng}_${item.count}',
+      count: item.count,
       latitude: item.lat,
       longitude: item.lng,
-      count: item.count,
       precision: precision,
     );
   }
+}
+
+List<_HospitalMarkerNode> _mergeHospitalMapItems(
+  List<HospitalMapClusterDto> items, {
+  required int precision,
+  required double zoom,
+}) {
+  final sources = items
+      .map((item) => _HospitalClusterSource.fromMap(item, precision))
+      .toList();
+  final groups = <List<_HospitalClusterSource>>[];
+
+  for (final source in sources) {
+    final sourcePoint = _worldPixelFor(
+      latitude: source.latitude,
+      longitude: source.longitude,
+      zoom: zoom,
+    );
+    var merged = false;
+
+    for (final group in groups) {
+      final groupPoint = _weightedWorldPixelFor(group, zoom);
+      final distance = (sourcePoint - groupPoint).distance;
+
+      if (distance <= _clusterMergePixelRadiusFor(group, source)) {
+        group.add(source);
+        merged = true;
+        break;
+      }
+    }
+
+    if (!merged) {
+      groups.add([source]);
+    }
+  }
+
+  return groups.map(_HospitalMarkerNode.fromSources).toList();
+}
+
+Offset _weightedWorldPixelFor(
+  List<_HospitalClusterSource> sources,
+  double zoom,
+) {
+  final count = sources.fold<int>(0, (sum, source) => sum + source.count);
+  final weighted = sources.fold<Offset>(Offset.zero, (sum, source) {
+    return sum +
+        (_worldPixelFor(
+              latitude: source.latitude,
+              longitude: source.longitude,
+              zoom: zoom,
+            ) *
+            source.count.toDouble());
+  });
+
+  return weighted / count.toDouble();
+}
+
+Offset _worldPixelFor({
+  required double latitude,
+  required double longitude,
+  required double zoom,
+}) {
+  final sinLatitude = math.sin(latitude * math.pi / 180).clamp(-0.9999, 0.9999);
+  final scale = 256 * math.pow(2, zoom).toDouble();
+  final x = ((longitude + 180) / 360) * scale;
+  final y =
+      (0.5 - math.log((1 + sinLatitude) / (1 - sinLatitude)) / (4 * math.pi)) *
+      scale;
+
+  return Offset(x, y);
+}
+
+double _clusterMergePixelRadiusFor(
+  List<_HospitalClusterSource> group,
+  _HospitalClusterSource source,
+) {
+  final groupCount = group.fold<int>(0, (sum, item) => sum + item.count);
+  final largestCount = math.max(groupCount, source.count);
+
+  if (largestCount >= 100) return 70;
+  if (largestCount >= 10) return 62;
+  return 54;
 }
 
 PlaceItem _placeItemFromHospital(
@@ -1197,6 +1444,19 @@ PlaceItem _placeItemFromHospital(
     isBookmarked: false,
     latitude: latitude,
     longitude: longitude,
+  );
+}
+
+PlaceItem _placeItemFromClusterNode(_HospitalMarkerNode node) {
+  return PlaceItem(
+    id: 'hospital_marker_${node.id}',
+    name: '병원',
+    tags: const [],
+    description: '',
+    address: '',
+    isBookmarked: false,
+    latitude: node.latitude,
+    longitude: node.longitude,
   );
 }
 

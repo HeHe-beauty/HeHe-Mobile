@@ -54,6 +54,8 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _showAddScheduleSheet(BuildContext context) async {
+    _hideDeviceTooltip();
+
     final result = await showVisitScheduleBottomSheet(
       context,
       initialDateTime: AppTime.now(),
@@ -67,6 +69,8 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _openCalendarIfLoggedIn(BuildContext context) async {
+    _hideDeviceTooltip();
+
     final allowed = await AuthGate.ensureLoggedInWithPrompt(
       context,
       prompt: AuthPrompts.calendar,
@@ -87,6 +91,8 @@ class _HomeScreenState extends State<HomeScreen>
     BuildContext context,
     CalendarSchedule schedule,
   ) async {
+    _hideDeviceTooltip();
+
     final allowed = await AuthGate.ensureLoggedInWithPrompt(
       context,
       prompt: AuthPrompts.calendar,
@@ -106,6 +112,8 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _openReservationLoginRequired(BuildContext context) {
+    _hideDeviceTooltip();
+
     return AuthGate.ensureLoggedInWithPrompt(
       context,
       prompt: AuthPrompts.reservationOverview,
@@ -116,6 +124,8 @@ class _HomeScreenState extends State<HomeScreen>
     BuildContext context,
     ContentItem item,
   ) async {
+    _hideDeviceTooltip();
+
     final articleId = item.articleId;
 
     if (articleId == null) {
@@ -150,6 +160,8 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _openSettings(BuildContext context) {
+    _hideDeviceTooltip();
+
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const SettingsScreen()),
@@ -157,6 +169,8 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _openDeviceMap(BuildContext context, String deviceName, {int? equipId}) {
+    _hideDeviceTooltip();
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -167,6 +181,8 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _openMyPage(BuildContext context) async {
+    _hideDeviceTooltip();
+
     final isLoggedIn = AuthState.isLoggedIn.value;
 
     if (!isLoggedIn) {

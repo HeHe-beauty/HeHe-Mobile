@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_palette.dart';
 
 class ClusterCountMarker extends StatelessWidget {
@@ -15,15 +16,14 @@ class ClusterCountMarker extends StatelessWidget {
 
   double get _size {
     if (isSingle) return isSelected ? 30 : 24;
-    if (count >= 100) return 78;
-    if (count >= 10) return 68;
-    return 60;
+
+    final scaledSize = 56 + (((count - 2).clamp(0, 48) / 3) * 4.0);
+    return scaledSize.clamp(56.0, 104.0);
   }
 
   double get _fontSize {
-    if (count >= 100) return 24;
-    if (count >= 10) return 22;
-    return 21;
+    final scaledSize = 20 + (((count - 2).clamp(0, 48) / 3) * 0.5);
+    return scaledSize.clamp(20.0, 27.0);
   }
 
   @override

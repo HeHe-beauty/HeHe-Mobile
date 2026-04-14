@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/common/app_settings_state.dart';
 import '../theme/app_palette.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/app_snackbar.dart';
 import '../widgets/screen_header.dart';
 
@@ -19,7 +20,7 @@ class SettingsScreen extends StatelessWidget {
             ScreenHeader(title: '설정', onTapBack: () => Navigator.pop(context)),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
                 child: Column(
                   children: [
                     ValueListenableBuilder<bool>(
@@ -44,7 +45,7 @@ class SettingsScreen extends StatelessWidget {
                                         onChanged:
                                             AppSettingsState.setPushEnabled,
                                       ),
-                                      const SizedBox(height: 12),
+                                      const SizedBox(height: 10),
                                       _SettingToggleTile(
                                         title: '야간 알림 허용',
                                         subtitle: '늦은 시간에도 필요한 알림을 받을 수 있어요.',
@@ -54,7 +55,7 @@ class SettingsScreen extends StatelessWidget {
                                                   .setNightPushEnabled
                                             : null,
                                       ),
-                                      const SizedBox(height: 12),
+                                      const SizedBox(height: 10),
                                       _SettingToggleTile(
                                         title: '마케팅 수신 동의',
                                         subtitle: '이벤트, 혜택, 추천 소식을 받아볼 수 있어요.',
@@ -71,7 +72,7 @@ class SettingsScreen extends StatelessWidget {
                         );
                       },
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     ValueListenableBuilder<ThemeMode>(
                       valueListenable: AppSettingsState.themeMode,
                       builder: (context, themeMode, _) {
@@ -85,14 +86,14 @@ class SettingsScreen extends StatelessWidget {
                                 isDarkMode: isDarkMode,
                                 onChanged: AppSettingsState.setDarkMode,
                               ),
-                              const SizedBox(height: 14),
+                              const SizedBox(height: 12),
                               Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.fromLTRB(
-                                  16,
                                   14,
-                                  16,
+                                  12,
                                   14,
+                                  12,
                                 ),
                                 decoration: BoxDecoration(
                                   color: palette.surfaceSoft,
@@ -111,10 +112,8 @@ class SettingsScreen extends StatelessWidget {
                                     Expanded(
                                       child: Text(
                                         '설정에서 선택한 테마가 앱 전체에 바로 반영돼요.',
-                                        style: TextStyle(
-                                          fontSize: 13,
+                                        style: AppTextStyles.homeBody.copyWith(
                                           height: 1.45,
-                                          fontWeight: FontWeight.w600,
                                           color: palette.textSecondary,
                                         ),
                                       ),
@@ -127,7 +126,7 @@ class SettingsScreen extends StatelessWidget {
                         );
                       },
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     _SectionCard(
                       title: '기타',
                       child: Column(
@@ -175,7 +174,7 @@ class _SectionCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: BoxDecoration(
         color: palette.surface,
         borderRadius: BorderRadius.circular(28),
@@ -194,14 +193,12 @@ class _SectionCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               title,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
+              style: AppTextStyles.homeSectionTitle.copyWith(
                 color: palette.textPrimary,
               ),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           child,
         ],
       ),
@@ -229,7 +226,7 @@ class _SettingToggleTile extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
         color: enabled ? palette.surfaceSoft : palette.surfaceMuted,
         borderRadius: BorderRadius.circular(20),
@@ -243,19 +240,15 @@ class _SettingToggleTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
+                  style: AppTextStyles.homeBodyStrong.copyWith(
                     color: enabled ? palette.textPrimary : palette.textTertiary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppTextStyles.homeCaption.copyWith(
                     height: 1.4,
-                    fontWeight: FontWeight.w600,
                     color: enabled
                         ? palette.textSecondary
                         : palette.textTertiary,
@@ -291,7 +284,7 @@ class _ThemeModeTile extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
         color: palette.surfaceSoft,
         borderRadius: BorderRadius.circular(20),
@@ -319,19 +312,15 @@ class _ThemeModeTile extends StatelessWidget {
               children: [
                 Text(
                   isDarkMode ? '다크모드' : '라이트모드',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
+                  style: AppTextStyles.homeBodyStrong.copyWith(
                     color: palette.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '앱 화면 테마를 변경할 수 있어요.',
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppTextStyles.homeCaption.copyWith(
                     height: 1.4,
-                    fontWeight: FontWeight.w600,
                     color: palette.textSecondary,
                   ),
                 ),
@@ -375,7 +364,7 @@ class _SimpleMenuTile extends StatelessWidget {
         onTap: onTap,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: palette.border),
@@ -398,19 +387,15 @@ class _SimpleMenuTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
+                      style: AppTextStyles.homeBodyStrong.copyWith(
                         color: palette.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: AppTextStyles.homeCaption.copyWith(
                         height: 1.4,
-                        fontWeight: FontWeight.w600,
                         color: palette.textSecondary,
                       ),
                     ),

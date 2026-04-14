@@ -24,60 +24,36 @@ class ContentCard extends StatelessWidget {
             border: Border.all(color: palette.border),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: palette.surfaceMuted,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: _ContentThumbnail(item: item),
+          child: Column(
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: palette.surfaceMuted,
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                const SizedBox(height: 10),
-                _WordWrappedTitle(
-                  title: item.title,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
-                    height: 1.4,
-                    color: palette.textPrimary,
+                child: _ContentThumbnail(item: item),
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: _WordWrappedTitle(
+                    title: item.title,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      height: 1.4,
+                      color: palette.textPrimary,
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _ContentThumbnail extends StatelessWidget {
-  final ContentItem item;
-
-  const _ContentThumbnail({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-    final thumbnailUrl = item.thumbnailUrl;
-
-    if (thumbnailUrl == null || thumbnailUrl.isEmpty) {
-      return Icon(item.icon, size: 28, color: palette.primary);
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: Image.network(
-        thumbnailUrl,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Icon(item.icon, size: 28, color: palette.primary);
-        },
       ),
     );
   }
@@ -214,5 +190,32 @@ class _WordWrappedTitle extends StatelessWidget {
     }
 
     return best.isEmpty ? '…' : best;
+  }
+}
+
+class _ContentThumbnail extends StatelessWidget {
+  final ContentItem item;
+
+  const _ContentThumbnail({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final thumbnailUrl = item.thumbnailUrl;
+
+    if (thumbnailUrl == null || thumbnailUrl.isEmpty) {
+      return Icon(item.icon, size: 28, color: palette.primary);
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: Image.network(
+        thumbnailUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Icon(item.icon, size: 28, color: palette.primary);
+        },
+      ),
+    );
   }
 }
