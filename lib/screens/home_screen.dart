@@ -515,7 +515,7 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                               const SizedBox(height: 24),
                               Text(
-                                '추천 콘텐츠',
+                                '이런 내용은 어떠세요?',
                                 style: AppTextStyles.homeSectionTitle.copyWith(
                                   color: palette.textPrimary,
                                 ),

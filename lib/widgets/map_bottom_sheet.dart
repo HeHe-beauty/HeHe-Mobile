@@ -44,10 +44,9 @@ class _MapBottomSheetState extends State<MapBottomSheet> {
   static const double _clusterMidSize = 0.42;
   static const double _clusterMaxSize = 0.99;
 
-  static const double _singleInitialSize = 0.36;
+  static const double _singleInitialSize = 0.3;
   static const double _singleMinSize = 0.01;
-  static const double _singleMaxSize = 0.36;
-  static const double _singleDismissThreshold = 0.11;
+  static const double _singleMaxSize = 0.3;
 
   bool get _isHiddenMode => widget.isHidden;
 
@@ -142,6 +141,27 @@ class _MapBottomSheetState extends State<MapBottomSheet> {
       );
     }
 
+    if (_isSingleMode) {
+      if (_isHiddenMode) return const SizedBox.shrink();
+
+      return Positioned(
+        left: 18,
+        right: 18,
+        bottom: 0,
+        child: SafeArea(
+          top: false,
+          minimum: const EdgeInsets.only(bottom: 14),
+          child: _SinglePlaceGestureBlocker(
+            child: _SinglePlaceSection(
+              place: widget.places.first,
+              onTapInquiry: widget.onTapInquiry,
+              onTapBookmark: widget.onTapBookmark,
+            ),
+          ),
+        ),
+      );
+    }
+
     final enableSnap = _isClusterMode;
 
     final double initialSize = _isHiddenMode
@@ -187,11 +207,6 @@ class _MapBottomSheetState extends State<MapBottomSheet> {
         return AnimatedBuilder(
           animation: widget.controller,
           builder: (context, child) {
-            final currentSize = widget.controller.isAttached
-                ? widget.controller.size
-                : initialSize;
-
-            final hideSingleContent = _isSingleMode && currentSize < 0.16;
             final isTinySheet = _isHiddenMode;
 
             if (isTinySheet) {
@@ -231,7 +246,6 @@ class _MapBottomSheetState extends State<MapBottomSheet> {
                       context,
                     ).viewPadding.bottom;
                     final horizontalPadding = isShortHeight ? 16.0 : 18.0;
-                    final topPadding = isShortHeight ? 8.0 : 9.0;
                     final defaultTopSpacer = isShortHeight ? 18.0 : 22.0;
                     final defaultChipBottomSpacer = isShortHeight ? 10.0 : 12.0;
                     final bottomPadding =
@@ -261,20 +275,8 @@ class _MapBottomSheetState extends State<MapBottomSheet> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (_isSingleMode || _isClusterMode) ...[
-                              SizedBox(height: topPadding),
-                              _FixedDragHandle(
-                                controller: widget.controller,
-                                minSize: minSize,
-                                maxSize: maxSize,
-                                snapSizes: snapSizes,
-                                isSingleMode: _isSingleMode,
-                                singleExpandedSize: _singleInitialSize,
-                                singleDismissThreshold: _singleDismissThreshold,
-                                onDismissSingle: widget.onDismissSingle,
-                              ),
-                              SizedBox(height: isShortHeight ? 8 : 10),
-                            ],
+                            if (_isClusterMode)
+                              SizedBox(height: isShortHeight ? 12 : 14),
                             Padding(
                               padding: EdgeInsets.fromLTRB(
                                 horizontalPadding,
@@ -323,17 +325,6 @@ class _MapBottomSheetState extends State<MapBottomSheet> {
                                     ),
                                     SizedBox(height: isShortHeight ? 6 : 8),
                                   ],
-
-                                  if (!_isHiddenMode &&
-                                      _isSingleMode &&
-                                      !hideSingleContent)
-                                    _SinglePlaceGestureBlocker(
-                                      child: _SinglePlaceSection(
-                                        place: widget.places.first,
-                                        onTapInquiry: widget.onTapInquiry,
-                                        onTapBookmark: widget.onTapBookmark,
-                                      ),
-                                    ),
                                 ],
                               ),
                             ),
@@ -352,119 +343,6 @@ class _MapBottomSheetState extends State<MapBottomSheet> {
   }
 }
 
-class _FixedDragHandle extends StatefulWidget {
-  final DraggableScrollableController controller;
-  final double minSize;
-  final double maxSize;
-  final List<double> snapSizes;
-  final bool isSingleMode;
-  final double singleExpandedSize;
-  final double singleDismissThreshold;
-  final VoidCallback onDismissSingle;
-
-  const _FixedDragHandle({
-    required this.controller,
-    required this.minSize,
-    required this.maxSize,
-    required this.snapSizes,
-    required this.isSingleMode,
-    required this.singleExpandedSize,
-    required this.singleDismissThreshold,
-    required this.onDismissSingle,
-  });
-
-  @override
-  State<_FixedDragHandle> createState() => _FixedDragHandleState();
-}
-
-class _FixedDragHandleState extends State<_FixedDragHandle> {
-  double _startSize = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onVerticalDragStart: (_) {
-        _startSize = widget.controller.isAttached
-            ? widget.controller.size
-            : widget.maxSize;
-      },
-      onVerticalDragUpdate: (details) {
-        if (!widget.controller.isAttached) return;
-
-        final delta = details.primaryDelta ?? 0;
-        final next = (_startSize - (delta / screenHeight)).clamp(
-          widget.minSize,
-          widget.maxSize,
-        );
-
-        widget.controller.jumpTo(next);
-        _startSize = next;
-      },
-      onVerticalDragEnd: (_) async {
-        if (!widget.controller.isAttached) return;
-
-        final current = widget.controller.size;
-
-        if (widget.isSingleMode) {
-          if (current <= widget.singleDismissThreshold) {
-            widget.onDismissSingle();
-          } else {
-            await widget.controller.animateTo(
-              widget.singleExpandedSize,
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-            );
-          }
-          return;
-        }
-
-        final target = _nearestSnap(current, widget.snapSizes);
-
-        await widget.controller.animateTo(
-          target,
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOutCubic,
-        );
-      },
-      child: Center(
-        child: SizedBox(
-          width: 68,
-          height: 28,
-          child: Center(
-            child: Container(
-              width: 46,
-              height: 5,
-              decoration: BoxDecoration(
-                color: palette.border,
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  double _nearestSnap(double value, List<double> snaps) {
-    double best = snaps.first;
-    double minDiff = (value - best).abs();
-
-    for (final snap in snaps) {
-      final diff = (value - snap).abs();
-      if (diff < minDiff) {
-        minDiff = diff;
-        best = snap;
-      }
-    }
-
-    return best;
-  }
-}
-
 class _FixedLocationPanel extends StatelessWidget {
   final bool isHidden;
   final Widget child;
@@ -473,45 +351,23 @@ class _FixedLocationPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = context.palette;
-    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
-
     if (isHidden) {
-      return Align(
-        alignment: Alignment.bottomCenter,
-        child: Container(
-          height: 8 + bottomInset,
-          decoration: BoxDecoration(
-            color: palette.bottomSheetSurface,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(_kMapSheetRadius),
-            ),
-          ),
-        ),
-      );
+      return const SizedBox.shrink();
     }
 
-    return Align(
-      alignment: Alignment.bottomCenter,
+    return Positioned(
+      left: 18,
+      right: 18,
+      bottom: 0,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onVerticalDragStart: (_) {},
         onVerticalDragUpdate: (_) {},
         onVerticalDragEnd: (_) {},
-        child: Container(
-          width: double.infinity,
-          padding: EdgeInsets.fromLTRB(18, 14, 18, 6 + bottomInset),
-          decoration: BoxDecoration(
-            color: palette.bottomSheetSurface,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(_kMapSheetRadius),
-            ),
-            border: Border(top: BorderSide(color: palette.bottomSheetBorder)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [const SizedBox(height: 6), child],
-          ),
+        child: SafeArea(
+          top: false,
+          minimum: const EdgeInsets.only(bottom: 14),
+          child: child,
         ),
       ),
     );
@@ -598,128 +454,136 @@ class _SinglePlaceSection extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 8, 4, 10),
+      padding: const EdgeInsets.fromLTRB(2, 2, 2, 8),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final stackActions = constraints.maxWidth < 340;
           final visibleTags = place.tags.take(4).toList();
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                place.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.homeSectionTitle.copyWith(
-                  color: palette.textPrimary,
-                  height: 1.2,
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(15, 14, 15, 15),
+            decoration: BoxDecoration(
+              color: palette.bottomSheetInnerSurface,
+              borderRadius: BorderRadius.circular(_kMapSheetInnerRadius),
+              border: Border.all(
+                color: palette.bottomSheetBorder.withValues(
+                  alpha: isDark ? 0.42 : 1,
                 ),
               ),
-              if (visibleTags.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: visibleTags
-                      .map((tag) => _HospitalTagChip(label: tag))
-                      .toList(),
-                ),
-              ],
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: palette.bottomSheetInnerSurface,
-                  borderRadius: BorderRadius.circular(_kMapSheetInnerRadius),
-                  border: Border.all(
-                    color: palette.bottomSheetBorder.withValues(
-                      alpha: isDark ? 0.42 : 1,
-                    ),
+              boxShadow: [
+                if (!isDark)
+                  BoxShadow(
+                    color: palette.shadow,
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
-                  boxShadow: [
-                    if (!isDark)
-                      BoxShadow(
-                        color: palette.shadow,
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                  ],
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '선택한 병원',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.homeCaption.copyWith(
+                    color: palette.textTertiary,
+                    fontWeight: FontWeight.w700,
+                    height: 1.1,
+                  ),
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: palette.surfaceMuted,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.location_on_rounded,
-                        size: 18,
-                        color: palette.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        place.address,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.homeBody.copyWith(
-                          color: palette.textSecondary,
-                          height: 1.35,
+                const SizedBox(height: 5),
+                Text(
+                  place.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.homeSectionTitle.copyWith(
+                    color: palette.textPrimary,
+                    height: 1.18,
+                  ),
+                ),
+                if (visibleTags.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 5,
+                    runSpacing: 5,
+                    children: visibleTags
+                        .map((tag) => _HospitalTagChip(label: tag))
+                        .toList(),
+                  ),
+                ],
+                if (place.address.isNotEmpty) ...[
+                  const SizedBox(height: 9),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 1),
+                        child: Icon(
+                          Icons.location_on_rounded,
+                          size: 15,
+                          color: palette.primary,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              if (stackActions) ...[
-                _PrimaryActionButton(
-                  icon: Icons.call_rounded,
-                  label: '문의하기',
-                  onTap: onTapInquiry,
-                ),
-                const SizedBox(height: 10),
-                _SecondaryActionButton(
-                  icon: place.isBookmarked
-                      ? Icons.star_rounded
-                      : Icons.star_border_rounded,
-                  label: '찜하기',
-                  isActive: place.isBookmarked,
-                  onTap: () => onTapBookmark(place),
-                ),
-              ] else
-                Row(
-                  children: [
-                    Expanded(
-                      child: _PrimaryActionButton(
-                        icon: Icons.call_rounded,
-                        label: '문의하기',
-                        onTap: onTapInquiry,
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          place.address,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.homeCaption.copyWith(
+                            color: palette.textSecondary,
+                            fontWeight: FontWeight.w600,
+                            height: 1.35,
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _SecondaryActionButton(
-                        icon: place.isBookmarked
-                            ? Icons.star_rounded
-                            : Icons.star_border_rounded,
-                        label: '찜하기',
-                        isActive: place.isBookmarked,
-                        onTap: () => onTapBookmark(place),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 12),
+                if (stackActions) ...[
+                  _PrimaryActionButton(
+                    icon: Icons.call_rounded,
+                    label: '문의하기',
+                    onTap: onTapInquiry,
+                  ),
+                  const SizedBox(height: 8),
+                  _SecondaryActionButton(
+                    icon: place.isBookmarked
+                        ? Icons.star_rounded
+                        : Icons.star_border_rounded,
+                    label: '찜하기',
+                    isActive: place.isBookmarked,
+                    onTap: () => onTapBookmark(place),
+                  ),
+                ] else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _PrimaryActionButton(
+                          icon: Icons.call_rounded,
+                          label: '문의하기',
+                          onTap: onTapInquiry,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-            ],
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _SecondaryActionButton(
+                          icon: place.isBookmarked
+                              ? Icons.star_rounded
+                              : Icons.star_border_rounded,
+                          label: '찜하기',
+                          isActive: place.isBookmarked,
+                          onTap: () => onTapBookmark(place),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
           );
         },
       ),
@@ -749,14 +613,14 @@ class _PrimaryActionButton extends StatelessWidget {
 
     return Material(
       color: palette.surface.withValues(alpha: 0),
-      borderRadius: BorderRadius.circular(_kMapSheetInnerRadius),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        borderRadius: BorderRadius.circular(_kMapSheetInnerRadius),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Ink(
-          height: 48,
+          height: 42,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(_kMapSheetInnerRadius),
+            borderRadius: BorderRadius.circular(16),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -766,7 +630,7 @@ class _PrimaryActionButton extends StatelessWidget {
               if (!isDark)
                 BoxShadow(
                   color: palette.shadow,
-                  blurRadius: 8,
+                  blurRadius: 7,
                   offset: const Offset(0, 3),
                 ),
             ],
@@ -775,8 +639,8 @@ class _PrimaryActionButton extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 18, color: palette.surface),
-                const SizedBox(width: 7),
+                Icon(icon, size: 16, color: palette.surface),
+                const SizedBox(width: 6),
                 Text(label, style: buttonTextStyle),
               ],
             ),
@@ -825,17 +689,19 @@ class _SecondaryActionButton extends StatelessWidget {
 
     return Material(
       color: palette.surface.withValues(alpha: 0),
-      borderRadius: BorderRadius.circular(_kMapSheetInnerRadius),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        borderRadius: BorderRadius.circular(_kMapSheetInnerRadius),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Ink(
-          height: 48,
+          height: 42,
           decoration: BoxDecoration(
             color: isActive
                 ? palette.primarySoft
-                : palette.bottomSheetInnerSurface,
-            borderRadius: BorderRadius.circular(_kMapSheetInnerRadius),
+                : palette.bottomSheetSurface.withValues(
+                    alpha: isDark ? 0.7 : 1,
+                  ),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isActive
                   ? palette.primary.withValues(alpha: 0.35)
@@ -847,7 +713,7 @@ class _SecondaryActionButton extends StatelessWidget {
               if (!isDark)
                 BoxShadow(
                   color: palette.shadow,
-                  blurRadius: 8,
+                  blurRadius: 7,
                   offset: const Offset(0, 3),
                 ),
             ],
@@ -858,10 +724,10 @@ class _SecondaryActionButton extends StatelessWidget {
               children: [
                 Icon(
                   icon,
-                  size: 18,
+                  size: 16,
                   color: isActive ? palette.primary : palette.textSecondary,
                 ),
-                const SizedBox(width: 7),
+                const SizedBox(width: 6),
                 Text(
                   label,
                   style: AppTextStyles.homeBodyStrong.copyWith(
