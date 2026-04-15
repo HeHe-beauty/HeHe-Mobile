@@ -50,6 +50,10 @@ class CalendarCard extends StatelessWidget {
     final palette = context.palette;
     final visibleReservations = reservations.take(maxVisibleItems).toList();
 
+    if (isLoginRequired) {
+      return _LoginReservationPrompt(onTap: onTapCard);
+    }
+
     return SectionLikeCard(
       onTap: onTapCard,
       child: Column(
@@ -113,7 +117,7 @@ class CalendarCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    if (isLoginRequired || onTapSummary != null) ...[
+                    if (onTapSummary != null) ...[
                       const SizedBox(width: 8),
                       Icon(
                         Icons.chevron_right_rounded,
@@ -128,7 +132,7 @@ class CalendarCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           if (visibleReservations.isEmpty)
-            _EmptyReservationState(isLoginRequired: isLoginRequired)
+            const _EmptyReservationState()
           else
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,6 +214,100 @@ class SectionLikeCard extends StatelessWidget {
   }
 }
 
+class _LoginReservationPrompt extends StatelessWidget {
+  final VoidCallback? onTap;
+
+  const _LoginReservationPrompt({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return SectionLikeCard(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 92,
+                          height: 17,
+                          decoration: BoxDecoration(
+                            color: palette.primarySoft.withValues(alpha: 0.72),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '방문',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
+                            color: palette.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Text(
+                          'D-??',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.3,
+                            color: palette.primaryStrong,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Container(
+                            height: 11,
+                            decoration: BoxDecoration(
+                              color: palette.surfaceSoft,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 22,
+                color: palette.textSecondary,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            '로그인하면 다가오는 예약 일정을 확인할 수 있어요',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: palette.textSecondary,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _UpcomingReservationRow extends StatelessWidget {
   final CalendarCardReservationItem item;
 
@@ -285,9 +383,7 @@ class _UpcomingReservationRow extends StatelessWidget {
 }
 
 class _EmptyReservationState extends StatelessWidget {
-  final bool isLoginRequired;
-
-  const _EmptyReservationState({required this.isLoginRequired});
+  const _EmptyReservationState();
 
   @override
   Widget build(BuildContext context) {
@@ -301,9 +397,7 @@ class _EmptyReservationState extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
       ),
       child: Text(
-        isLoginRequired
-            ? '로그인 후 다가오는 예약 일정을 확인할 수 있어요.'
-            : '다가오는 예약이 없어요. 다음 방문 일정을 추가해보세요.',
+        '다가오는 예약이 없어요. 다음 방문 일정을 추가해보세요.',
         style: TextStyle(
           fontSize: 11,
           height: 1.45,

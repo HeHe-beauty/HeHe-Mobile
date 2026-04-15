@@ -24,65 +24,60 @@ class DeviceTile extends StatelessWidget {
     return Material(
       color: palette.surface,
       borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
         child: Container(
           height: height,
-          padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: palette.border),
+            boxShadow: [
+              BoxShadow(
+                color: palette.shadow,
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: Row(
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 6, right: 2),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.left,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w900,
-                              height: 1.15,
-                              letterSpacing: -0.2,
-                              color: palette.textPrimary,
-                            ),
-                          ),
-                        ),
-                        if (infoIcon != null) ...[
-                          const SizedBox(width: 2),
-                          infoIcon!,
-                        ],
-                      ],
-                    ),
+              Positioned(
+                left: 0,
+                top: 0,
+                child: SizedBox(
+                  width: 86,
+                  height: height - 34,
+                  child: Image.asset(
+                    imageAsset!,
+                    fit: BoxFit.contain,
+                    alignment: Alignment.topLeft,
                   ),
                 ),
               ),
-              if (imageAsset != null) ...[
-                const SizedBox(width: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    width: 50,
-                    height: double.infinity,
-                    child: Image.asset(
-                      imageAsset!,
-                      fit: BoxFit.contain,
-                      alignment: Alignment.center,
-                    ),
+              Positioned(
+                left: 20,
+                right: 0,
+                bottom: 0,
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    height: 1.15,
+                    letterSpacing: -0.2,
+                    color: palette.textPrimary,
                   ),
                 ),
-              ],
+              ),
+              if (infoIcon != null)
+                Positioned(top: -6, right: -2, child: infoIcon!),
             ],
           ),
         ),

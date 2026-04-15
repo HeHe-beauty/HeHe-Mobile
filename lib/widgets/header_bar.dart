@@ -7,6 +7,9 @@ class HeaderBar extends StatelessWidget {
   final VoidCallback? onTapProfile;
   final VoidCallback? onTapSettings;
   final bool isLoggedIn;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
+  final Color? utilityIconColor;
 
   const HeaderBar({
     super.key,
@@ -14,6 +17,9 @@ class HeaderBar extends StatelessWidget {
     required this.isLoggedIn,
     this.onTapProfile,
     this.onTapSettings,
+    this.backgroundColor,
+    this.foregroundColor,
+    this.utilityIconColor,
   });
 
   @override
@@ -23,7 +29,7 @@ class HeaderBar extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.fromLTRB(20, safeTop + 18, 20, 14),
-      color: palette.bg,
+      color: backgroundColor ?? palette.bg,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -33,13 +39,15 @@ class HeaderBar extends StatelessWidget {
               child: RichText(
                 text: TextSpan(
                   style: AppTextStyles.homeHeadline.copyWith(
-                    color: palette.textPrimary,
+                    color: foregroundColor ?? palette.textPrimary,
                   ),
-                  children: const [
-                    TextSpan(text: '시술 꿀팁부터\n병원 찾기까지\n'),
+                  children: [
+                    const TextSpan(text: '시술 꿀팁부터\n병원 찾기까지\n'),
                     TextSpan(
                       text: '관리는 HeHe에서',
-                      style: AppTextStyles.homeHeadlineStrong,
+                      style: AppTextStyles.homeHeadlineStrong.copyWith(
+                        color: foregroundColor ?? palette.textPrimary,
+                      ),
                     ),
                   ],
                 ),
@@ -54,10 +62,12 @@ class HeaderBar extends StatelessWidget {
                 _UtilityIconButton(
                   icon: Icons.person_outline_rounded,
                   onTap: onTapProfile,
+                  color: utilityIconColor,
                 ),
                 _UtilityIconButton(
                   icon: Icons.settings_outlined,
                   onTap: onTapSettings,
+                  color: utilityIconColor,
                 ),
               ],
             ),
@@ -71,8 +81,9 @@ class HeaderBar extends StatelessWidget {
 class _UtilityIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
+  final Color? color;
 
-  const _UtilityIconButton({required this.icon, this.onTap});
+  const _UtilityIconButton({required this.icon, this.onTap, this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +97,7 @@ class _UtilityIconButton extends StatelessWidget {
         child: InkResponse(
           onTap: onTap,
           radius: 22,
-          child: Icon(icon, size: 22, color: palette.textSecondary),
+          child: Icon(icon, size: 22, color: color ?? palette.textSecondary),
         ),
       ),
     );

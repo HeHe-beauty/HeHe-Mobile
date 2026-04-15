@@ -18,6 +18,27 @@ class _ContentCarouselState extends State<ContentCarousel> {
   int _currentPage = 0;
 
   @override
+  void didUpdateWidget(covariant ContentCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.items.isEmpty) {
+      if (_currentPage != 0) {
+        setState(() {
+          _currentPage = 0;
+        });
+      }
+      return;
+    }
+
+    if (_currentPage >= widget.items.length) {
+      final nextPage = widget.items.length - 1;
+      setState(() {
+        _currentPage = nextPage;
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
@@ -32,30 +53,68 @@ class _ContentCarouselState extends State<ContentCarousel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          height: 152,
+          height: 174,
           child: LayoutBuilder(
             builder: (context, constraints) {
               const gap = 14.0;
-              final cardWidth = (constraints.maxWidth - (gap * 2)) / 2.5;
+              final cardWidth = constraints.maxWidth * 0.86;
+
+              int nearestPage(ScrollMetrics metrics) {
+                var nearestIndex = 0;
+                var nearestDistance = double.infinity;
+
+                for (var index = 0; index < items.length; index++) {
+                  final targetOffset = _targetOffsetFor(
+                    index: index,
+                    itemCount: items.length,
+                    cardWidth: cardWidth,
+                    gap: gap,
+                    viewportWidth: constraints.maxWidth,
+                    maxScrollExtent: metrics.maxScrollExtent,
+                  );
+                  final distance = (metrics.pixels - targetOffset).abs();
+
+                  if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestIndex = index;
+                  }
+                }
+
+                return nearestIndex;
+              }
 
               return NotificationListener<ScrollNotification>(
                 onNotification: (notification) {
                   if (items.isEmpty) return false;
-                  final maxScrollExtent = notification.metrics.maxScrollExtent;
-                  final progress = maxScrollExtent <= 0
-                      ? 0.0
-                      : (notification.metrics.pixels / maxScrollExtent).clamp(
-                          0.0,
-                          1.0,
-                        );
-                  final nextPage = (progress * (items.length - 1))
-                      .round()
-                      .clamp(0, items.length - 1);
+
+                  final nextPage = nearestPage(notification.metrics);
                   if (nextPage != _currentPage) {
                     setState(() {
                       _currentPage = nextPage;
                     });
                   }
+
+                  if (notification is ScrollEndNotification) {
+                    final targetOffset = _targetOffsetFor(
+                      index: nextPage,
+                      itemCount: items.length,
+                      cardWidth: cardWidth,
+                      gap: gap,
+                      viewportWidth: constraints.maxWidth,
+                      maxScrollExtent: notification.metrics.maxScrollExtent,
+                    );
+
+                    if ((notification.metrics.pixels - targetOffset).abs() >
+                            0.5 &&
+                        _scrollController.hasClients) {
+                      _scrollController.animateTo(
+                        targetOffset,
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutCubic,
+                      );
+                    }
+                  }
+
                   return false;
                 },
                 child: ListView.separated(
@@ -101,5 +160,22 @@ class _ContentCarouselState extends State<ContentCarousel> {
         ),
       ],
     );
+  }
+
+  double _targetOffsetFor({
+    required int index,
+    required int itemCount,
+    required double cardWidth,
+    required double gap,
+    required double viewportWidth,
+    required double maxScrollExtent,
+  }) {
+    if (index <= 0 || itemCount <= 1) return 0;
+    if (index >= itemCount - 1) return maxScrollExtent;
+
+    final itemLeading = index * (cardWidth + gap);
+    final centeredOffset = itemLeading - ((viewportWidth - cardWidth) / 2);
+
+    return centeredOffset.clamp(0.0, maxScrollExtent);
   }
 }

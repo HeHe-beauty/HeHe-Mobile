@@ -23,23 +23,23 @@ class ContentCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(22),
             border: Border.all(color: palette.border),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Column(
             children: [
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Container(
-                width: 54,
-                height: 54,
+                width: 60,
+                height: 60,
                 decoration: BoxDecoration(
                   color: palette.surfaceMuted,
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: _ContentThumbnail(item: item),
               ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.topCenter,
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 44,
+                child: Center(
                   child: _WordWrappedTitle(
                     title: item.title,
                     style: TextStyle(
@@ -76,7 +76,7 @@ class _WordWrappedTitle extends StatelessWidget {
           return Text(
             normalizedTitle,
             textAlign: TextAlign.center,
-            maxLines: 2,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: style,
           );
@@ -174,13 +174,20 @@ class _WordWrappedTitle extends StatelessWidget {
       return text;
     }
 
+    final parts = text
+        .trim()
+        .split(' ')
+        .where((word) => word.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return '…';
+
     var low = 0;
-    var high = text.length;
+    var high = parts.length;
     var best = '';
 
     while (low <= high) {
       final mid = (low + high) ~/ 2;
-      final candidate = '${text.substring(0, mid).trimRight()}…';
+      final candidate = '${parts.take(mid).join(' ')}…';
       if (_fits(candidate, style, maxWidth, context)) {
         best = candidate;
         low = mid + 1;
