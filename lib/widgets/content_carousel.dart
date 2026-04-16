@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import '../models/content_item.dart';
 import '../theme/app_palette.dart';
 import 'content_card.dart';
@@ -53,26 +54,22 @@ class _ContentCarouselState extends State<ContentCarousel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          height: 174,
+          height: 102,
           child: LayoutBuilder(
             builder: (context, constraints) {
               const gap = 14.0;
               final cardWidth = constraints.maxWidth * 0.86;
 
-              int nearestPage(ScrollMetrics metrics) {
+              int nearestPageByCenter(ScrollMetrics metrics) {
                 var nearestIndex = 0;
                 var nearestDistance = double.infinity;
+                final viewportCenter =
+                    metrics.pixels + (metrics.viewportDimension / 2);
 
                 for (var index = 0; index < items.length; index++) {
-                  final targetOffset = _targetOffsetFor(
-                    index: index,
-                    itemCount: items.length,
-                    cardWidth: cardWidth,
-                    gap: gap,
-                    viewportWidth: constraints.maxWidth,
-                    maxScrollExtent: metrics.maxScrollExtent,
-                  );
-                  final distance = (metrics.pixels - targetOffset).abs();
+                  final itemCenter =
+                      (index * (cardWidth + gap)) + (cardWidth / 2);
+                  final distance = (viewportCenter - itemCenter).abs();
 
                   if (distance < nearestDistance) {
                     nearestDistance = distance;
@@ -87,32 +84,11 @@ class _ContentCarouselState extends State<ContentCarousel> {
                 onNotification: (notification) {
                   if (items.isEmpty) return false;
 
-                  final nextPage = nearestPage(notification.metrics);
-                  if (nextPage != _currentPage) {
+                  final visiblePage = nearestPageByCenter(notification.metrics);
+                  if (visiblePage != _currentPage) {
                     setState(() {
-                      _currentPage = nextPage;
+                      _currentPage = visiblePage;
                     });
-                  }
-
-                  if (notification is ScrollEndNotification) {
-                    final targetOffset = _targetOffsetFor(
-                      index: nextPage,
-                      itemCount: items.length,
-                      cardWidth: cardWidth,
-                      gap: gap,
-                      viewportWidth: constraints.maxWidth,
-                      maxScrollExtent: notification.metrics.maxScrollExtent,
-                    );
-
-                    if ((notification.metrics.pixels - targetOffset).abs() >
-                            0.5 &&
-                        _scrollController.hasClients) {
-                      _scrollController.animateTo(
-                        targetOffset,
-                        duration: const Duration(milliseconds: 220),
-                        curve: Curves.easeOutCubic,
-                      );
-                    }
                   }
 
                   return false;
@@ -120,7 +96,11 @@ class _ContentCarouselState extends State<ContentCarousel> {
                 child: ListView.separated(
                   controller: _scrollController,
                   scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
+                  physics: _RecommendationCarouselScrollPhysics(
+                    itemCount: items.length,
+                    cardWidth: cardWidth,
+                    gap: gap,
+                  ),
                   padding: EdgeInsets.zero,
                   itemCount: items.length,
                   separatorBuilder: (context, index) =>
@@ -161,21 +141,72 @@ class _ContentCarouselState extends State<ContentCarousel> {
       ],
     );
   }
+}
 
-  double _targetOffsetFor({
-    required int index,
-    required int itemCount,
-    required double cardWidth,
-    required double gap,
-    required double viewportWidth,
-    required double maxScrollExtent,
-  }) {
-    if (index <= 0 || itemCount <= 1) return 0;
-    if (index >= itemCount - 1) return maxScrollExtent;
+class _RecommendationCarouselScrollPhysics extends ScrollPhysics {
+  final int itemCount;
+  final double cardWidth;
+  final double gap;
 
-    final itemLeading = index * (cardWidth + gap);
-    final centeredOffset = itemLeading - ((viewportWidth - cardWidth) / 2);
+  const _RecommendationCarouselScrollPhysics({
+    required this.itemCount,
+    required this.cardWidth,
+    required this.gap,
+    super.parent,
+  });
 
-    return centeredOffset.clamp(0.0, maxScrollExtent);
+  @override
+  _RecommendationCarouselScrollPhysics applyTo(ScrollPhysics? ancestor) {
+    return _RecommendationCarouselScrollPhysics(
+      itemCount: itemCount,
+      cardWidth: cardWidth,
+      gap: gap,
+      parent: buildParent(ancestor),
+    );
+  }
+
+  @override
+  Simulation? createBallisticSimulation(
+    ScrollMetrics position,
+    double velocity,
+  ) {
+    if ((velocity <= 0.0 && position.pixels <= position.minScrollExtent) ||
+        (velocity >= 0.0 && position.pixels >= position.maxScrollExtent)) {
+      return super.createBallisticSimulation(position, velocity);
+    }
+
+    final target = _targetPixels(position);
+
+    if ((target - position.pixels).abs() < toleranceFor(position).distance) {
+      return null;
+    }
+
+    return ScrollSpringSimulation(
+      spring,
+      position.pixels,
+      target,
+      velocity,
+      tolerance: toleranceFor(position),
+    );
+  }
+
+  double _targetPixels(ScrollMetrics position) {
+    if (itemCount <= 1) return position.minScrollExtent;
+
+    final itemExtent = cardWidth + gap;
+    final centerInset = (position.viewportDimension - cardWidth) / 2;
+    final rawIndex = (position.pixels + centerInset) / itemExtent;
+    final index = rawIndex.round().clamp(0, itemCount - 1).toInt();
+
+    if (index <= 0) return position.minScrollExtent;
+    if (index >= itemCount - 1) return position.maxScrollExtent;
+
+    final itemLeading = index * itemExtent;
+    final centeredOffset = itemLeading - centerInset;
+
+    return centeredOffset.clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
   }
 }

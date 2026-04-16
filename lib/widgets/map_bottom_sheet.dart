@@ -275,8 +275,11 @@ class _MapBottomSheetState extends State<MapBottomSheet> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (_isClusterMode)
+                            if (_isClusterMode) ...[
                               SizedBox(height: isShortHeight ? 12 : 14),
+                              const _MapSheetDragHandle(),
+                              SizedBox(height: isShortHeight ? 12 : 14),
+                            ],
                             Padding(
                               padding: EdgeInsets.fromLTRB(
                                 horizontalPadding,
@@ -339,6 +342,26 @@ class _MapBottomSheetState extends State<MapBottomSheet> {
           },
         );
       },
+    );
+  }
+}
+
+class _MapSheetDragHandle extends StatelessWidget {
+  const _MapSheetDragHandle();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Center(
+      child: Container(
+        width: 38,
+        height: 5,
+        decoration: BoxDecoration(
+          color: palette.bottomSheetBorder,
+          borderRadius: BorderRadius.circular(999),
+        ),
+      ),
     );
   }
 }

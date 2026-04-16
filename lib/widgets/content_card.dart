@@ -23,30 +23,33 @@ class ContentCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(22),
             border: Border.all(color: palette.border),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
             children: [
-              const SizedBox(height: 6),
               Container(
-                width: 60,
-                height: 60,
+                width: 58,
+                height: 58,
                 decoration: BoxDecoration(
                   color: palette.surfaceMuted,
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: _ContentThumbnail(item: item),
               ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 44,
-                child: Center(
-                  child: _WordWrappedTitle(
-                    title: item.title,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      height: 1.4,
-                      color: palette.textPrimary,
+              const SizedBox(width: 14),
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: _WordWrappedTitle(
+                      title: item.title,
+                      textAlign: TextAlign.left,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        height: 1.4,
+                        color: palette.textPrimary,
+                      ),
                     ),
                   ),
                 ),
@@ -62,8 +65,13 @@ class ContentCard extends StatelessWidget {
 class _WordWrappedTitle extends StatelessWidget {
   final String title;
   final TextStyle style;
+  final TextAlign textAlign;
 
-  const _WordWrappedTitle({required this.title, required this.style});
+  const _WordWrappedTitle({
+    required this.title,
+    required this.style,
+    this.textAlign = TextAlign.center,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +83,8 @@ class _WordWrappedTitle extends StatelessWidget {
         if (words.length <= 1) {
           return Text(
             normalizedTitle,
-            textAlign: TextAlign.center,
+            textAlign: textAlign,
+            softWrap: false,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: style,
@@ -140,7 +149,8 @@ class _WordWrappedTitle extends StatelessWidget {
 
         return Text(
           lines.join('\n'),
-          textAlign: TextAlign.center,
+          textAlign: textAlign,
+          softWrap: false,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: style,

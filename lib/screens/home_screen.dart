@@ -350,10 +350,12 @@ class _HomeScreenState extends State<HomeScreen>
             isLoggedIn && reservationItems.isNotEmpty ? '이후 예약 일정' : null;
 
         return Scaffold(
-          backgroundColor: palette.primary,
+          backgroundColor: palette.surface,
           body: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: _hideDeviceTooltip,
+            behavior: _activeDeviceInfo == null
+                ? HitTestBehavior.deferToChild
+                : HitTestBehavior.translucent,
+            onTap: _activeDeviceInfo == null ? null : _hideDeviceTooltip,
             child: Stack(
               key: _homeStackKey,
               children: [
@@ -499,76 +501,84 @@ class _HomeScreenState extends State<HomeScreen>
                             ],
                           ),
                         ),
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: palette.surface,
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(26),
+                        DecoratedBox(
+                          decoration: BoxDecoration(color: palette.primary),
+                          child: Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: palette.surface,
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(26),
+                              ),
                             ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '내 일정',
-                                  style: AppTextStyles.homeSectionTitle
-                                      .copyWith(color: palette.textPrimary),
-                                ),
-                                const SizedBox(height: 14),
-                                CalendarCard(
-                                  title: reservationTitle,
-                                  dDayLabel: reservationDday,
-                                  subtitle: reservationSubtitle,
-                                  reservationSectionLabel:
-                                      reservationSectionLabel,
-                                  reservations: reservationItems,
-                                  isLoginRequired: !isLoggedIn,
-                                  showAddButton: isLoggedIn,
-                                  maxVisibleItems: _maxVisibleReservations,
-                                  onTapCalendar: () =>
-                                      _openCalendarIfLoggedIn(context),
-                                  onTapCard: !isLoggedIn
-                                      ? () => _openReservationLoginRequired(
-                                          context,
-                                        )
-                                      : null,
-                                  onTapSummary:
-                                      nearestSchedule != null && isLoggedIn
-                                      ? () => _openReservationDetail(
-                                          context,
-                                          nearestSchedule,
-                                        )
-                                      : null,
-                                  onTapStart: () async {
-                                    final allowed =
-                                        await AuthGate.ensureLoggedInWithPrompt(
-                                          context,
-                                          prompt: AuthPrompts.calendarAdd,
-                                        );
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                20,
+                                22,
+                                20,
+                                18,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '내 일정',
+                                    style: AppTextStyles.homeSectionTitle
+                                        .copyWith(color: palette.textPrimary),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  CalendarCard(
+                                    title: reservationTitle,
+                                    dDayLabel: reservationDday,
+                                    subtitle: reservationSubtitle,
+                                    reservationSectionLabel:
+                                        reservationSectionLabel,
+                                    reservations: reservationItems,
+                                    isLoginRequired: !isLoggedIn,
+                                    showAddButton: isLoggedIn,
+                                    maxVisibleItems: _maxVisibleReservations,
+                                    onTapCalendar: () =>
+                                        _openCalendarIfLoggedIn(context),
+                                    onTapCard: !isLoggedIn
+                                        ? () => _openReservationLoginRequired(
+                                            context,
+                                          )
+                                        : null,
+                                    onTapSummary:
+                                        nearestSchedule != null && isLoggedIn
+                                        ? () => _openReservationDetail(
+                                            context,
+                                            nearestSchedule,
+                                          )
+                                        : null,
+                                    onTapStart: () async {
+                                      final allowed =
+                                          await AuthGate.ensureLoggedInWithPrompt(
+                                            context,
+                                            prompt: AuthPrompts.calendarAdd,
+                                          );
 
-                                    if (!allowed || !context.mounted) return;
+                                      if (!allowed || !context.mounted) return;
 
-                                    await _showAddScheduleSheet(context);
-                                  },
-                                ),
-                                const SizedBox(height: 24),
-                                Text(
-                                  '추천 콘텐츠',
-                                  style: AppTextStyles.homeSectionTitle
-                                      .copyWith(color: palette.textPrimary),
-                                ),
-                                const SizedBox(height: 14),
-                                ContentCarousel(
-                                  items: contents,
-                                  onTapItem: (item) {
-                                    _openContentDetail(context, item);
-                                  },
-                                ),
-                                const SizedBox(height: 14),
-                              ],
+                                      await _showAddScheduleSheet(context);
+                                    },
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    '추천 콘텐츠',
+                                    style: AppTextStyles.homeSectionTitle
+                                        .copyWith(color: palette.textPrimary),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  ContentCarousel(
+                                    items: contents,
+                                    onTapItem: (item) {
+                                      _openContentDetail(context, item);
+                                    },
+                                  ),
+                                  const SizedBox(height: 14),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -731,8 +741,8 @@ class _DeviceInfoButton extends StatelessWidget {
           height: 16,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: palette.primarySoft,
-            border: Border.all(color: palette.primary.withValues(alpha: 0.28)),
+            color: palette.border,
+            border: Border.all(color: palette.textTertiary),
           ),
           child: Center(
             child: Text(
@@ -741,7 +751,7 @@ class _DeviceInfoButton extends StatelessWidget {
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
                 height: 1,
-                color: palette.primaryStrong,
+                color: palette.textPrimary,
               ),
             ),
           ),

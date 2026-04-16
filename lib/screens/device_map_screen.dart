@@ -333,6 +333,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   Future<void> _onMapReady(NaverMapController controller) async {
     _mapController = controller;
     _isMapReady = true;
+    _selectedClusterId = null;
 
     final position = await controller.getCameraPosition();
     _currentZoom = position.zoom;
@@ -356,9 +357,9 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     final controller = _mapController;
     if (!_isMapReady || controller == null) return;
 
-    final nodes = await _loadHospitalClusterNodes(controller);
-
     await controller.clearOverlays();
+
+    final nodes = await _loadHospitalClusterNodes(controller);
 
     final overlays = <NAddableOverlay<NOverlay<void>>>{};
     final selectedPlace = _selectedPlace;
@@ -1360,7 +1361,92 @@ List<_HospitalMarkerNode> _mergeHospitalMapItems(
     }
   }
 
-  return groups.map(_HospitalMarkerNode.fromSources).toList();
+  final nodes = groups.map(_HospitalMarkerNode.fromSources).toList();
+  return _mergeOverlappingHospitalMarkerNodes(nodes, zoom: zoom);
+}
+
+List<_HospitalMarkerNode> _mergeOverlappingHospitalMarkerNodes(
+  List<_HospitalMarkerNode> nodes, {
+  required double zoom,
+}) {
+  if (nodes.length <= 1) return nodes;
+
+  var mergedNodes = nodes;
+  var didMerge = true;
+
+  while (didMerge) {
+    didMerge = false;
+    final nextNodes = <_HospitalMarkerNode>[];
+    final usedIndexes = <int>{};
+
+    for (var i = 0; i < mergedNodes.length; i++) {
+      if (usedIndexes.contains(i)) continue;
+
+      var mergedSources = <_HospitalClusterSource>[...mergedNodes[i].sources];
+      usedIndexes.add(i);
+
+      var keepSearching = true;
+      while (keepSearching) {
+        keepSearching = false;
+        final currentNode = _HospitalMarkerNode.fromSources(mergedSources);
+
+        for (var j = 0; j < mergedNodes.length; j++) {
+          if (usedIndexes.contains(j)) continue;
+
+          if (_shouldMergeVisualClusterNodes(
+            currentNode,
+            mergedNodes[j],
+            zoom: zoom,
+          )) {
+            mergedSources = [...mergedSources, ...mergedNodes[j].sources];
+            usedIndexes.add(j);
+            didMerge = true;
+            keepSearching = true;
+          }
+        }
+      }
+
+      nextNodes.add(_HospitalMarkerNode.fromSources(mergedSources));
+    }
+
+    mergedNodes = nextNodes;
+  }
+
+  return mergedNodes;
+}
+
+bool _shouldMergeVisualClusterNodes(
+  _HospitalMarkerNode a,
+  _HospitalMarkerNode b, {
+  required double zoom,
+}) {
+  final aPoint = _worldPixelFor(
+    latitude: a.latitude,
+    longitude: a.longitude,
+    zoom: zoom,
+  );
+  final bPoint = _worldPixelFor(
+    latitude: b.latitude,
+    longitude: b.longitude,
+    zoom: zoom,
+  );
+  final distance = (aPoint - bPoint).distance;
+
+  return distance <= _clusterVisualMergeDistance(a, b);
+}
+
+double _clusterVisualMergeDistance(
+  _HospitalMarkerNode a,
+  _HospitalMarkerNode b,
+) {
+  final aSize = a.count <= 1
+      ? ClusterCountMarker.singleDefaultSize
+      : _clusterMarkerIconSize(a.count);
+  final bSize = b.count <= 1
+      ? ClusterCountMarker.singleDefaultSize
+      : _clusterMarkerIconSize(b.count);
+
+  return ((aSize + bSize) / 2) + 12;
 }
 
 Offset _weightedWorldPixelFor(
