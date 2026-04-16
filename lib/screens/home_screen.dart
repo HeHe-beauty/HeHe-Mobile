@@ -427,7 +427,7 @@ class _HomeScreenState extends State<HomeScreen>
                                               DeviceTile(
                                                 title: d1Name,
                                                 imageAsset: d1Asset,
-                                                height: 92,
+                                                height: 74,
                                                 infoIcon: _DeviceInfoButton(
                                                   key: _apogeeInfoKey,
                                                   onTap: () => _toggleDeviceTooltip(
@@ -450,7 +450,7 @@ class _HomeScreenState extends State<HomeScreen>
                                               DeviceTile(
                                                 title: d2Name,
                                                 imageAsset: d2Asset,
-                                                height: 92,
+                                                height: 74,
                                                 infoIcon: _DeviceInfoButton(
                                                   key: _clarityInfoKey,
                                                   onTap: () => _toggleDeviceTooltip(
@@ -459,7 +459,7 @@ class _HomeScreenState extends State<HomeScreen>
                                                     const _DeviceInfo(
                                                       title: '클라리티 2',
                                                       body:
-                                                          '피부가 예민해 걱정인 분, 바쁜 일상 속 빠른 제모로 시간을 아끼고 싶다면',
+                                                          '피부가 예민해 걱정인 분, 바쁜 일상 속 빠른 제모로 시간을 아끼고 싶다면?',
                                                     ),
                                                   ),
                                                 ),
@@ -488,6 +488,9 @@ class _HomeScreenState extends State<HomeScreen>
                                           TextSpan(
                                             text:
                                                 '기기를 선택하면 주변 병원 위치를 확인할 수 있어요',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -632,7 +635,7 @@ class _PrimaryDeviceCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(28),
         child: Ink(
-          height: 198,
+          height: 162,
           decoration: BoxDecoration(
             color: palette.surface,
             borderRadius: BorderRadius.circular(28),
@@ -654,8 +657,8 @@ class _PrimaryDeviceCard extends StatelessWidget {
                   top: 18,
                   child: IgnorePointer(
                     child: SizedBox(
-                      width: 132,
-                      height: 114,
+                      width: 118,
+                      height: 102,
                       child: Image.asset(
                         imageAsset,
                         fit: BoxFit.contain,
@@ -678,7 +681,7 @@ class _PrimaryDeviceCard extends StatelessWidget {
                         textAlign: TextAlign.right,
                         style: theme.textTheme.titleMedium?.copyWith(
                           color: palette.textPrimary,
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: FontWeight.w900,
                           height: 1.1,
                         ),
@@ -692,7 +695,7 @@ class _PrimaryDeviceCard extends StatelessWidget {
                             textAlign: TextAlign.right,
                             style: theme.textTheme.titleMedium?.copyWith(
                               color: palette.textPrimary,
-                              fontSize: 15,
+                              fontSize: 16,
                               fontWeight: FontWeight.w900,
                               height: 1.1,
                             ),

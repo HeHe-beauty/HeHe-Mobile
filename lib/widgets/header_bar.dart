@@ -42,7 +42,7 @@ class HeaderBar extends StatelessWidget {
                     color: foregroundColor ?? palette.textPrimary,
                   ),
                   children: [
-                    const TextSpan(text: '시술 꿀팁부터\n병원 찾기까지\n'),
+                    const TextSpan(text: '시술 꿀팁부터\n기기 찾기까지\n'),
                     TextSpan(
                       text: '관리는 HeHe에서',
                       style: AppTextStyles.homeHeadlineStrong.copyWith(

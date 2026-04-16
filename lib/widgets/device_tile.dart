@@ -49,8 +49,8 @@ class DeviceTile extends StatelessWidget {
                 left: 0,
                 top: 0,
                 child: SizedBox(
-                  width: 86,
-                  height: height - 34,
+                  width: 76,
+                  height: height - 30,
                   child: Image.asset(
                     imageAsset!,
                     fit: BoxFit.contain,
@@ -68,7 +68,7 @@ class DeviceTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.right,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 16,
                     fontWeight: FontWeight.w900,
                     height: 1.15,
                     letterSpacing: -0.2,
