@@ -13,15 +13,23 @@ class ContentCard extends StatelessWidget {
     final palette = context.palette;
 
     return Material(
-      color: palette.surface,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(22),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(22),
         child: Container(
           decoration: BoxDecoration(
+            color: palette.surface,
             borderRadius: BorderRadius.circular(22),
             border: Border.all(color: palette.border),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+                color: palette.primary.withValues(alpha: 0.06),
+              ),
+            ],
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(

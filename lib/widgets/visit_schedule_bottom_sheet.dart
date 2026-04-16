@@ -242,7 +242,7 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
         padding: EdgeInsets.only(bottom: bottomInset),
         child: SingleChildScrollView(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(20, 10, 20, contentBottomPadding),
+            padding: EdgeInsets.fromLTRB(20, 14, 20, contentBottomPadding),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,7 +257,7 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 Text(
                   widget.title ?? '병원 방문 일정을 등록할까요?',
                   style: TextStyle(

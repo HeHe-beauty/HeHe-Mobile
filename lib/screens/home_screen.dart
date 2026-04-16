@@ -306,6 +306,7 @@ class _HomeScreenState extends State<HomeScreen>
     final d0Asset = _deviceImageAsset(d0Name);
     final d1Asset = _deviceImageAsset(d1Name);
     final d2Asset = _deviceImageAsset(d2Name);
+    final heroBackgroundColor = palette.primary.withValues(alpha: 0.82);
 
     return ValueListenableBuilder<bool>(
       valueListenable: AuthState.isLoggedIn,
@@ -350,7 +351,7 @@ class _HomeScreenState extends State<HomeScreen>
             isLoggedIn && reservationItems.isNotEmpty ? '이후 예약 일정' : null;
 
         return Scaffold(
-          backgroundColor: palette.surface,
+          backgroundColor: palette.surfaceSoft,
           body: GestureDetector(
             behavior: _activeDeviceInfo == null
                 ? HitTestBehavior.deferToChild
@@ -370,7 +371,7 @@ class _HomeScreenState extends State<HomeScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         DecoratedBox(
-                          decoration: BoxDecoration(color: palette.primary),
+                          decoration: BoxDecoration(color: heroBackgroundColor),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -488,9 +489,7 @@ class _HomeScreenState extends State<HomeScreen>
                                           TextSpan(
                                             text:
                                                 '기기를 선택하면 주변 병원 위치를 확인할 수 있어요',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                            ),
+                                            style: TextStyle(fontSize: 13),
                                           ),
                                         ],
                                       ),
@@ -505,11 +504,11 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                         ),
                         DecoratedBox(
-                          decoration: BoxDecoration(color: palette.primary),
+                          decoration: BoxDecoration(color: heroBackgroundColor),
                           child: Container(
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              color: palette.surface,
+                              color: palette.surfaceSoft,
                               borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(26),
                               ),
@@ -744,7 +743,7 @@ class _DeviceInfoButton extends StatelessWidget {
           height: 16,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: palette.border,
+            color: palette.surface,
             border: Border.all(color: palette.textTertiary),
           ),
           child: Center(

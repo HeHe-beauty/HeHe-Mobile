@@ -201,9 +201,9 @@ class SectionLikeCard extends StatelessWidget {
             border: Border.all(color: palette.border),
             boxShadow: [
               BoxShadow(
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-                color: palette.shadow,
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+                color: palette.primary.withValues(alpha: 0.06),
               ),
             ],
           ),
