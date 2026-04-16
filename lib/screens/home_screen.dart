@@ -145,7 +145,6 @@ class _HomeScreenState extends State<HomeScreen>
         context,
         MaterialPageRoute(
           builder: (_) => ContentDetailScreen.content(
-            sourceLabel: item.author,
             title: detail.title,
             htmlContent: detail.content,
             icon: item.icon,
@@ -735,12 +734,12 @@ class _DeviceInfoButton extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
-        width: 22,
-        height: 22,
+        width: 18,
+        height: 18,
         alignment: Alignment.center,
         child: Container(
-          width: 16,
-          height: 16,
+          width: 13,
+          height: 13,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: palette.surface,
@@ -750,7 +749,7 @@ class _DeviceInfoButton extends StatelessWidget {
             child: Text(
               'i',
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 8,
                 fontWeight: FontWeight.w900,
                 height: 1,
                 color: palette.textPrimary,

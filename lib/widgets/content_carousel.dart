@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/physics.dart';
 import '../models/content_item.dart';
 import '../theme/app_palette.dart';
 import 'content_card.dart';

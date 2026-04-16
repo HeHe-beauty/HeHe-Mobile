@@ -5,20 +5,17 @@ import '../theme/app_palette.dart';
 import '../widgets/app_icon_circle_button.dart';
 
 class ContentDetailScreen extends StatelessWidget {
-  final String sourceLabel;
   final String title;
   final String? htmlContent;
   final IconData icon;
 
   ContentDetailScreen({super.key, required ContentItem item})
-    : sourceLabel = item.author,
-      title = item.title,
+    : title = item.title,
       htmlContent = item.htmlContent,
       icon = item.icon;
 
   const ContentDetailScreen.content({
     super.key,
-    required this.sourceLabel,
     required this.title,
     required this.htmlContent,
     this.icon = Icons.article_rounded,
@@ -33,26 +30,18 @@ class ContentDetailScreen extends StatelessWidget {
       body: SafeArea(
         child: Container(
           width: double.infinity,
-          margin: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+          height: double.infinity,
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-          decoration: BoxDecoration(
-            color: palette.surface,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: palette.border),
-          ),
+          color: palette.bg,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _ContentHeader(
-                sourceLabel: sourceLabel,
+                title: title,
                 icon: icon,
                 onClose: () => Navigator.pop(context),
               ),
-              const SizedBox(height: 28),
-              _ContentTitle(title: title),
-              const SizedBox(height: 22),
-              const _ContentDivider(),
-              const SizedBox(height: 22),
+              const SizedBox(height: 20),
               Expanded(child: _ContentBodyArea(htmlContent: htmlContent ?? '')),
             ],
           ),
@@ -63,12 +52,12 @@ class ContentDetailScreen extends StatelessWidget {
 }
 
 class _ContentHeader extends StatelessWidget {
-  final String sourceLabel;
+  final String title;
   final IconData icon;
   final VoidCallback onClose;
 
   const _ContentHeader({
-    required this.sourceLabel,
+    required this.title,
     required this.icon,
     required this.onClose,
   });
@@ -91,55 +80,17 @@ class _ContentHeader extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: Text(
-            sourceLabel,
+            title,
             style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              height: 1.35,
               color: palette.textPrimary,
             ),
           ),
         ),
         AppIconCircleButton(icon: Icons.close_rounded, onTap: onClose),
       ],
-    );
-  }
-}
-
-class _ContentTitle extends StatelessWidget {
-  final String title;
-
-  const _ContentTitle({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 17,
-        fontWeight: FontWeight.w900,
-        height: 1.4,
-        color: palette.textPrimary,
-      ),
-    );
-  }
-}
-
-class _ContentDivider extends StatelessWidget {
-  const _ContentDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Container(
-      width: 120,
-      height: 3,
-      decoration: BoxDecoration(
-        color: palette.border,
-        borderRadius: BorderRadius.circular(999),
-      ),
     );
   }
 }

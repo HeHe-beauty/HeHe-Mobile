@@ -78,6 +78,8 @@ class MyPageScreen extends StatelessWidget {
                                     accessToken.isEmpty) {
                                   await AuthSessionStore.clear();
                                   AuthState.logOut();
+                                  if (!context.mounted) return;
+
                                   showAppSnackBar(context, '로그아웃 되었습니다');
                                   Navigator.pop(context);
                                   return;
@@ -90,6 +92,8 @@ class MyPageScreen extends StatelessWidget {
 
                                   await AuthSessionStore.clear();
                                   AuthState.logOut();
+                                  if (!context.mounted) return;
+
                                   showAppSnackBar(context, '로그아웃 되었습니다');
                                   Navigator.pop(context);
                                 } catch (e) {

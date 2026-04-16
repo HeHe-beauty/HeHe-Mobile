@@ -27,7 +27,6 @@ void main() {
       MaterialApp(
         theme: AppTheme.lightTheme,
         home: const ContentDetailScreen.content(
-          sourceLabel: 'HeHe',
           title: 'HTML 렌더링 테스트',
           htmlContent:
               '<html><body><p><strong>기존 내용</strong></p></body></html>',
