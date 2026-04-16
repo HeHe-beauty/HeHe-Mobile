@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../core/auth/auth_session_store.dart';
 import '../core/auth/auth_state.dart';
+import '../data/auth/auth_repository.dart';
 import '../theme/app_palette.dart';
 import '../utils/app_snackbar.dart';
 import '../widgets/screen_header.dart';
@@ -68,12 +70,36 @@ class MyPageScreen extends StatelessWidget {
                             const SizedBox(height: 16),
                             _AccountSection(
                               isLoggedIn: isLoggedIn,
-                              onTapLogout: () {
-                                AuthState.logOut();
+                              onTapLogout: () async {
+                                final accessToken =
+                                    AuthState.session?.accessToken;
 
-                                showAppSnackBar(context, '로그아웃 되었어요');
+                                if (accessToken == null ||
+                                    accessToken.isEmpty) {
+                                  await AuthSessionStore.clear();
+                                  AuthState.logOut();
+                                  showAppSnackBar(context, '로그아웃 되었습니다');
+                                  Navigator.pop(context);
+                                  return;
+                                }
 
-                                Navigator.pop(context);
+                                try {
+                                  await AuthRepository.logout(accessToken);
+
+                                  if (!context.mounted) return;
+
+                                  await AuthSessionStore.clear();
+                                  AuthState.logOut();
+                                  showAppSnackBar(context, '로그아웃 되었습니다');
+                                  Navigator.pop(context);
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    showAppSnackBar(
+                                      context,
+                                      '로그아웃에 실패했어요. 잠시 후 다시 시도해주세요.',
+                                    );
+                                  }
+                                }
                               },
                               onTapWithdraw: () {
                                 showAppSnackBar(

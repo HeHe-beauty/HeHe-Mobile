@@ -25,7 +25,7 @@ class AuthPrompts {
 
   static const myPage = AuthPrompt(
     title: '로그인이 필요해요',
-    description: '내 정보와 개인화 메뉴는 로그인 후\n확인할 수 있어요.',
+    description: '내 정보와 개인 메뉴는 로그인 후\n확인할 수 있어요.',
   );
 
   static const mapMyPage = AuthPrompt(

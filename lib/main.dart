@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter/services.dart';
 
-import '../core/common/app_settings_state.dart';
+import 'core/common/app_settings_state.dart';
+import 'core/auth/auth_session_store.dart';
+import 'core/auth/auth_state.dart';
+import 'data/auth/auth_repository.dart';
 import 'core/auth/social_login_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
@@ -23,6 +26,32 @@ void main() async {
     debugPrint('🔥 social login init done');
   } catch (e, stack) {
     debugPrint('🔥 social login init error: $e');
+    debugPrint('$stack');
+  }
+
+  try {
+    final savedSession = await AuthSessionStore.read();
+    if (savedSession != null) {
+      AuthState.restore(savedSession);
+
+      try {
+        final refreshedToken = await AuthRepository.refreshToken(
+          savedSession.refreshToken,
+        );
+        final refreshedSession = savedSession.copyWith(
+          accessToken: refreshedToken.accessToken,
+        );
+
+        await AuthSessionStore.write(refreshedSession);
+        AuthState.restore(refreshedSession);
+      } catch (e, stack) {
+        debugPrint('🔥 auth token refresh error: $e');
+        debugPrint('$stack');
+      }
+    }
+    debugPrint('🔥 auth session restore done');
+  } catch (e, stack) {
+    debugPrint('🔥 auth session restore error: $e');
     debugPrint('$stack');
   }
 

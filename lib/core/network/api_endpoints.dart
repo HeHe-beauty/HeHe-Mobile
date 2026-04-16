@@ -3,6 +3,11 @@ class ApiEndpoints {
   // 현재 시간 불러오기
   static const String serverTime = '/api/v1/common/time';
 
+  /// 인증과 관련된 api 목록
+  static const String authLogin = '/api/v1/auth/login';
+  static const String authLogout = '/api/v1/auth/logout';
+  static const String authTokenRefresh = '/api/v1/auth/token/refresh';
+
   /// 장비와 관련된 api 목록
   static const String equipList = '/api/v1/equipments/main';
   static String equipDetail(int equipId) => '/api/v1/equipments/$equipId';

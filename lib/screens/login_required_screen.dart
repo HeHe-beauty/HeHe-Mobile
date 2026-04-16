@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../core/auth/auth_session_store.dart';
 import '../core/auth/auth_state.dart';
 import '../core/auth/social_login_service.dart';
+import '../data/auth/auth_repository.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/app_snackbar.dart';
@@ -31,13 +33,25 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
         SocialLoginProvider.naver => await SocialLoginService.loginWithNaver(),
       };
 
-      // TODO: Exchange this provider credential with the backend auth API
-      // and persist the app session token when the endpoint is available.
-      credential.toJson();
+      final auth = await AuthRepository.login(
+        provider: credential.provider.name,
+        accessToken: credential.accessToken,
+      );
 
       if (!mounted) return;
 
-      _completeLogin(context);
+      final session = AuthSession(
+        accessToken: auth.accessToken,
+        refreshToken: auth.refreshToken,
+        userId: auth.user.userId,
+        nickname: auth.user.nickname,
+      );
+
+      await AuthSessionStore.write(session);
+
+      if (!mounted) return;
+
+      _completeLogin(context, session);
     } on SocialLoginException catch (e) {
       if (mounted) {
         showAppSnackBar(context, e.message);
@@ -55,8 +69,8 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
     }
   }
 
-  void _completeLogin(BuildContext context) {
-    AuthState.logIn();
+  void _completeLogin(BuildContext context, AuthSession session) {
+    AuthState.logIn(authSession: session);
     showAppSnackBar(context, '로그인 완료');
 
     Future.delayed(const Duration(milliseconds: 200), () {
