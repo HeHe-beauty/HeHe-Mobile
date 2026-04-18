@@ -333,7 +333,7 @@ class _HomeScreenState extends State<HomeScreen>
                             Padding(
                               padding: const EdgeInsets.fromLTRB(
                                 20,
-                                10,
+                                42,
                                 20,
                                 12,
                               ),
@@ -345,16 +345,26 @@ class _HomeScreenState extends State<HomeScreen>
                                         CrossAxisAlignment.start,
                                     children: [
                                       Expanded(
-                                        child: _PrimaryDeviceCard(
-                                          title: d0Label,
-                                          description:
-                                              '돈은 들어도 확실하고 안 아픈 게 최고라면?',
-                                          imageAsset: d0Asset,
-                                          onTap: () => _openDeviceMap(
-                                            context,
-                                            d0Name,
-                                            equipId: d0?.equipId,
-                                          ),
+                                        child: Stack(
+                                          clipBehavior: Clip.none,
+                                          children: [
+                                            _PrimaryDeviceCard(
+                                              title: d0Label,
+                                              description:
+                                                  '돈은 들어도 확실하고 안 아픈 게 최고라면?',
+                                              imageAsset: d0Asset,
+                                              onTap: () => _openDeviceMap(
+                                                context,
+                                                d0Name,
+                                                equipId: d0?.equipId,
+                                              ),
+                                            ),
+                                            const Positioned(
+                                              left: 12,
+                                              top: -20,
+                                              child: _DeviceCategoryBubble(),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                       const SizedBox(width: 14),
@@ -633,6 +643,68 @@ class _DeviceDescriptionText extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+class _DeviceCategoryBubble extends StatelessWidget {
+  const _DeviceCategoryBubble();
+
+  @override
+  Widget build(BuildContext context) {
+    const bubbleColor = Color(0xFFFF8A3D);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+          decoration: BoxDecoration(
+            color: bubbleColor,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: const Text(
+            '가장 많이 찾는 기기',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              height: 1,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 18),
+          child: CustomPaint(
+            size: const Size(14, 10),
+            painter: _BubbleTailPainter(color: bubbleColor),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BubbleTailPainter extends CustomPainter {
+  final Color color;
+
+  const _BubbleTailPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _BubbleTailPainter oldDelegate) {
+    return oldDelegate.color != color;
   }
 }
 
