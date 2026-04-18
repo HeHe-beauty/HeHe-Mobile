@@ -28,7 +28,7 @@ class ContentCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(22),
-        child: Container(
+        child: Ink(
           decoration: BoxDecoration(
             color: resolvedBackgroundColor,
             borderRadius: BorderRadius.circular(22),
