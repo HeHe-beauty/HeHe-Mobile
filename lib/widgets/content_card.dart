@@ -37,8 +37,8 @@ class ContentCard extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 58,
-                height: 58,
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
                   color: palette.surfaceMuted,
                   borderRadius: BorderRadius.circular(18),
@@ -220,7 +220,7 @@ class _ContentThumbnail extends StatelessWidget {
     final thumbnailUrl = item.thumbnailUrl;
 
     if (thumbnailUrl == null || thumbnailUrl.isEmpty) {
-      return Icon(item.icon, size: 28, color: palette.primary);
+      return Icon(item.icon, size: 22, color: palette.primary);
     }
 
     return ClipRRect(
@@ -229,7 +229,7 @@ class _ContentThumbnail extends StatelessWidget {
         thumbnailUrl,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          return Icon(item.icon, size: 28, color: palette.primary);
+          return Icon(item.icon, size: 22, color: palette.primary);
         },
       ),
     );

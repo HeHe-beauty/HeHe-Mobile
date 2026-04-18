@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_palette.dart';
 
-const _homeSecondaryTextColor = Color(0xFF6B7280);
+const _homeSecondaryTextColor = Color(0xFF4B5563);
 
 class CalendarCardReservationItem {
   final String title;
@@ -78,7 +78,7 @@ class CalendarCard extends StatelessWidget {
                           Text(
                             title,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 17,
                               fontWeight: FontWeight.w600,
                               letterSpacing: -0.2,
                               color: palette.textPrimary,
@@ -92,7 +92,7 @@ class CalendarCard extends StatelessWidget {
                                   Text(
                                     dDayLabel!,
                                     style: TextStyle(
-                                      fontSize: 18,
+                                      fontSize: 19,
                                       fontWeight: FontWeight.w800,
                                       letterSpacing: -0.3,
                                       color: palette.primaryStrong,
@@ -107,7 +107,7 @@ class CalendarCard extends StatelessWidget {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        fontSize: 12,
+                                        fontSize: 13,
                                         color: _homeSecondaryTextColor,
                                         fontWeight: FontWeight.w400,
                                       ),
@@ -143,7 +143,7 @@ class CalendarCard extends StatelessWidget {
                   Text(
                     reservationSectionLabel!,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: FontWeight.w400,
                       color: _homeSecondaryTextColor,
                     ),
@@ -290,7 +290,7 @@ class _LoginReservationPrompt extends StatelessWidget {
           Text(
             '로그인하면 다가오는 예약 일정을 확인할 수 있어요',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: FontWeight.w500,
               color: _homeSecondaryTextColor,
               height: 1.35,
@@ -330,7 +330,7 @@ class _UpcomingReservationRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: palette.textPrimary,
                       ),
@@ -339,7 +339,7 @@ class _UpcomingReservationRow extends StatelessWidget {
                     Text(
                       item.dateLabel,
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w400,
                         color: _homeSecondaryTextColor,
                       ),
@@ -393,7 +393,7 @@ class _EmptyReservationState extends StatelessWidget {
       child: Text(
         '다가오는 예약이 없어요. 다음 방문 일정을 추가해보세요.',
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 13,
           height: 1.45,
           fontWeight: FontWeight.w400,
           color: _homeSecondaryTextColor,
@@ -425,7 +425,7 @@ class _PrimaryButton extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: palette.surface,
               ),
@@ -474,7 +474,7 @@ class _SecondaryButton extends StatelessWidget {
                   Text(
                     label,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: palette.primary,
                     ),

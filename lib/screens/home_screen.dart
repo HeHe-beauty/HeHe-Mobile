@@ -28,7 +28,7 @@ import 'settings_screen.dart';
 import 'my_page_screen.dart';
 
 const _homeBackgroundColor = Color(0xFFF0F1F4);
-const _homeSecondaryTextColor = Color(0xFF6B7280);
+const _homeSecondaryTextColor = Color(0xFF4B5563);
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -335,7 +335,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 20,
                                 10,
                                 20,
-                                24,
+                                12,
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,10 +363,9 @@ class _HomeScreenState extends State<HomeScreen>
                                           children: [
                                             DeviceTile(
                                               title: d1Name,
-                                              description:
-                                                  '효과적이면서도 가성비 좋은 선택을 원하는 분',
+                                              description: '가성비 좋은 선택을 원하는 분',
                                               imageAsset: d1Asset,
-                                              height: 74,
+                                              height: 90,
                                               onTap: () => _openDeviceMap(
                                                 context,
                                                 d1Name,
@@ -379,7 +378,7 @@ class _HomeScreenState extends State<HomeScreen>
                                               description:
                                                   '빠른 제모로 시간을 아끼고 싶다면?',
                                               imageAsset: d2Asset,
-                                              height: 74,
+                                              height: 90,
                                               onTap: () => _openDeviceMap(
                                                 context,
                                                 d2Name,
@@ -419,9 +418,9 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         Container(
                           width: double.infinity,
-                          color: _homeSecondaryTextColor,
+                          color: _homeBackgroundColor,
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+                            padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -431,6 +430,7 @@ class _HomeScreenState extends State<HomeScreen>
                                       .copyWith(
                                         color: palette.textPrimary,
                                         fontSize: 18,
+                                        fontWeight: FontWeight.w700,
                                       ),
                                 ),
                                 const SizedBox(height: 14),
@@ -477,6 +477,7 @@ class _HomeScreenState extends State<HomeScreen>
                                       .copyWith(
                                         color: palette.textPrimary,
                                         fontSize: 18,
+                                        fontWeight: FontWeight.w700,
                                       ),
                                 ),
                                 const SizedBox(height: 14),
@@ -528,7 +529,7 @@ class _PrimaryDeviceCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(28),
         child: Ink(
-          height: 162,
+          height: 194,
           decoration: BoxDecoration(
             color: palette.surface,
             borderRadius: BorderRadius.circular(28),
@@ -555,7 +556,7 @@ class _PrimaryDeviceCard extends StatelessWidget {
                 Positioned(
                   left: 18,
                   right: 54,
-                  top: 18,
+                  top: 24,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -577,11 +578,11 @@ class _PrimaryDeviceCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 10),
                       _DeviceDescriptionText(
                         description,
                         style: TextStyle(
-                          color: _homeBackgroundColor,
+                          color: _homeSecondaryTextColor,
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
                           height: 1.25,

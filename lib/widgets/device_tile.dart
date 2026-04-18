@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_palette.dart';
 
-const _homeSecondaryTextColor = Color(0xFF6B7280);
+const _homeSecondaryTextColor = Color(0xFF4B5563);
 
 class DeviceTile extends StatelessWidget {
   final String title;
@@ -53,7 +53,7 @@ class DeviceTile extends StatelessWidget {
               Positioned(
                 left: 0,
                 right: 38,
-                top: 0,
+                top: 4,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -76,12 +76,12 @@ class DeviceTile extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 7),
                     _DeviceTileDescriptionText(
                       description,
                       style: TextStyle(
                         color: _homeSecondaryTextColor,
-                        fontSize: 9.5,
+                        fontSize: 12,
                         fontWeight: FontWeight.w400,
                         height: 1.2,
                       ),
