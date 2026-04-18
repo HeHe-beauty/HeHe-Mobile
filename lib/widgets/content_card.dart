@@ -7,6 +7,7 @@ class ContentCard extends StatelessWidget {
   final VoidCallback? onTap;
   final Color? backgroundColor;
   final Color? foregroundColor;
+  final Color? thumbnailBackgroundColor;
 
   const ContentCard({
     super.key,
@@ -14,6 +15,7 @@ class ContentCard extends StatelessWidget {
     this.onTap,
     this.backgroundColor,
     this.foregroundColor,
+    this.thumbnailBackgroundColor,
   });
 
   @override
@@ -21,6 +23,8 @@ class ContentCard extends StatelessWidget {
     final palette = context.palette;
     final resolvedBackgroundColor = backgroundColor ?? palette.surface;
     final resolvedForegroundColor = foregroundColor ?? palette.textPrimary;
+    final resolvedThumbnailBackgroundColor =
+        thumbnailBackgroundColor ?? palette.surfaceMuted;
 
     return Material(
       color: Colors.transparent,
@@ -40,7 +44,7 @@ class ContentCard extends StatelessWidget {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: palette.surfaceMuted,
+                  color: resolvedThumbnailBackgroundColor,
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: _ContentThumbnail(item: item),

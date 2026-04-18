@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_palette.dart';
 
 const _homeSecondaryTextColor = Color(0xFF4B5563);
+const _homeSoftCardColor = Color(0xFFF6F7F9);
 
 class CalendarCardReservationItem {
   final String title;
@@ -198,7 +199,7 @@ class SectionLikeCard extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: palette.surface,
+            color: _homeSoftCardColor,
             borderRadius: BorderRadius.circular(18),
           ),
           child: child,
@@ -217,86 +218,48 @@ class _LoginReservationPrompt extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
 
-    return SectionLikeCard(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 92,
-                          height: 17,
-                          decoration: BoxDecoration(
-                            color: palette.primarySoft.withValues(alpha: 0.72),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          '방문',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: -0.2,
-                            color: palette.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Text(
-                          'D-??',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.3,
-                            color: palette.primaryStrong,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Container(
-                            height: 11,
-                            decoration: BoxDecoration(
-                              color: palette.surfaceSoft,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 22,
-                color: palette.textSecondary,
-              ),
-            ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          decoration: BoxDecoration(
+            color: palette.surface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: palette.primary, width: 0.8),
           ),
-          const SizedBox(height: 14),
-          Text(
-            '로그인하면 다가오는 예약 일정을 확인할 수 있어요',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: _homeSecondaryTextColor,
-              height: 1.35,
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '로그인하고 다가오는 예약 일정 확인하기',
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: palette.primary,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 14,
+                    weight: 700,
+                    color: palette.primary,
+                  ),
+                ],
+              ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

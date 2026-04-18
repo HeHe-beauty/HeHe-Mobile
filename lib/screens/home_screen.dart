@@ -29,6 +29,7 @@ import 'my_page_screen.dart';
 
 const _homeBackgroundColor = Color(0xFFF0F1F4);
 const _homeSecondaryTextColor = Color(0xFF4B5563);
+const _homeSoftCardColor = Color(0xFFF6F7F9);
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -303,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen>
             isLoggedIn && reservationItems.isNotEmpty ? '이후 예약 일정' : null;
 
         return Scaffold(
-          backgroundColor: _homeBackgroundColor,
+          backgroundColor: palette.surface,
           body: GestureDetector(
             behavior: HitTestBehavior.deferToChild,
             child: Stack(
@@ -330,107 +331,112 @@ class _HomeScreenState extends State<HomeScreen>
                               onTapProfile: () => _openMyPage(context),
                               onTapSettings: () => _openSettings(context),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                20,
-                                42,
-                                20,
-                                12,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: Stack(
-                                          clipBehavior: Clip.none,
-                                          children: [
-                                            _PrimaryDeviceCard(
-                                              title: d0Label,
-                                              description:
-                                                  '돈은 들어도 확실하고 안 아픈 게 최고라면?',
-                                              imageAsset: d0Asset,
-                                              onTap: () => _openDeviceMap(
-                                                context,
-                                                d0Name,
-                                                equipId: d0?.equipId,
-                                              ),
-                                            ),
-                                            const Positioned(
-                                              left: 12,
-                                              top: -20,
-                                              child: _DeviceCategoryBubble(),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 14),
-                                      Expanded(
-                                        child: Column(
-                                          children: [
-                                            DeviceTile(
-                                              title: d1Name,
-                                              description: '가성비 좋은 선택을 원하는 분',
-                                              imageAsset: d1Asset,
-                                              height: 90,
-                                              onTap: () => _openDeviceMap(
-                                                context,
-                                                d1Name,
-                                                equipId: d1?.equipId,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 14),
-                                            DeviceTile(
-                                              title: d2Name,
-                                              description:
-                                                  '빠른 제모로 시간을 아끼고 싶다면?',
-                                              imageAsset: d2Asset,
-                                              height: 90,
-                                              onTap: () => _openDeviceMap(
-                                                context,
-                                                d2Name,
-                                                equipId: d2?.equipId,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text.rich(
-                                    const TextSpan(
+                            Container(
+                              width: double.infinity,
+                              color: _homeBackgroundColor,
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  20,
+                                  42,
+                                  20,
+                                  22,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        TextSpan(
-                                          text: '💡 ',
-                                          style: TextStyle(
-                                            fontFamily: 'Tossface',
-                                            fontSize: 12,
+                                        Expanded(
+                                          child: Stack(
+                                            clipBehavior: Clip.none,
+                                            children: [
+                                              _PrimaryDeviceCard(
+                                                title: d0Label,
+                                                description:
+                                                    '돈은 들어도 확실하고 안 아픈 게 최고라면?',
+                                                imageAsset: d0Asset,
+                                                onTap: () => _openDeviceMap(
+                                                  context,
+                                                  d0Name,
+                                                  equipId: d0?.equipId,
+                                                ),
+                                              ),
+                                              const Positioned(
+                                                left: 12,
+                                                top: -20,
+                                                child: _DeviceCategoryBubble(),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                        TextSpan(
-                                          text: '기기를 선택하면 주변 병원 위치를 확인할 수 있어요',
-                                          style: TextStyle(fontSize: 13),
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                          child: Column(
+                                            children: [
+                                              DeviceTile(
+                                                title: d1Name,
+                                                description: '가성비 좋은 선택을 원하는 분',
+                                                imageAsset: d1Asset,
+                                                height: 90,
+                                                onTap: () => _openDeviceMap(
+                                                  context,
+                                                  d1Name,
+                                                  equipId: d1?.equipId,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 14),
+                                              DeviceTile(
+                                                title: d2Name,
+                                                description:
+                                                    '빠른 제모로 시간을 아끼고 싶다면?',
+                                                imageAsset: d2Asset,
+                                                height: 90,
+                                                onTap: () => _openDeviceMap(
+                                                  context,
+                                                  d2Name,
+                                                  equipId: d2?.equipId,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ],
                                     ),
-                                    style: AppTextStyles.homeCaption.copyWith(
-                                      color: palette.textPrimary,
+                                    const SizedBox(height: 20),
+                                    Text.rich(
+                                      const TextSpan(
+                                        children: [
+                                          TextSpan(
+                                            text: '💡 ',
+                                            style: TextStyle(
+                                              fontFamily: 'Tossface',
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          TextSpan(
+                                            text:
+                                                '기기를 선택하면 주변 병원 위치를 확인할 수 있어요',
+                                            style: TextStyle(fontSize: 13),
+                                          ),
+                                        ],
+                                      ),
+                                      style: AppTextStyles.homeCaption.copyWith(
+                                        color: palette.textPrimary,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ],
                         ),
                         Container(
                           width: double.infinity,
-                          color: _homeBackgroundColor,
+                          color: palette.surface,
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
+                            padding: const EdgeInsets.fromLTRB(20, 24, 20, 18),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -493,6 +499,9 @@ class _HomeScreenState extends State<HomeScreen>
                                 const SizedBox(height: 14),
                                 ContentCarousel(
                                   items: contents,
+                                  cardBackgroundColor: palette.primarySoft
+                                      .withValues(alpha: 0.45),
+                                  thumbnailBackgroundColor: palette.surface,
                                   onTapItem: (item) {
                                     _openContentDetail(context, item);
                                   },
