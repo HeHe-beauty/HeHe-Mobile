@@ -60,7 +60,7 @@ class HeaderBar extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _UtilityIconButton(
-                  icon: Icons.person_outline_rounded,
+                  icon: Icons.person_outline,
                   onTap: onTapProfile,
                   color: utilityIconColor,
                 ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme/app_palette.dart';
 
+const _homeSecondaryTextColor = Color(0xFF6B7280);
+
 class CalendarCardReservationItem {
   final String title;
   final String dateLabel;
@@ -76,8 +78,8 @@ class CalendarCard extends StatelessWidget {
                           Text(
                             title,
                             style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
                               letterSpacing: -0.2,
                               color: palette.textPrimary,
                             ),
@@ -90,8 +92,8 @@ class CalendarCard extends StatelessWidget {
                                   Text(
                                     dDayLabel!,
                                     style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w900,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
                                       letterSpacing: -0.3,
                                       color: palette.primaryStrong,
                                     ),
@@ -105,9 +107,9 @@ class CalendarCard extends StatelessWidget {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        fontSize: 11,
-                                        color: palette.textSecondary,
-                                        fontWeight: FontWeight.w700,
+                                        fontSize: 12,
+                                        color: _homeSecondaryTextColor,
+                                        fontWeight: FontWeight.w400,
                                       ),
                                     ),
                                   ),
@@ -141,9 +143,9 @@ class CalendarCard extends StatelessWidget {
                   Text(
                     reservationSectionLabel!,
                     style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: palette.textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                      color: _homeSecondaryTextColor,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -198,14 +200,6 @@ class SectionLikeCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: palette.surface,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: palette.border),
-            boxShadow: [
-              BoxShadow(
-                blurRadius: 14,
-                offset: const Offset(0, 5),
-                color: palette.primary.withValues(alpha: 0.06),
-              ),
-            ],
           ),
           child: child,
         ),
@@ -249,8 +243,8 @@ class _LoginReservationPrompt extends StatelessWidget {
                         Text(
                           '방문',
                           style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                             letterSpacing: -0.2,
                             color: palette.textPrimary,
                           ),
@@ -263,8 +257,8 @@ class _LoginReservationPrompt extends StatelessWidget {
                         Text(
                           'D-??',
                           style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
                             letterSpacing: -0.3,
                             color: palette.primaryStrong,
                           ),
@@ -298,7 +292,7 @@ class _LoginReservationPrompt extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: palette.textSecondary,
+              color: _homeSecondaryTextColor,
               height: 1.35,
             ),
           ),
@@ -337,7 +331,7 @@ class _UpcomingReservationRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         color: palette.textPrimary,
                       ),
                     ),
@@ -346,8 +340,8 @@ class _UpcomingReservationRow extends StatelessWidget {
                       item.dateLabel,
                       style: TextStyle(
                         fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: palette.textSecondary,
+                        fontWeight: FontWeight.w400,
+                        color: _homeSecondaryTextColor,
                       ),
                     ),
                   ],
@@ -401,8 +395,8 @@ class _EmptyReservationState extends StatelessWidget {
         style: TextStyle(
           fontSize: 11,
           height: 1.45,
-          fontWeight: FontWeight.w700,
-          color: palette.textSecondary,
+          fontWeight: FontWeight.w400,
+          color: _homeSecondaryTextColor,
         ),
       ),
     );
@@ -432,7 +426,7 @@ class _PrimaryButton extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w600,
                 color: palette.surface,
               ),
             ),
@@ -481,7 +475,7 @@ class _SecondaryButton extends StatelessWidget {
                     label,
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: palette.primary,
                     ),
                   ),

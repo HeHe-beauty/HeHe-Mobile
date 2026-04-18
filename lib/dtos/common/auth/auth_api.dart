@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_endpoints.dart';
 import 'auth_login_request_dto.dart';
@@ -9,9 +11,12 @@ class AuthApi {
   static final ApiClient _apiClient = ApiClient();
 
   static Future<AuthLoginResponseDto> login(AuthLoginRequestDto request) async {
+    final requestBody = request.toJson();
+    debugPrint('Auth login request body: $requestBody');
+
     final body = await _apiClient.post(
       ApiEndpoints.authLogin,
-      body: request.toJson(),
+      body: requestBody,
     );
 
     final data = body['data'] as Map<String, dynamic>;

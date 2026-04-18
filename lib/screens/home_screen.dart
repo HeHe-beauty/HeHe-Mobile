@@ -27,6 +27,9 @@ import 'device_map_screen.dart';
 import 'settings_screen.dart';
 import 'my_page_screen.dart';
 
+const _homeBackgroundColor = Color(0xFFF0F1F4);
+const _homeSecondaryTextColor = Color(0xFF6B7280);
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -37,16 +40,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with WidgetsBindingObserver, DateRefreshMixin {
   static const int _maxVisibleReservations = 2;
-  static const double _deviceTooltipWidth = 244;
   List<EquipDto> _devices = [];
   List<ContentItem> _contents = HomeCatalog.contents;
-  final GlobalKey _homeStackKey = GlobalKey();
-  final GlobalKey _gentleInfoKey = GlobalKey();
-  final GlobalKey _apogeeInfoKey = GlobalKey();
-  final GlobalKey _clarityInfoKey = GlobalKey();
-  String? _activeDeviceInfoId;
-  _DeviceInfo? _activeDeviceInfo;
-  Offset? _deviceTooltipOffset;
 
   EquipDto? _device(int index) {
     if (index >= _devices.length) return null;
@@ -248,47 +243,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _hideDeviceTooltip() {
-    if (_activeDeviceInfoId == null) return;
-
-    setState(() {
-      _activeDeviceInfoId = null;
-      _activeDeviceInfo = null;
-      _deviceTooltipOffset = null;
-    });
-  }
-
-  void _toggleDeviceTooltip(String id, GlobalKey iconKey, _DeviceInfo info) {
-    if (_activeDeviceInfoId == id) {
-      _hideDeviceTooltip();
-      return;
-    }
-
-    final stackContext = _homeStackKey.currentContext;
-    final iconContext = iconKey.currentContext;
-    if (stackContext == null || iconContext == null) return;
-
-    final stackBox = stackContext.findRenderObject() as RenderBox?;
-    final iconBox = iconContext.findRenderObject() as RenderBox?;
-    if (stackBox == null || iconBox == null) return;
-
-    final iconOffset = stackBox.globalToLocal(
-      iconBox.localToGlobal(Offset.zero),
-    );
-    final centeredLeft =
-        iconOffset.dx + (iconBox.size.width / 2) - (_deviceTooltipWidth / 2);
-    final left = centeredLeft.clamp(
-      12.0,
-      stackBox.size.width - _deviceTooltipWidth - 12,
-    );
-
-    setState(() {
-      _activeDeviceInfoId = id;
-      _activeDeviceInfo = info;
-      _deviceTooltipOffset = Offset(
-        left,
-        iconOffset.dy + iconBox.size.height + 8,
-      );
-    });
+    return;
   }
 
   @override
@@ -299,14 +254,12 @@ class _HomeScreenState extends State<HomeScreen>
     final d1 = _device(1);
     final d2 = _device(2);
     final d0Name = _deviceName(d0, '젠틀맥스 프로');
-    final d0Label = _gentleMaxLabel(d0Name);
+    final d0Label = d0Name;
     final d1Name = _deviceName(d1, '아포지');
     final d2Name = _deviceName(d2, '클라리티2');
     final d0Asset = _deviceImageAsset(d0Name);
     final d1Asset = _deviceImageAsset(d1Name);
     final d2Asset = _deviceImageAsset(d2Name);
-    final heroBackgroundColor = palette.primary.withValues(alpha: 0.82);
-
     return ValueListenableBuilder<bool>(
       valueListenable: AuthState.isLoggedIn,
       builder: (context, isLoggedIn, _) {
@@ -350,14 +303,10 @@ class _HomeScreenState extends State<HomeScreen>
             isLoggedIn && reservationItems.isNotEmpty ? '이후 예약 일정' : null;
 
         return Scaffold(
-          backgroundColor: palette.surfaceSoft,
+          backgroundColor: _homeBackgroundColor,
           body: GestureDetector(
-            behavior: _activeDeviceInfo == null
-                ? HitTestBehavior.deferToChild
-                : HitTestBehavior.translucent,
-            onTap: _activeDeviceInfo == null ? null : _hideDeviceTooltip,
+            behavior: HitTestBehavior.deferToChild,
             child: Stack(
-              key: _homeStackKey,
               children: [
                 NotificationListener<ScrollStartNotification>(
                   onNotification: (_) {
@@ -369,217 +318,176 @@ class _HomeScreenState extends State<HomeScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        DecoratedBox(
-                          decoration: BoxDecoration(color: heroBackgroundColor),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              HeaderBar(
-                                title: '시술 꿀팁부터 병원 찾기까지 관리는 HeHe에서',
-                                isLoggedIn: isLoggedIn,
-                                backgroundColor: Colors.transparent,
-                                foregroundColor: palette.surface,
-                                utilityIconColor: palette.surface,
-                                onTapProfile: () => _openMyPage(context),
-                                onTapSettings: () => _openSettings(context),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  20,
-                                  10,
-                                  20,
-                                  24,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: _PrimaryDeviceCard(
-                                            title: d0Label,
-                                            imageAsset: d0Asset,
-                                            infoIcon: _DeviceInfoButton(
-                                              key: _gentleInfoKey,
-                                              onTap: () => _toggleDeviceTooltip(
-                                                'gentle',
-                                                _gentleInfoKey,
-                                                const _DeviceInfo(
-                                                  title: '젠틀맥스 프로플러스',
-                                                  body:
-                                                      '뿌리 깊은 털이 고민인 분, 돈은 들어도 확실하고 안 아픈 게 최고라면?',
-                                                ),
-                                              ),
-                                            ),
-                                            onTap: () => _openDeviceMap(
-                                              context,
-                                              d0Name,
-                                              equipId: d0?.equipId,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 14),
-                                        Expanded(
-                                          child: Column(
-                                            children: [
-                                              DeviceTile(
-                                                title: d1Name,
-                                                imageAsset: d1Asset,
-                                                height: 74,
-                                                infoIcon: _DeviceInfoButton(
-                                                  key: _apogeeInfoKey,
-                                                  onTap: () => _toggleDeviceTooltip(
-                                                    'apogee',
-                                                    _apogeeInfoKey,
-                                                    const _DeviceInfo(
-                                                      title: '아포지 (엘리트 플러스)',
-                                                      body:
-                                                          '얇은 털까지 깔끔하게! 효과적이면서도 가성비 좋은 선택을 원하는 분',
-                                                    ),
-                                                  ),
-                                                ),
-                                                onTap: () => _openDeviceMap(
-                                                  context,
-                                                  d1Name,
-                                                  equipId: d1?.equipId,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 14),
-                                              DeviceTile(
-                                                title: d2Name,
-                                                imageAsset: d2Asset,
-                                                height: 74,
-                                                infoIcon: _DeviceInfoButton(
-                                                  key: _clarityInfoKey,
-                                                  onTap: () => _toggleDeviceTooltip(
-                                                    'clarity',
-                                                    _clarityInfoKey,
-                                                    const _DeviceInfo(
-                                                      title: '클라리티 2',
-                                                      body:
-                                                          '피부가 예민해 걱정인 분, 바쁜 일상 속 빠른 제모로 시간을 아끼고 싶다면?',
-                                                    ),
-                                                  ),
-                                                ),
-                                                onTap: () => _openDeviceMap(
-                                                  context,
-                                                  d2Name,
-                                                  equipId: d2?.equipId,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Text.rich(
-                                      const TextSpan(
-                                        children: [
-                                          TextSpan(
-                                            text: '💡 ',
-                                            style: TextStyle(
-                                              fontFamily: 'Tossface',
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                          TextSpan(
-                                            text:
-                                                '기기를 선택하면 주변 병원 위치를 확인할 수 있어요',
-                                            style: TextStyle(fontSize: 13),
-                                          ),
-                                        ],
-                                      ),
-                                      style: AppTextStyles.homeCaption.copyWith(
-                                        color: palette.surface,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        DecoratedBox(
-                          decoration: BoxDecoration(color: heroBackgroundColor),
-                          child: Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: palette.surfaceSoft,
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(26),
-                              ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            HeaderBar(
+                              title: '시술 꿀팁부터 병원 찾기까지 관리는 HeHe에서',
+                              isLoggedIn: isLoggedIn,
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: palette.textPrimary,
+                              utilityIconColor: palette.textPrimary,
+                              onTapProfile: () => _openMyPage(context),
+                              onTapSettings: () => _openSettings(context),
                             ),
-                            child: Padding(
+                            Padding(
                               padding: const EdgeInsets.fromLTRB(
                                 20,
-                                22,
+                                10,
                                 20,
-                                18,
+                                24,
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    '내 일정',
-                                    style: AppTextStyles.homeSectionTitle
-                                        .copyWith(color: palette.textPrimary),
-                                  ),
-                                  const SizedBox(height: 14),
-                                  CalendarCard(
-                                    title: reservationTitle,
-                                    dDayLabel: reservationDday,
-                                    subtitle: reservationSubtitle,
-                                    reservationSectionLabel:
-                                        reservationSectionLabel,
-                                    reservations: reservationItems,
-                                    isLoginRequired: !isLoggedIn,
-                                    showAddButton: isLoggedIn,
-                                    maxVisibleItems: _maxVisibleReservations,
-                                    onTapCalendar: () =>
-                                        _openCalendarIfLoggedIn(context),
-                                    onTapCard: !isLoggedIn
-                                        ? () => _openReservationLoginRequired(
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: _PrimaryDeviceCard(
+                                          title: d0Label,
+                                          description:
+                                              '돈은 들어도 확실하고 안 아픈 게 최고라면?',
+                                          imageAsset: d0Asset,
+                                          onTap: () => _openDeviceMap(
                                             context,
-                                          )
-                                        : null,
-                                    onTapSummary:
-                                        nearestSchedule != null && isLoggedIn
-                                        ? () => _openReservationDetail(
-                                            context,
-                                            nearestSchedule,
-                                          )
-                                        : null,
-                                    onTapStart: () async {
-                                      final allowed =
-                                          await AuthGate.ensureLoggedInWithPrompt(
-                                            context,
-                                            prompt: AuthPrompts.calendarAdd,
-                                          );
-
-                                      if (!allowed || !context.mounted) return;
-
-                                      await _showAddScheduleSheet(context);
-                                    },
+                                            d0Name,
+                                            equipId: d0?.equipId,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: Column(
+                                          children: [
+                                            DeviceTile(
+                                              title: d1Name,
+                                              description:
+                                                  '효과적이면서도 가성비 좋은 선택을 원하는 분',
+                                              imageAsset: d1Asset,
+                                              height: 74,
+                                              onTap: () => _openDeviceMap(
+                                                context,
+                                                d1Name,
+                                                equipId: d1?.equipId,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 14),
+                                            DeviceTile(
+                                              title: d2Name,
+                                              description:
+                                                  '빠른 제모로 시간을 아끼고 싶다면?',
+                                              imageAsset: d2Asset,
+                                              height: 74,
+                                              onTap: () => _openDeviceMap(
+                                                context,
+                                                d2Name,
+                                                equipId: d2?.equipId,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 24),
-                                  Text(
-                                    '추천 콘텐츠',
-                                    style: AppTextStyles.homeSectionTitle
-                                        .copyWith(color: palette.textPrimary),
+                                  const SizedBox(height: 12),
+                                  Text.rich(
+                                    const TextSpan(
+                                      children: [
+                                        TextSpan(
+                                          text: '💡 ',
+                                          style: TextStyle(
+                                            fontFamily: 'Tossface',
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        TextSpan(
+                                          text: '기기를 선택하면 주변 병원 위치를 확인할 수 있어요',
+                                          style: TextStyle(fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                                    style: AppTextStyles.homeCaption.copyWith(
+                                      color: palette.textPrimary,
+                                    ),
                                   ),
-                                  const SizedBox(height: 14),
-                                  ContentCarousel(
-                                    items: contents,
-                                    onTapItem: (item) {
-                                      _openContentDetail(context, item);
-                                    },
-                                  ),
-                                  const SizedBox(height: 14),
                                 ],
                               ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          width: double.infinity,
+                          color: _homeSecondaryTextColor,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '내 일정',
+                                  style: AppTextStyles.homeSectionTitle
+                                      .copyWith(
+                                        color: palette.textPrimary,
+                                        fontSize: 18,
+                                      ),
+                                ),
+                                const SizedBox(height: 14),
+                                CalendarCard(
+                                  title: reservationTitle,
+                                  dDayLabel: reservationDday,
+                                  subtitle: reservationSubtitle,
+                                  reservationSectionLabel:
+                                      reservationSectionLabel,
+                                  reservations: reservationItems,
+                                  isLoginRequired: !isLoggedIn,
+                                  showAddButton: isLoggedIn,
+                                  maxVisibleItems: _maxVisibleReservations,
+                                  onTapCalendar: () =>
+                                      _openCalendarIfLoggedIn(context),
+                                  onTapCard: !isLoggedIn
+                                      ? () => _openReservationLoginRequired(
+                                          context,
+                                        )
+                                      : null,
+                                  onTapSummary:
+                                      nearestSchedule != null && isLoggedIn
+                                      ? () => _openReservationDetail(
+                                          context,
+                                          nearestSchedule,
+                                        )
+                                      : null,
+                                  onTapStart: () async {
+                                    final allowed =
+                                        await AuthGate.ensureLoggedInWithPrompt(
+                                          context,
+                                          prompt: AuthPrompts.calendarAdd,
+                                        );
+
+                                    if (!allowed || !context.mounted) return;
+
+                                    await _showAddScheduleSheet(context);
+                                  },
+                                ),
+                                const SizedBox(height: 24),
+                                Text(
+                                  '추천 콘텐츠',
+                                  style: AppTextStyles.homeSectionTitle
+                                      .copyWith(
+                                        color: palette.textPrimary,
+                                        fontSize: 18,
+                                      ),
+                                ),
+                                const SizedBox(height: 14),
+                                ContentCarousel(
+                                  items: contents,
+                                  onTapItem: (item) {
+                                    _openContentDetail(context, item);
+                                  },
+                                ),
+                                const SizedBox(height: 14),
+                              ],
                             ),
                           ),
                         ),
@@ -587,19 +495,6 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
                 ),
-                if (_activeDeviceInfo != null && _deviceTooltipOffset != null)
-                  Positioned(
-                    left: _deviceTooltipOffset!.dx,
-                    top: _deviceTooltipOffset!.dy,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {},
-                      child: _DeviceInfoBubble(
-                        width: _deviceTooltipWidth,
-                        info: _activeDeviceInfo!,
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
@@ -611,14 +506,14 @@ class _HomeScreenState extends State<HomeScreen>
 
 class _PrimaryDeviceCard extends StatelessWidget {
   final String title;
+  final String description;
   final String imageAsset;
-  final Widget? infoIcon;
   final VoidCallback onTap;
 
   const _PrimaryDeviceCard({
     required this.title,
+    required this.description,
     required this.imageAsset,
-    this.infoIcon,
     required this.onTap,
   });
 
@@ -637,74 +532,64 @@ class _PrimaryDeviceCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: palette.surface,
             borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: palette.border),
-            boxShadow: [
-              BoxShadow(
-                color: palette.shadow,
-                blurRadius: 12,
-                offset: const Offset(0, 5),
-              ),
-            ],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(28),
             child: Stack(
               children: [
                 Positioned(
-                  left: 14,
-                  top: 18,
+                  right: 14,
+                  bottom: 14,
                   child: IgnorePointer(
                     child: SizedBox(
-                      width: 118,
-                      height: 102,
+                      width: 78,
+                      height: 66,
                       child: Image.asset(
                         imageAsset,
                         fit: BoxFit.contain,
-                        alignment: Alignment.topLeft,
+                        alignment: Alignment.bottomRight,
                       ),
                     ),
                   ),
                 ),
                 Positioned(
                   left: 18,
-                  right: 18,
-                  bottom: 18,
+                  right: 54,
+                  top: 18,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        _primaryDeviceTitleFirstLine(title),
-                        maxLines: 1,
-                        textAlign: TextAlign.right,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: palette.textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          height: 1.1,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          title.replaceAll(RegExp(r'\s+'), ' '),
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.visible,
+                          textAlign: TextAlign.left,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: palette.textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            height: 1.1,
+                          ),
                         ),
                       ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _primaryDeviceTitleSecondLine(title),
-                            maxLines: 1,
-                            textAlign: TextAlign.right,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: palette.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              height: 1.1,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(height: 6),
+                      _DeviceDescriptionText(
+                        description,
+                        style: TextStyle(
+                          color: _homeBackgroundColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          height: 1.25,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                if (infoIcon != null)
-                  Positioned(top: 16, right: 16, child: infoIcon!),
               ],
             ),
           ),
@@ -714,130 +599,87 @@ class _PrimaryDeviceCard extends StatelessWidget {
   }
 }
 
-class _DeviceInfo {
-  final String title;
-  final String body;
+class _DeviceDescriptionText extends StatelessWidget {
+  final String text;
+  final TextStyle style;
 
-  const _DeviceInfo({required this.title, required this.body});
-}
-
-class _DeviceInfoButton extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _DeviceInfoButton({super.key, required this.onTap});
+  const _DeviceDescriptionText(this.text, {required this.style});
 
   @override
   Widget build(BuildContext context) {
-    final palette = context.palette;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final lines = _wordWrapLines(
+          text.trim().replaceAll(RegExp(r'\s+'), ' '),
+          style,
+          constraints.maxWidth,
+          context,
+        );
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        width: 18,
-        height: 18,
-        alignment: Alignment.center,
-        child: Container(
-          width: 13,
-          height: 13,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: palette.surface,
-            border: Border.all(color: palette.textTertiary),
-          ),
-          child: Center(
-            child: Text(
-              'i',
-              style: TextStyle(
-                fontSize: 8,
-                fontWeight: FontWeight.w900,
-                height: 1,
-                color: palette.textPrimary,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DeviceInfoBubble extends StatelessWidget {
-  final double width;
-  final _DeviceInfo info;
-
-  const _DeviceInfoBubble({required this.width, required this.info});
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        width: width,
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-        decoration: BoxDecoration(
-          color: palette.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: palette.border),
-          boxShadow: [
-            BoxShadow(
-              color: palette.shadow,
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
+        return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              info.title,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
-                color: palette.textPrimary,
+            for (final line in lines)
+              Text(
+                line,
+                softWrap: false,
+                maxLines: 1,
+                overflow: TextOverflow.visible,
+                style: style,
               ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              info.body,
-              style: TextStyle(
-                fontSize: 11,
-                height: 1.45,
-                fontWeight: FontWeight.w600,
-                color: palette.textSecondary,
-              ),
-            ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
-String _primaryDeviceTitleFirstLine(String title) {
-  final lines = title.split('\n');
-  return lines.first;
+List<String> _wordWrapLines(
+  String text,
+  TextStyle style,
+  double maxWidth,
+  BuildContext context,
+) {
+  final words = text.split(RegExp(r'\s+')).where((word) => word.isNotEmpty);
+  final lines = <String>[];
+  var currentLine = '';
+
+  for (final word in words) {
+    final candidate = currentLine.isEmpty ? word : '$currentLine $word';
+    if (currentLine.isEmpty || _textFits(candidate, style, maxWidth, context)) {
+      currentLine = candidate;
+      continue;
+    }
+
+    lines.add(currentLine);
+    currentLine = word;
+  }
+
+  if (currentLine.isNotEmpty) {
+    lines.add(currentLine);
+  }
+
+  return lines.isEmpty ? const [''] : lines;
 }
 
-String _primaryDeviceTitleSecondLine(String title) {
-  final lines = title.split('\n');
-  if (lines.length < 2) return '';
-  return lines.sublist(1).join(' ');
+bool _textFits(
+  String text,
+  TextStyle style,
+  double maxWidth,
+  BuildContext context,
+) {
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: Directionality.of(context),
+    maxLines: 1,
+  )..layout(maxWidth: maxWidth);
+
+  return !painter.didExceedMaxLines;
 }
 
 String _deviceName(EquipDto? device, String fallback) {
   return (device?.displayName ?? fallback).trim();
-}
-
-String _gentleMaxLabel(String deviceName) {
-  if (deviceName.contains('젠틀맥스')) {
-    return '젠틀맥스\n프로';
-  }
-  return deviceName;
 }
 
 String _deviceImageAsset(String deviceName) {

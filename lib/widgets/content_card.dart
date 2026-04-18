@@ -5,12 +5,22 @@ import '../theme/app_palette.dart';
 class ContentCard extends StatelessWidget {
   final ContentItem item;
   final VoidCallback? onTap;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
 
-  const ContentCard({super.key, required this.item, this.onTap});
+  const ContentCard({
+    super.key,
+    required this.item,
+    this.onTap,
+    this.backgroundColor,
+    this.foregroundColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    final resolvedBackgroundColor = backgroundColor ?? palette.surface;
+    final resolvedForegroundColor = foregroundColor ?? palette.textPrimary;
 
     return Material(
       color: Colors.transparent,
@@ -20,16 +30,8 @@ class ContentCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         child: Container(
           decoration: BoxDecoration(
-            color: palette.surface,
+            color: resolvedBackgroundColor,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: palette.border),
-            boxShadow: [
-              BoxShadow(
-                blurRadius: 14,
-                offset: const Offset(0, 5),
-                color: palette.primary.withValues(alpha: 0.06),
-              ),
-            ],
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
@@ -45,19 +47,16 @@ class ContentCard extends StatelessWidget {
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: SizedBox(
-                  height: 44,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: _WordWrappedTitle(
-                      title: item.title,
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        height: 1.4,
-                        color: palette.textPrimary,
-                      ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: _WordWrappedTitle(
+                    title: item.title,
+                    textAlign: TextAlign.left,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
+                      color: resolvedForegroundColor,
                     ),
                   ),
                 ),
@@ -86,85 +85,78 @@ class _WordWrappedTitle extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final normalizedTitle = title.trim().replaceAll(RegExp(r'\s+'), ' ');
-        final words = normalizedTitle.split(' ');
+        final words = _splitWords(normalizedTitle);
+        final lines = _wrapByWords(words, style, constraints.maxWidth, context);
 
-        if (words.length <= 1) {
-          return Text(
-            normalizedTitle,
-            textAlign: textAlign,
-            softWrap: false,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: style,
-          );
-        }
-
-        final lines = <String>[];
-        var currentLine = '';
-
-        for (final word in words) {
-          final candidate = currentLine.isEmpty ? word : '$currentLine $word';
-          if (_fits(candidate, style, constraints.maxWidth, context)) {
-            currentLine = candidate;
-            continue;
-          }
-
-          if (currentLine.isNotEmpty) {
-            lines.add(currentLine);
-            if (lines.length == 2) {
-              break;
-            }
-          }
-
-          currentLine = word;
-        }
-
-        if (lines.length < 2 && currentLine.isNotEmpty) {
-          lines.add(currentLine);
-        }
-
-        if (lines.isEmpty) {
-          lines.add(normalizedTitle);
-        }
-
-        if (lines.length > 2) {
-          lines.removeRange(2, lines.length);
-        }
-
-        final consumedWords = lines
-            .expand((line) => line.split(' '))
-            .where((word) => word.isNotEmpty)
-            .length;
-
-        if (consumedWords < words.length) {
-          final remaining = words.sublist(consumedWords).join(' ');
-          final finalLineBase = lines.length == 2
-              ? lines.removeLast()
-              : (lines.isNotEmpty ? lines.removeLast() : '');
-          final finalLine = [
-            finalLineBase,
-            remaining,
-          ].where((part) => part.isNotEmpty).join(' ');
-          lines.add(
-            _ellipsizeToWidth(finalLine, style, constraints.maxWidth, context),
-          );
-        } else {
-          final lastLine = lines.removeLast();
-          lines.add(
-            _ellipsizeToWidth(lastLine, style, constraints.maxWidth, context),
-          );
-        }
-
-        return Text(
-          lines.join('\n'),
-          textAlign: textAlign,
-          softWrap: false,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: style,
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: _crossAxisAlignmentFor(textAlign),
+          children: [
+            for (final line in lines)
+              Align(
+                alignment: _alignmentFor(textAlign),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: _alignmentFor(textAlign),
+                  child: Text(
+                    line,
+                    textAlign: textAlign,
+                    softWrap: false,
+                    maxLines: 1,
+                    overflow: TextOverflow.visible,
+                    style: style,
+                  ),
+                ),
+              ),
+          ],
         );
       },
     );
+  }
+
+  List<String> _wrapByWords(
+    List<String> words,
+    TextStyle style,
+    double maxWidth,
+    BuildContext context,
+  ) {
+    if (words.isEmpty) return const [''];
+
+    final lines = <String>[];
+    var currentLine = '';
+
+    for (final word in words) {
+      final candidate = currentLine.isEmpty ? word : '$currentLine $word';
+      if (currentLine.isEmpty || _fits(candidate, style, maxWidth, context)) {
+        currentLine = candidate;
+        continue;
+      }
+
+      lines.add(currentLine);
+      currentLine = word;
+    }
+
+    if (currentLine.isNotEmpty) {
+      lines.add(currentLine);
+    }
+
+    return lines;
+  }
+
+  CrossAxisAlignment _crossAxisAlignmentFor(TextAlign textAlign) {
+    return switch (textAlign) {
+      TextAlign.center => CrossAxisAlignment.center,
+      TextAlign.right || TextAlign.end => CrossAxisAlignment.end,
+      _ => CrossAxisAlignment.start,
+    };
+  }
+
+  Alignment _alignmentFor(TextAlign textAlign) {
+    return switch (textAlign) {
+      TextAlign.center => Alignment.center,
+      TextAlign.right || TextAlign.end => Alignment.centerRight,
+      _ => Alignment.centerLeft,
+    };
   }
 
   bool _fits(
@@ -182,39 +174,38 @@ class _WordWrappedTitle extends StatelessWidget {
     return !painter.didExceedMaxLines;
   }
 
-  String _ellipsizeToWidth(
-    String text,
-    TextStyle style,
-    double maxWidth,
-    BuildContext context,
-  ) {
-    if (_fits(text, style, maxWidth, context)) {
-      return text;
-    }
-
+  List<String> _splitWords(String text) {
     final parts = text
-        .trim()
-        .split(' ')
+        .split(RegExp(r'\s+'))
         .where((word) => word.isNotEmpty)
         .toList();
-    if (parts.isEmpty) return '…';
+    final words = <String>[];
 
-    var low = 0;
-    var high = parts.length;
-    var best = '';
-
-    while (low <= high) {
-      final mid = (low + high) ~/ 2;
-      final candidate = '${parts.take(mid).join(' ')}…';
-      if (_fits(candidate, style, maxWidth, context)) {
-        best = candidate;
-        low = mid + 1;
-      } else {
-        high = mid - 1;
+    for (final part in parts) {
+      if (_isEmojiToken(part) && words.isNotEmpty) {
+        words[words.length - 1] = '${words.last} $part';
+        continue;
       }
+
+      words.add(part);
     }
 
-    return best.isEmpty ? '…' : best;
+    return words;
+  }
+
+  bool _isEmojiToken(String text) {
+    for (final rune in text.runes) {
+      if (!_isEmojiRune(rune)) return false;
+    }
+
+    return text.isNotEmpty;
+  }
+
+  bool _isEmojiRune(int rune) {
+    return rune == 0x200D ||
+        rune == 0xFE0F ||
+        (rune >= 0x1F000 && rune <= 0x1FAFF) ||
+        (rune >= 0x2600 && rune <= 0x27BF);
   }
 }
 

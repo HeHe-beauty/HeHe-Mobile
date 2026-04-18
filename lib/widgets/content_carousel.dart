@@ -6,8 +6,16 @@ import 'content_card.dart';
 class ContentCarousel extends StatefulWidget {
   final List<ContentItem> items;
   final ValueChanged<ContentItem>? onTapItem;
+  final Color? cardBackgroundColor;
+  final Color? cardForegroundColor;
 
-  const ContentCarousel({super.key, required this.items, this.onTapItem});
+  const ContentCarousel({
+    super.key,
+    required this.items,
+    this.onTapItem,
+    this.cardBackgroundColor,
+    this.cardForegroundColor,
+  });
 
   @override
   State<ContentCarousel> createState() => _ContentCarouselState();
@@ -111,6 +119,8 @@ class _ContentCarouselState extends State<ContentCarousel> {
                       width: cardWidth,
                       child: ContentCard(
                         item: item,
+                        backgroundColor: widget.cardBackgroundColor,
+                        foregroundColor: widget.cardForegroundColor,
                         onTap: () => widget.onTapItem?.call(item),
                       ),
                     );
