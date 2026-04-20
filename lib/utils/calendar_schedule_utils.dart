@@ -10,6 +10,12 @@ DateTime calendarDateOnly(DateTime date) {
 
 String formatMonthDotLabel(DateTime date) => '${date.year}. ${date.month}';
 
+String formatScheduleQueryDate(DateTime date) {
+  return '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
+}
+
 String formatScheduleTime(DateTime dateTime) {
   final hour = dateTime.hour;
   final minute = dateTime.minute;

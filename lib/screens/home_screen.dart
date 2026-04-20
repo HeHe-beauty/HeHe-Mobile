@@ -12,10 +12,13 @@ import '../data/article/article_repository.dart';
 import '../data/calendar_schedule_store.dart';
 import '../data/home_catalog.dart';
 import '../data/equipment/equip_repository.dart';
+import '../data/schedule/schedule_repository.dart';
 import '../dtos/common/article/article_dto.dart';
 import '../dtos/common/equipment/equip_dto.dart';
+import '../dtos/common/schedule/schedule_detail_dto.dart';
 import '../utils/calendar_schedule_utils.dart';
 import '../utils/app_snackbar.dart';
+import '../utils/visit_time_utils.dart';
 import '../widgets/calendar_card.dart';
 import '../widgets/content_carousel.dart';
 import '../widgets/device_tile.dart';
@@ -29,7 +32,6 @@ import 'my_page_screen.dart';
 
 const _homeBackgroundColor = Color(0xFFF0F1F4);
 const _homeSecondaryTextColor = Color(0xFF4B5563);
-const _homeSoftCardColor = Color(0xFFF6F7F9);
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -43,6 +45,7 @@ class _HomeScreenState extends State<HomeScreen>
   static const int _maxVisibleReservations = 2;
   List<EquipDto> _devices = [];
   List<ContentItem> _contents = HomeCatalog.contents;
+  List<CalendarSchedule> _upcomingSchedules = const [];
   bool _showGuideBanner = true;
 
   EquipDto? _device(int index) {
@@ -61,8 +64,33 @@ class _HomeScreenState extends State<HomeScreen>
 
     if (result == null) return;
 
-    CalendarScheduleStore.upsertFromResult(result);
-    setState(() {});
+    final accessToken = AuthState.session?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      if (context.mounted) {
+        showAppSnackBar(context, '로그인이 필요해요');
+      }
+      return;
+    }
+
+    late final String scheduleId;
+    try {
+      final createdSchedule = await ScheduleRepository.createSchedule(
+        accessToken: accessToken,
+        hospitalName: result.hospitalName,
+        visitDateTime: result.dateTime,
+      );
+      scheduleId = createdSchedule.scheduleId;
+    } catch (e) {
+      if (context.mounted) {
+        showAppSnackBar(context, '일정을 등록하지 못했어요. 잠시 후 다시 시도해주세요.');
+      }
+      return;
+    }
+
+    if (!mounted) return;
+
+    CalendarScheduleStore.upsertFromResult(result, scheduleId: scheduleId);
+    await _loadUpcomingSchedules();
   }
 
   Future<void> _openCalendarIfLoggedIn(BuildContext context) async {
@@ -80,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen>
       MaterialPageRoute(builder: (_) => const CalendarDetailScreen()),
     );
     if (mounted) {
-      setState(() {});
+      await _loadUpcomingSchedules();
     }
   }
 
@@ -104,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen>
       ),
     );
     if (mounted) {
-      setState(() {});
+      await _loadUpcomingSchedules();
     }
   }
 
@@ -198,14 +226,26 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void onDateChanged() {
-    setState(() {});
+    _loadUpcomingSchedules();
   }
 
   @override
   void initState() {
     super.initState();
+    AuthState.isLoggedIn.addListener(_handleAuthStateChanged);
     _loadDevices();
     _loadArticles();
+    _loadUpcomingSchedules();
+  }
+
+  @override
+  void dispose() {
+    AuthState.isLoggedIn.removeListener(_handleAuthStateChanged);
+    super.dispose();
+  }
+
+  void _handleAuthStateChanged() {
+    _loadUpcomingSchedules();
   }
 
   Future<void> _loadDevices() async {
@@ -244,6 +284,50 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  Future<void> _loadUpcomingSchedules() async {
+    final accessToken = AuthState.session?.accessToken;
+    if (!AuthState.isLoggedIn.value ||
+        accessToken == null ||
+        accessToken.isEmpty) {
+      if (!mounted) return;
+
+      setState(() {
+        _upcomingSchedules = const [];
+      });
+      return;
+    }
+
+    try {
+      final schedules = await ScheduleRepository.getUpcomingSchedules(
+        accessToken: accessToken,
+        limit: _maxVisibleReservations,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _upcomingSchedules = schedules.map(_scheduleFromDetail).toList();
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _upcomingSchedules = const [];
+      });
+    }
+  }
+
+  CalendarSchedule _scheduleFromDetail(ScheduleDetailDto detail) {
+    return CalendarSchedule(
+      id: detail.scheduleId,
+      hospitalName: detail.hospitalName,
+      dateTime: dateTimeFromUnixVisitTime(detail.visitTime),
+      isThreeDaysBefore: detail.alarms.any((alarm) => alarm.alarmType == '3D'),
+      isOneDayBefore: detail.alarms.any((alarm) => alarm.alarmType == '1D'),
+      isOneHourBefore: detail.alarms.any((alarm) => alarm.alarmType == '1H'),
+    );
+  }
+
   void _hideDeviceTooltip() {
     return;
   }
@@ -272,11 +356,7 @@ class _HomeScreenState extends State<HomeScreen>
       valueListenable: AuthState.isLoggedIn,
       builder: (context, isLoggedIn, _) {
         final upcomingSchedules = isLoggedIn
-            ? upcomingSchedulesFromToday(
-                CalendarScheduleStore.snapshot().values.expand(
-                  (items) => items,
-                ),
-              )
+            ? _upcomingSchedules
             : const <CalendarSchedule>[];
         final nearestSchedule = upcomingSchedules.isNotEmpty
             ? upcomingSchedules.first

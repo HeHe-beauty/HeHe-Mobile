@@ -46,4 +46,42 @@ class ApiClient {
 
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
+
+  Future<Map<String, dynamic>> patch(
+    String path, {
+    Map<String, dynamic>? body,
+    Map<String, String>? headers,
+  }) async {
+    final uri = ApiConfig.uri(path);
+
+    final response = await _client.patch(
+      uri,
+      headers: {'Content-Type': 'application/json', ...?headers},
+      body: body == null ? null : jsonEncode(body),
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('PATCH 요청 실패: ${response.statusCode}');
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> delete(
+    String path, {
+    Map<String, String>? headers,
+  }) async {
+    final uri = ApiConfig.uri(path);
+
+    final response = await _client.delete(
+      uri,
+      headers: {'Content-Type': 'application/json', ...?headers},
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('DELETE 요청 실패: ${response.statusCode}');
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
 }

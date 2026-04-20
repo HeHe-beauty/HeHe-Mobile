@@ -21,4 +21,16 @@ class ApiEndpoints {
   static const String hospitalMap = '/api/v1/hospitals/map';
   static String hospitalDetail(int hospitalId) =>
       '/api/v1/hospitals/$hospitalId';
+
+  /// 일정과 관련된 api 목록
+  static const String scheduleCreate = '/api/v1/schedules';
+  static const String scheduleUpcoming = '/api/v1/schedules/upcoming';
+  static const String scheduleSummary = '/api/v1/schedules/summary';
+  static const String scheduleDaily = '/api/v1/schedules/daily';
+  static String scheduleDetail(String scheduleId) =>
+      '/api/v1/schedules/$scheduleId';
+  static String scheduleAlarms(String scheduleId) =>
+      '/api/v1/schedules/$scheduleId/alarms';
+  static String scheduleAlarm(String scheduleId, String alarmType) =>
+      '/api/v1/schedules/$scheduleId/alarms/$alarmType';
 }
