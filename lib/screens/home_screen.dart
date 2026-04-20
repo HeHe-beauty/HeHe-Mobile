@@ -500,7 +500,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 ContentCarousel(
                                   items: contents,
                                   cardBackgroundColor: palette.primarySoft
-                                      .withValues(alpha: 0.45),
+                                      .withValues(alpha: 0.68),
                                   thumbnailBackgroundColor: palette.surface,
                                   onTapItem: (item) {
                                     _openContentDetail(context, item);

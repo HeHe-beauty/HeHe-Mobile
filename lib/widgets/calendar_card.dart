@@ -64,11 +64,17 @@ class CalendarCard extends StatelessWidget {
         children: [
           Material(
             color: Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
             child: InkWell(
               onTap: onTapSummary,
               borderRadius: BorderRadius.circular(14),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Ink(
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                decoration: BoxDecoration(
+                  color: palette.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: palette.primary, width: 0.8),
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -275,13 +281,18 @@ class _UpcomingReservationRow extends StatelessWidget {
     final palette = context.palette;
 
     return Material(
-      color: palette.surfaceSoft,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: item.onTap,
         borderRadius: BorderRadius.circular(14),
-        child: Padding(
+        child: Ink(
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          decoration: BoxDecoration(
+            color: palette.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: palette.primary, width: 0.8),
+          ),
           child: Row(
             children: [
               Expanded(

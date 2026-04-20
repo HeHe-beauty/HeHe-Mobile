@@ -3,6 +3,7 @@ import '../core/auth/auth_session_store.dart';
 import '../core/auth/auth_state.dart';
 import '../data/auth/auth_repository.dart';
 import '../theme/app_palette.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/app_snackbar.dart';
 import '../widgets/screen_header.dart';
 
@@ -191,9 +192,8 @@ class _ProfileCard extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             userName,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
+            style: AppTextStyles.homeBodyStrong.copyWith(
+              fontSize: 16,
               color: palette.textPrimary,
               letterSpacing: -0.4,
             ),
@@ -202,10 +202,8 @@ class _ProfileCard extends StatelessWidget {
           Text(
             '내 활동과 저장한 정보를 한 번에 볼 수 있어요.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 11,
+            style: AppTextStyles.homeCaption.copyWith(
               height: 1.45,
-              fontWeight: FontWeight.w600,
               color: palette.textSecondary,
             ),
           ),
@@ -286,9 +284,8 @@ class _SummaryCard extends StatelessWidget {
           const SizedBox(height: 9),
           Text(
             value,
-            style: TextStyle(
+            style: AppTextStyles.homeBodyStrong.copyWith(
               fontSize: 17,
-              fontWeight: FontWeight.w900,
               color: palette.textPrimary,
             ),
           ),
@@ -296,10 +293,8 @@ class _SummaryCard extends StatelessWidget {
           Text(
             label,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 10,
+            style: AppTextStyles.homeCaption.copyWith(
               height: 1.3,
-              fontWeight: FontWeight.w700,
               color: palette.textSecondary,
             ),
           ),
@@ -340,9 +335,8 @@ class _MenuSection extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               '내 활동',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w900,
+              style: AppTextStyles.homeSectionTitle.copyWith(
+                fontSize: 18,
                 color: palette.textPrimary,
               ),
             ),
@@ -429,19 +423,15 @@ class _MenuTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
+                      style: AppTextStyles.homeBodyStrong.copyWith(
                         color: palette.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: TextStyle(
-                        fontSize: 11,
+                      style: AppTextStyles.homeCaption.copyWith(
                         height: 1.35,
-                        fontWeight: FontWeight.w600,
                         color: palette.textSecondary,
                       ),
                     ),
@@ -492,9 +482,11 @@ class _AccountSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            child: const Text(
+            child: Text(
               '로그아웃',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+              style: AppTextStyles.homeBodyStrong.copyWith(
+                color: palette.primary,
+              ),
             ),
           ),
         ),
@@ -506,11 +498,7 @@ class _AccountSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Text(
               '회원탈퇴',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: palette.danger,
-              ),
+              style: AppTextStyles.homeCaption.copyWith(color: palette.danger),
             ),
           ),
         ),
