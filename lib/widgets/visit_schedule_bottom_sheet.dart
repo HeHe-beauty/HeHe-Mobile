@@ -93,6 +93,8 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
   late FixedExtentScrollController _hourController;
   late FixedExtentScrollController _minuteController;
 
+  bool _showHospitalNameError = false;
+
   late int _selectedYear;
   late int _selectedMonth;
   late int _selectedDay;
@@ -168,8 +170,17 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
   void _submit() {
     FocusManager.instance.primaryFocus?.unfocus();
 
+    final hospitalName = _hospitalController.text.trim();
+    if (hospitalName.isEmpty) {
+      setState(() {
+        _showHospitalNameError = true;
+      });
+      _hospitalFocusNode.requestFocus();
+      return;
+    }
+
     final result = VisitScheduleResult(
-      hospitalName: _hospitalController.text.trim(),
+      hospitalName: hospitalName,
       dateTime: DateTime(
         _isFixedDateMode ? _effectiveFixedDate.year : _selectedYear,
         _isFixedDateMode ? _effectiveFixedDate.month : _selectedMonth,
@@ -280,6 +291,14 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
                 _CompactInputField(
                   controller: _hospitalController,
                   focusNode: _hospitalFocusNode,
+                  hasError: _showHospitalNameError,
+                  onChanged: (_) {
+                    if (!_showHospitalNameError) return;
+
+                    setState(() {
+                      _showHospitalNameError = false;
+                    });
+                  },
                   onSubmitted: (_) => _submit(),
                 ),
                 const SizedBox(height: 26),
@@ -467,11 +486,15 @@ class _FixedDateCard extends StatelessWidget {
 class _CompactInputField extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
+  final bool hasError;
+  final ValueChanged<String> onChanged;
   final ValueChanged<String> onSubmitted;
 
   const _CompactInputField({
     required this.controller,
     required this.focusNode,
+    required this.hasError,
+    required this.onChanged,
     required this.onSubmitted,
   });
 
@@ -479,37 +502,114 @@ class _CompactInputField extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
 
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color: palette.bottomSheetInnerSurface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: palette.bottomSheetBorder),
-      ),
-      alignment: Alignment.center,
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        textInputAction: TextInputAction.done,
-        onSubmitted: onSubmitted,
-        decoration: InputDecoration(
-          hintText: '병원명을 입력해주세요',
-          hintStyle: TextStyle(
-            color: palette.textTertiary,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (hasError) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 5),
+            child: _RequiredInputBubble(color: palette.danger),
           ),
-          border: InputBorder.none,
-          isCollapsed: true,
+        ],
+        Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: palette.bottomSheetInnerSurface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: hasError ? palette.danger : palette.bottomSheetBorder,
+              width: hasError ? 1.4 : 1,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            textInputAction: TextInputAction.done,
+            onChanged: onChanged,
+            onSubmitted: onSubmitted,
+            decoration: InputDecoration(
+              hintText: '병원명을 입력해주세요',
+              hintStyle: TextStyle(
+                color: palette.textTertiary,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              border: InputBorder.none,
+              isCollapsed: true,
+            ),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: palette.textPrimary,
+            ),
+          ),
         ),
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          color: palette.textPrimary,
-        ),
-      ),
+      ],
     );
+  }
+}
+
+class _RequiredInputBubble extends StatelessWidget {
+  final Color color;
+
+  const _RequiredInputBubble({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(9, 5, 9, 5),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: const Text(
+            '필수 입력',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              height: 1,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 14),
+          child: CustomPaint(
+            size: const Size(10, 7),
+            painter: _RequiredInputBubbleTailPainter(color: color),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RequiredInputBubbleTailPainter extends CustomPainter {
+  final Color color;
+
+  const _RequiredInputBubbleTailPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _RequiredInputBubbleTailPainter oldDelegate) {
+    return oldDelegate.color != color;
   }
 }
 

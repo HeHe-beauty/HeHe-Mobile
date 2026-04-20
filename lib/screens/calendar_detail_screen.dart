@@ -35,6 +35,8 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
   final Map<DateTime, List<CalendarSchedule>> _scheduleMap = {};
   final Map<DateTime, int> _scheduleCountMap = {};
   bool _didOpenInitialSchedule = false;
+  bool _isLoadingScheduleSummary = false;
+  bool _hasLoadedScheduleSummary = false;
   DateTime? _lastKnownCalendarToday;
 
   bool _isSameDate(DateTime a, DateTime b) {
@@ -50,10 +52,10 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
     _focusedMonth = DateTime(today.year, today.month, 1);
     _selectedDate = today;
     _refreshSchedules();
-    _loadScheduleSummary();
 
     final initialScheduleResult = widget.initialScheduleResult;
     if (initialScheduleResult == null) {
+      _loadScheduleSummary();
       _openInitialScheduleIfNeeded();
       return;
     }
@@ -62,9 +64,9 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
       initialScheduleResult,
     );
     _refreshSchedules();
-    _loadScheduleSummary();
     _focusedMonth = DateTime(selectedDate.year, selectedDate.month, 1);
     _selectedDate = selectedDate;
+    _loadScheduleSummary(force: true);
     _openInitialScheduleIfNeeded();
   }
 
@@ -85,7 +87,6 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
     });
 
     _lastKnownCalendarToday = today;
-    _loadScheduleSummary();
   }
 
   void _refreshSchedules() {
@@ -123,12 +124,6 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
     return null;
   }
 
-  List<CalendarSchedule> _schedulesFor(DateTime date) {
-    return List<CalendarSchedule>.from(
-      _scheduleMap[calendarDateOnly(date)] ?? const <CalendarSchedule>[],
-    )..sort((a, b) => a.dateTime.compareTo(b.dateTime));
-  }
-
   int _scheduleCountFor(DateTime date) {
     final targetDate = calendarDateOnly(date);
     return _scheduleCountMap[targetDate] ??
@@ -136,20 +131,26 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
         0;
   }
 
-  Future<void> _loadScheduleSummary() async {
+  Future<void> _loadScheduleSummary({bool force = false}) async {
+    if (_isLoadingScheduleSummary) return;
+    if (_hasLoadedScheduleSummary && !force) return;
+
     final accessToken = AuthState.session?.accessToken;
     if (accessToken == null || accessToken.isEmpty) {
       if (!mounted) return;
 
       setState(() {
         _scheduleCountMap.clear();
+        _hasLoadedScheduleSummary = false;
       });
       return;
     }
 
+    _isLoadingScheduleSummary = true;
     try {
       final summary = await ScheduleRepository.getScheduleSummary(
         accessToken: accessToken,
+        forceRefresh: force,
       );
 
       if (!mounted) return;
@@ -162,13 +163,18 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
               (date, count) => MapEntry(calendarDateOnly(date), count),
             ),
           );
+        _hasLoadedScheduleSummary = true;
       });
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
         _scheduleCountMap.clear();
+        _hasLoadedScheduleSummary = true;
       });
+      showAppSnackBar(context, '일정 요약을 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      _isLoadingScheduleSummary = false;
     }
   }
 
@@ -222,9 +228,11 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
   }
 
   Future<void> _showDateSchedulesBottomSheet(DateTime selectedDate) async {
-    final palette = context.palette;
-    await _loadDailySchedules(selectedDate);
+    final schedules = await _loadDailySchedules(selectedDate);
     if (!mounted) return;
+    if (schedules == null) return;
+
+    final palette = context.palette;
 
     await showModalBottomSheet(
       context: context,
@@ -237,8 +245,6 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
       ),
       builder: (sheetContext) {
-        final schedules = _schedulesFor(selectedDate);
-
         return _DateSchedulesBottomSheet(
           selectedDate: selectedDate,
           schedules: schedules,
@@ -269,14 +275,16 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
     );
   }
 
-  Future<void> _loadDailySchedules(DateTime selectedDate) async {
+  Future<List<CalendarSchedule>?> _loadDailySchedules(
+    DateTime selectedDate,
+  ) async {
     final targetDate = calendarDateOnly(selectedDate);
     final accessToken = AuthState.session?.accessToken;
     if (accessToken == null || accessToken.isEmpty) {
       if (mounted) {
         showAppSnackBar(context, '로그인이 필요해요');
       }
-      return;
+      return null;
     }
 
     try {
@@ -284,18 +292,20 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
         accessToken: accessToken,
         date: formatScheduleQueryDate(targetDate),
       );
+      final schedules = dailySchedules.map(_scheduleFromDetail).toList()
+        ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
-      if (!mounted) return;
+      if (!mounted) return null;
 
       setState(() {
-        _scheduleMap[targetDate] =
-            dailySchedules.map(_scheduleFromDetail).toList()
-              ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+        _scheduleMap[targetDate] = schedules;
       });
+      return schedules;
     } catch (e) {
       if (mounted) {
         showAppSnackBar(context, '일정을 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
       }
+      return null;
     }
   }
 
@@ -379,8 +389,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
     if (result == _ScheduleDetailSheetResult.deleteRequested) {
       final shouldDelete = await _showDeleteConfirmDialog();
       if (shouldDelete != true) {
-        if (!mounted) return _ScheduleDetailSheetResult.closed;
-        return _showScheduleDetailBottomSheet(latestSchedule);
+        return _ScheduleDetailSheetResult.backToList;
       }
 
       final accessToken = AuthState.session?.accessToken;
@@ -409,7 +418,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
         CalendarScheduleStore.removeById(latestSchedule.id);
         _refreshSchedules();
       });
-      await _loadScheduleSummary();
+      await _loadScheduleSummary(force: true);
       return _ScheduleDetailSheetResult.deleted;
     }
 
@@ -629,7 +638,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
       _focusedMonth = DateTime(targetDate.year, targetDate.month, 1);
       _selectedDate = targetDate;
     });
-    await _loadScheduleSummary();
+    await _loadScheduleSummary(force: true);
   }
 
   @override

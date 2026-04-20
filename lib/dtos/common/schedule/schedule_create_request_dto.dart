@@ -1,7 +1,7 @@
 class ScheduleCreateRequestDto {
   final String hospitalName;
   final String procedureName;
-  final String visitTime;
+  final int visitTime;
 
   const ScheduleCreateRequestDto({
     required this.hospitalName,

@@ -47,6 +47,9 @@ class _HomeScreenState extends State<HomeScreen>
   List<ContentItem> _contents = HomeCatalog.contents;
   List<CalendarSchedule> _upcomingSchedules = const [];
   bool _showGuideBanner = true;
+  bool _isLoadingUpcomingSchedules = false;
+  bool _hasLoadedUpcomingSchedules = false;
+  DateTime? _lastUpcomingFetchAt;
 
   EquipDto? _device(int index) {
     if (index >= _devices.length) return null;
@@ -90,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen>
     if (!mounted) return;
 
     CalendarScheduleStore.upsertFromResult(result, scheduleId: scheduleId);
-    await _loadUpcomingSchedules();
+    await _loadUpcomingSchedules(force: true);
   }
 
   Future<void> _openCalendarIfLoggedIn(BuildContext context) async {
@@ -108,7 +111,8 @@ class _HomeScreenState extends State<HomeScreen>
       MaterialPageRoute(builder: (_) => const CalendarDetailScreen()),
     );
     if (mounted) {
-      await _loadUpcomingSchedules();
+      ScheduleRepository.invalidateUpcomingSchedulesCache();
+      await _loadUpcomingSchedules(force: true);
     }
   }
 
@@ -132,7 +136,8 @@ class _HomeScreenState extends State<HomeScreen>
       ),
     );
     if (mounted) {
-      await _loadUpcomingSchedules();
+      ScheduleRepository.invalidateUpcomingSchedulesCache();
+      await _loadUpcomingSchedules(force: true);
     }
   }
 
@@ -183,25 +188,37 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  void _openSettings(BuildContext context) {
+  Future<void> _openSettings(BuildContext context) async {
     _hideDeviceTooltip();
 
-    Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const SettingsScreen()),
     );
+    if (mounted) {
+      ScheduleRepository.invalidateUpcomingSchedulesCache();
+      await _loadUpcomingSchedules(force: true);
+    }
   }
 
-  void _openDeviceMap(BuildContext context, String deviceName, {int? equipId}) {
+  Future<void> _openDeviceMap(
+    BuildContext context,
+    String deviceName, {
+    int? equipId,
+  }) async {
     _hideDeviceTooltip();
 
-    Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) =>
             DeviceMapScreen(deviceName: deviceName, equipId: equipId),
       ),
     );
+    if (mounted) {
+      ScheduleRepository.invalidateUpcomingSchedulesCache();
+      await _loadUpcomingSchedules(force: true);
+    }
   }
 
   Future<void> _openMyPage(BuildContext context) async {
@@ -222,6 +239,10 @@ class _HomeScreenState extends State<HomeScreen>
       context,
       MaterialPageRoute(builder: (_) => const MyPageScreen()),
     );
+    if (mounted) {
+      ScheduleRepository.invalidateUpcomingSchedulesCache();
+      await _loadUpcomingSchedules(force: true);
+    }
   }
 
   @override
@@ -245,7 +266,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _handleAuthStateChanged() {
-    _loadUpcomingSchedules();
+    _loadUpcomingSchedules(force: true);
   }
 
   Future<void> _loadDevices() async {
@@ -284,7 +305,16 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  Future<void> _loadUpcomingSchedules() async {
+  Future<void> _loadUpcomingSchedules({bool force = false}) async {
+    if (_isLoadingUpcomingSchedules) return;
+    if (_hasLoadedUpcomingSchedules && !force) return;
+
+    final lastFetchAt = _lastUpcomingFetchAt;
+    if (lastFetchAt != null &&
+        DateTime.now().difference(lastFetchAt) < const Duration(seconds: 5)) {
+      return;
+    }
+
     final accessToken = AuthState.session?.accessToken;
     if (!AuthState.isLoggedIn.value ||
         accessToken == null ||
@@ -293,27 +323,35 @@ class _HomeScreenState extends State<HomeScreen>
 
       setState(() {
         _upcomingSchedules = const [];
+        _hasLoadedUpcomingSchedules = false;
       });
       return;
     }
 
+    _isLoadingUpcomingSchedules = true;
+    _lastUpcomingFetchAt = DateTime.now();
     try {
       final schedules = await ScheduleRepository.getUpcomingSchedules(
         accessToken: accessToken,
         limit: _maxVisibleReservations,
+        forceRefresh: force,
       );
 
       if (!mounted) return;
 
       setState(() {
         _upcomingSchedules = schedules.map(_scheduleFromDetail).toList();
+        _hasLoadedUpcomingSchedules = true;
       });
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
         _upcomingSchedules = const [];
+        _hasLoadedUpcomingSchedules = true;
       });
+    } finally {
+      _isLoadingUpcomingSchedules = false;
     }
   }
 
