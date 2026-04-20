@@ -38,11 +38,11 @@ class DeviceTile extends StatelessWidget {
             clipBehavior: Clip.none,
             children: [
               Positioned(
-                right: 0,
-                bottom: 0,
+                right: -2,
+                bottom: -2,
                 child: SizedBox(
-                  width: 42,
-                  height: height - 42,
+                  width: 44,
+                  height: height - 58,
                   child: Image.asset(
                     imageAsset!,
                     fit: BoxFit.contain,

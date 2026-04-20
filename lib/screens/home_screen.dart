@@ -43,6 +43,7 @@ class _HomeScreenState extends State<HomeScreen>
   static const int _maxVisibleReservations = 2;
   List<EquipDto> _devices = [];
   List<ContentItem> _contents = HomeCatalog.contents;
+  bool _showGuideBanner = true;
 
   EquipDto? _device(int index) {
     if (index >= _devices.length) return null;
@@ -247,6 +248,12 @@ class _HomeScreenState extends State<HomeScreen>
     return;
   }
 
+  void _dismissGuideBanner() {
+    setState(() {
+      _showGuideBanner = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
@@ -304,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen>
             isLoggedIn && reservationItems.isNotEmpty ? '이후 예약 일정' : null;
 
         return Scaffold(
-          backgroundColor: palette.surface,
+          backgroundColor: _homeBackgroundColor,
           body: GestureDetector(
             behavior: HitTestBehavior.deferToChild,
             child: Stack(
@@ -323,10 +330,10 @@ class _HomeScreenState extends State<HomeScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             HeaderBar(
-                              title: '시술 꿀팁부터 병원 찾기까지 관리는 HeHe에서',
+                              title: 'HeHe',
                               isLoggedIn: isLoggedIn,
-                              backgroundColor: Colors.transparent,
-                              foregroundColor: palette.textPrimary,
+                              backgroundColor: _homeBackgroundColor,
+                              foregroundColor: palette.primary,
                               utilityIconColor: palette.textPrimary,
                               onTapProfile: () => _openMyPage(context),
                               onTapSettings: () => _openSettings(context),
@@ -337,7 +344,7 @@ class _HomeScreenState extends State<HomeScreen>
                               child: Padding(
                                 padding: const EdgeInsets.fromLTRB(
                                   20,
-                                  42,
+                                  32,
                                   20,
                                   22,
                                 ),
@@ -379,7 +386,7 @@ class _HomeScreenState extends State<HomeScreen>
                                                 title: d1Name,
                                                 description: '가성비 좋은 선택을 원하는 분',
                                                 imageAsset: d1Asset,
-                                                height: 90,
+                                                height: 116,
                                                 onTap: () => _openDeviceMap(
                                                   context,
                                                   d1Name,
@@ -392,7 +399,7 @@ class _HomeScreenState extends State<HomeScreen>
                                                 description:
                                                     '빠른 제모로 시간을 아끼고 싶다면?',
                                                 imageAsset: d2Asset,
-                                                height: 90,
+                                                height: 116,
                                                 onTap: () => _openDeviceMap(
                                                   context,
                                                   d2Name,
@@ -432,9 +439,16 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                           ],
                         ),
+                        if (_showGuideBanner)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                            child: _HomeGuideBanner(
+                              onDismiss: _dismissGuideBanner,
+                            ),
+                          ),
                         Container(
                           width: double.infinity,
-                          color: palette.surface,
+                          color: _homeBackgroundColor,
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(20, 24, 20, 18),
                             child: Column(
@@ -499,9 +513,8 @@ class _HomeScreenState extends State<HomeScreen>
                                 const SizedBox(height: 14),
                                 ContentCarousel(
                                   items: contents,
-                                  cardBackgroundColor: palette.primarySoft
-                                      .withValues(alpha: 0.68),
-                                  thumbnailBackgroundColor: palette.surface,
+                                  cardBackgroundColor: palette.surface,
+                                  thumbnailBackgroundColor: palette.primarySoft,
                                   onTapItem: (item) {
                                     _openContentDetail(context, item);
                                   },
@@ -548,7 +561,7 @@ class _PrimaryDeviceCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(28),
         child: Ink(
-          height: 194,
+          height: 246,
           decoration: BoxDecoration(
             color: palette.surface,
             borderRadius: BorderRadius.circular(28),
@@ -558,8 +571,8 @@ class _PrimaryDeviceCard extends StatelessWidget {
             child: Stack(
               children: [
                 Positioned(
-                  right: 14,
-                  bottom: 14,
+                  right: 6,
+                  bottom: 6,
                   child: IgnorePointer(
                     child: SizedBox(
                       width: 78,
@@ -614,6 +627,65 @@ class _PrimaryDeviceCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _HomeGuideBanner extends StatelessWidget {
+  final VoidCallback onDismiss;
+
+  const _HomeGuideBanner({required this.onDismiss});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 16, 8, 16),
+      decoration: BoxDecoration(
+        color: palette.primary,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'HeHe(히히) 이용이 처음이신가요?',
+                  style: AppTextStyles.homeBodyStrong.copyWith(
+                    color: palette.surface,
+                    fontSize: 15,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  '서비스 안내 바로가기',
+                  style: AppTextStyles.homeCaption.copyWith(
+                    color: palette.surface.withValues(alpha: 0.86),
+                    height: 1.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 34,
+            height: 34,
+            child: IconButton(
+              onPressed: onDismiss,
+              padding: EdgeInsets.zero,
+              icon: Icon(Icons.close_rounded, size: 18, color: palette.surface),
+              splashRadius: 18,
+            ),
+          ),
+        ],
       ),
     );
   }

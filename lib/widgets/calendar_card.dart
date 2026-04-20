@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_palette.dart';
 
 const _homeSecondaryTextColor = Color(0xFF4B5563);
-const _homeSoftCardColor = Color(0xFFF6F7F9);
+const _scheduleInnerCardColor = Color(0xFFF6F7F9);
 
 class CalendarCardReservationItem {
   final String title;
@@ -71,9 +71,8 @@ class CalendarCard extends StatelessWidget {
               child: Ink(
                 padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                 decoration: BoxDecoration(
-                  color: palette.surface,
+                  color: _scheduleInnerCardColor,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: palette.primary, width: 0.8),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -205,7 +204,7 @@ class SectionLikeCard extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: _homeSoftCardColor,
+            color: palette.surface,
             borderRadius: BorderRadius.circular(18),
           ),
           child: child,
@@ -232,9 +231,8 @@ class _LoginReservationPrompt extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           decoration: BoxDecoration(
-            color: palette.surface,
+            color: _scheduleInnerCardColor,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: palette.primary, width: 0.8),
           ),
           child: Center(
             child: FittedBox(
@@ -289,9 +287,8 @@ class _UpcomingReservationRow extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
           decoration: BoxDecoration(
-            color: palette.surface,
+            color: _scheduleInnerCardColor,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: palette.primary, width: 0.8),
           ),
           child: Row(
             children: [

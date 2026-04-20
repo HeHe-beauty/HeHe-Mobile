@@ -28,62 +28,36 @@ class HeaderBar extends StatelessWidget {
     final safeTop = MediaQuery.of(context).padding.top;
 
     return Container(
-      padding: EdgeInsets.fromLTRB(20, safeTop + 18, 20, 14),
+      padding: EdgeInsets.fromLTRB(20, safeTop + 10, 20, 8),
       color: backgroundColor ?? palette.bg,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: RichText(
-                text: TextSpan(
-                  style: AppTextStyles.homeHeadline.copyWith(
-                    color: foregroundColor ?? palette.textPrimary,
-                  ),
-                  children: [
-                    const TextSpan(text: '시술 꿀팁부터\n기기 찾기까지\n'),
-                    TextSpan(
-                      text: '관리는 ',
-                      style: AppTextStyles.homeHeadlineStrong.copyWith(
-                        color: foregroundColor ?? palette.textPrimary,
-                      ),
-                    ),
-                    TextSpan(
-                      text: 'HeHe',
-                      style: AppTextStyles.homeHeadlineStrong.copyWith(
-                        color: palette.primary,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    TextSpan(
-                      text: '에서',
-                      style: AppTextStyles.homeHeadlineStrong.copyWith(
-                        color: foregroundColor ?? palette.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.homeHeadlineStrong.copyWith(
+                color: foregroundColor ?? palette.textPrimary,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),
-          Align(
-            alignment: Alignment.topRight,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _UtilityIconButton(
-                  icon: Icons.person_outline,
-                  onTap: onTapProfile,
-                  color: utilityIconColor,
-                ),
-                _UtilityIconButton(
-                  icon: Icons.settings_outlined,
-                  onTap: onTapSettings,
-                  color: utilityIconColor,
-                ),
-              ],
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _UtilityIconButton(
+                icon: Icons.person_outline,
+                onTap: onTapProfile,
+                color: utilityIconColor,
+              ),
+              _UtilityIconButton(
+                icon: Icons.settings_outlined,
+                onTap: onTapSettings,
+                color: utilityIconColor,
+              ),
+            ],
           ),
         ],
       ),
