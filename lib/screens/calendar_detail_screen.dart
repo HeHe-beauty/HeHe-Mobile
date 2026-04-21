@@ -836,8 +836,8 @@ _CalendarDayColors _dayColors(AppPalette palette, DateTime date) {
   }
   if (date.weekday == DateTime.saturday) {
     return _CalendarDayColors(
-      active: const Color(0xFF4D84E8),
-      inactive: const Color(0xFF9EBBF2),
+      active: palette.primaryStrong,
+      inactive: palette.primary.withValues(alpha: 0.45),
     );
   }
   return _CalendarDayColors(
@@ -1317,7 +1317,7 @@ class _CalendarDateCell extends StatelessWidget {
                           ? FontWeight.w600
                           : FontWeight.w500,
                       color: isSelected
-                          ? palette.surface
+                          ? Colors.white
                           : isToday
                           ? palette.primaryStrong
                           : textColor,
@@ -1357,9 +1357,7 @@ class _CalendarScheduleMarker extends StatelessWidget {
       return const SizedBox(height: 10);
     }
 
-    final markerColor = isSelected
-        ? const Color(0xFFF6C94C)
-        : palette.primaryStrong;
+    final markerColor = isSelected ? Colors.white : palette.primaryStrong;
     final markerCount = scheduleCount >= 2 ? 2 : scheduleCount;
 
     return SizedBox(
@@ -1400,7 +1398,7 @@ class _WeekdayHeader extends StatelessWidget {
     final color = isSunday
         ? palette.danger.withValues(alpha: 0.82)
         : isSaturday
-        ? const Color(0xFF4D84E8)
+        ? palette.primaryStrong
         : palette.textSecondary;
 
     return Expanded(

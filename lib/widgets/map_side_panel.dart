@@ -78,7 +78,7 @@ class MapSidePanel extends StatelessWidget {
                               child: Icon(
                                 Icons.person_outline_rounded,
                                 size: 20,
-                                color: palette.primary,
+                                color: palette.primaryStrong,
                               ),
                             ),
                             const SizedBox(width: 9),

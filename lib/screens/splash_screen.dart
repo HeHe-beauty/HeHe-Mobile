@@ -131,7 +131,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: -0.8,
                                 color: isDark
-                                    ? palette.surface
+                                    ? palette.textPrimary
                                     : palette.primary,
                               ),
                             ),
@@ -142,7 +142,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
                                 color: isDark
-                                    ? palette.surface.withValues(alpha: 0.70)
+                                    ? palette.textSecondary
                                     : palette.textSecondary,
                               ),
                             ),
@@ -155,7 +155,7 @@ class _SplashScreenState extends State<SplashScreen>
                         child: _LoadingDots(
                           controller: _dotController,
                           color: isDark
-                              ? palette.surface.withValues(alpha: 0.82)
+                              ? palette.textPrimary.withValues(alpha: 0.82)
                               : palette.primary.withValues(alpha: 0.80),
                         ),
                       ),

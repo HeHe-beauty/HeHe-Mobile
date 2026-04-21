@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_palette.dart';
 
-const _homeSecondaryTextColor = Color(0xFF4B5563);
-
 class DeviceTile extends StatelessWidget {
   final String title;
   final String description;
@@ -80,7 +78,7 @@ class DeviceTile extends StatelessWidget {
                     _DeviceTileDescriptionText(
                       description,
                       style: TextStyle(
-                        color: _homeSecondaryTextColor,
+                        color: palette.textSecondary,
                         fontSize: 12,
                         fontWeight: FontWeight.w400,
                         height: 1.2,

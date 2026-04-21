@@ -263,7 +263,10 @@ class _SettingToggleTile extends StatelessWidget {
             child: Switch(
               value: value,
               onChanged: onChanged,
-              activeThumbColor: palette.primary,
+              activeThumbColor: palette.primaryStrong,
+              activeTrackColor: palette.primary.withValues(alpha: 0.58),
+              inactiveThumbColor: palette.textTertiary,
+              inactiveTrackColor: palette.surfaceMuted,
             ),
           ),
         ],
@@ -302,7 +305,7 @@ class _ThemeModeTile extends StatelessWidget {
             child: Icon(
               isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
               size: 22,
-              color: palette.primary,
+              color: palette.primaryStrong,
             ),
           ),
           const SizedBox(width: 12),
@@ -331,7 +334,10 @@ class _ThemeModeTile extends StatelessWidget {
           Switch(
             value: isDarkMode,
             onChanged: onChanged,
-            activeThumbColor: palette.primary,
+            activeThumbColor: palette.primaryStrong,
+            activeTrackColor: palette.primary.withValues(alpha: 0.58),
+            inactiveThumbColor: palette.textTertiary,
+            inactiveTrackColor: palette.surfaceMuted,
           ),
         ],
       ),
@@ -378,7 +384,7 @@ class _SimpleMenuTile extends StatelessWidget {
                   color: palette.surfaceMuted,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, size: 22, color: palette.primary),
+                child: Icon(icon, size: 22, color: palette.primaryStrong),
               ),
               const SizedBox(width: 12),
               Expanded(

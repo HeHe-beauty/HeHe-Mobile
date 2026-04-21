@@ -224,7 +224,7 @@ class _ContentThumbnail extends StatelessWidget {
     final thumbnailUrl = item.thumbnailUrl;
 
     if (thumbnailUrl == null || thumbnailUrl.isEmpty) {
-      return Icon(item.icon, size: 22, color: palette.primary);
+      return Icon(item.icon, size: 22, color: palette.primaryStrong);
     }
 
     return ClipRRect(
@@ -233,7 +233,7 @@ class _ContentThumbnail extends StatelessWidget {
         thumbnailUrl,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          return Icon(item.icon, size: 22, color: palette.primary);
+          return Icon(item.icon, size: 22, color: palette.primaryStrong);
         },
       ),
     );

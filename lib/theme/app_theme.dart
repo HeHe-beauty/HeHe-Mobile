@@ -10,9 +10,13 @@ class AppTheme {
       seedColor: AppPalette.light.primary,
       brightness: Brightness.light,
     ),
-    extensions: const [
-      AppPalette.light,
-    ],
+    cardColor: AppPalette.light.surface,
+    dialogTheme: DialogThemeData(backgroundColor: AppPalette.light.surface),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: AppPalette.light.bottomSheetSurface,
+      modalBackgroundColor: AppPalette.light.bottomSheetSurface,
+    ),
+    extensions: const [AppPalette.light],
   );
 
   static final ThemeData darkTheme = ThemeData(
@@ -23,8 +27,12 @@ class AppTheme {
       seedColor: AppPalette.dark.primary,
       brightness: Brightness.dark,
     ),
-    extensions: const [
-      AppPalette.dark,
-    ],
+    cardColor: AppPalette.dark.surface,
+    dialogTheme: DialogThemeData(backgroundColor: AppPalette.dark.surface),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: AppPalette.dark.bottomSheetSurface,
+      modalBackgroundColor: AppPalette.dark.bottomSheetSurface,
+    ),
+    extensions: const [AppPalette.dark],
   );
 }

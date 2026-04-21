@@ -55,10 +55,12 @@ class ClusterCountMarker extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: tone.gradient,
           ),
-          border: Border.all(
-            color: tone.borderColor,
-            width: isSelected ? 3.2 : 2,
-          ),
+          border: tone.borderColor == null
+              ? null
+              : Border.all(
+                  color: tone.borderColor!,
+                  width: isSelected ? 3.2 : 2,
+                ),
           boxShadow: [
             BoxShadow(
               color: tone.shadowColor,
@@ -90,10 +92,12 @@ class ClusterCountMarker extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: tone.gradient,
         ),
-        border: Border.all(
-          color: tone.borderColor,
-          width: isSelected ? 3.4 : 2.4,
-        ),
+        border: tone.borderColor == null
+            ? null
+            : Border.all(
+                color: tone.borderColor!,
+                width: isSelected ? 3.4 : 2.4,
+              ),
         boxShadow: [
           BoxShadow(
             color: tone.shadowColor,
@@ -111,15 +115,17 @@ class ClusterCountMarker extends StatelessWidget {
             color: tone.textColor,
             letterSpacing: -0.5,
             height: 1,
-            shadows: [
-              Shadow(
-                color: palette.textPrimary.withValues(
-                  alpha: isSelected ? 0.14 : 0.08,
-                ),
-                blurRadius: 3,
-                offset: const Offset(0, 1),
-              ),
-            ],
+            shadows: isDark
+                ? const []
+                : [
+                    Shadow(
+                      color: palette.textPrimary.withValues(
+                        alpha: isSelected ? 0.14 : 0.08,
+                      ),
+                      blurRadius: 3,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
           ),
         ),
       ),
@@ -140,10 +146,10 @@ class ClusterCountMarker extends StatelessWidget {
               palette.mapMarkerDarkSelectedStart,
               palette.primaryStrong,
             ],
-            borderColor: palette.surface.withValues(alpha: 0.96),
+            borderColor: null,
             shadowColor: palette.primary.withValues(alpha: 0.34),
-            textColor: palette.surface,
-            dotColor: palette.surface.withValues(alpha: 0.98),
+            textColor: Colors.white,
+            dotColor: Colors.white,
           );
         }
 
@@ -152,20 +158,20 @@ class ClusterCountMarker extends StatelessWidget {
             palette.mapMarkerDarkSelectedStart.withValues(alpha: 0.88),
             palette.primary.withValues(alpha: 0.78),
           ],
-          borderColor: palette.surface.withValues(alpha: 0.74),
+          borderColor: null,
           shadowColor: palette.primary.withValues(alpha: 0.2),
-          textColor: palette.surface,
-          dotColor: palette.surface.withValues(alpha: 0.76),
+          textColor: Colors.white,
+          dotColor: Colors.white,
         );
       }
 
       if (isSingle) {
         return _MarkerTone(
           gradient: [palette.mapMarkerDarkStart, palette.mapMarkerDarkEnd],
-          borderColor: palette.surface.withValues(alpha: 0.84),
+          borderColor: null,
           shadowColor: palette.primary.withValues(alpha: 0.24),
-          textColor: palette.surface,
-          dotColor: palette.surface.withValues(alpha: 0.95),
+          textColor: Colors.white,
+          dotColor: Colors.white,
         );
       }
 
@@ -174,10 +180,10 @@ class ClusterCountMarker extends StatelessWidget {
           palette.mapMarkerDarkStart.withValues(alpha: 0.72),
           palette.mapMarkerDarkEnd.withValues(alpha: 0.62),
         ],
-        borderColor: palette.surface.withValues(alpha: 0.54),
+        borderColor: null,
         shadowColor: palette.primary.withValues(alpha: 0.12),
-        textColor: palette.surface,
-        dotColor: palette.surface.withValues(alpha: 0.68),
+        textColor: Colors.white,
+        dotColor: Colors.white,
       );
     }
 
@@ -232,7 +238,7 @@ class ClusterCountMarker extends StatelessWidget {
 
 class _MarkerTone {
   final List<Color> gradient;
-  final Color borderColor;
+  final Color? borderColor;
   final Color shadowColor;
   final Color textColor;
   final Color dotColor;

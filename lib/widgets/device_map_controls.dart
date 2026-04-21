@@ -70,7 +70,7 @@ class DeviceMapTopBar extends StatelessWidget {
                           child: Icon(
                             Icons.search_rounded,
                             size: 18,
-                            color: palette.primary,
+                            color: palette.primaryStrong,
                           ),
                         ),
                       ),
@@ -143,7 +143,9 @@ class DeviceMapMyLocationButton extends StatelessWidget {
               height: 18,
               child: CircularProgressIndicator(
                 strokeWidth: 2.2,
-                valueColor: AlwaysStoppedAnimation<Color>(palette.primary),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  palette.primaryStrong,
+                ),
               ),
             )
           : SizedBox(
@@ -153,7 +155,7 @@ class DeviceMapMyLocationButton extends StatelessWidget {
                 child: Icon(
                   Icons.my_location_rounded,
                   size: 20,
-                  color: palette.primary,
+                  color: palette.primaryStrong,
                 ),
               ),
             ),

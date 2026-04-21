@@ -40,6 +40,8 @@ class DeviceMapScreen extends StatefulWidget {
 
 class _DeviceMapScreenState extends State<DeviceMapScreen> {
   static const double _individualMarkerZoom = 16.0;
+  static const String _lightMapStyleId = '65773ad2-304e-4b1c-8430-cde97f36ab3f';
+  static const String _darkMapStyleId = '8a258f07-dd94-4f51-84b7-dbb44ba00a58';
 
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
@@ -1032,6 +1034,8 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mapStyleId = isDark ? _darkMapStyleId : _lightMapStyleId;
 
     return Scaffold(
       backgroundColor: palette.bg,
@@ -1052,14 +1056,15 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
               children: [
                 Positioned.fill(
                   child: NaverMap(
-                    options: const NaverMapViewOptions(
-                      initialCameraPosition: NCameraPosition(
+                    options: NaverMapViewOptions(
+                      initialCameraPosition: const NCameraPosition(
                         target: NLatLng(37.4979, 127.0276),
                         zoom: 13.2,
                       ),
                       scaleBarEnable: false,
                       indoorEnable: true,
                       locationButtonEnable: false,
+                      customStyleId: mapStyleId,
                     ),
                     onMapReady: _onMapReady,
                     onMapTapped: (mapPoint, latLng) {
@@ -1193,7 +1198,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
                           child: Icon(
                             Icons.subway_rounded,
                             size: 20,
-                            color: palette.primary,
+                            color: palette.primaryStrong,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1561,9 +1566,9 @@ class _CurrentLocationMarker extends StatelessWidget {
               height: 28,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: palette.primary.withValues(alpha: 0.14),
+                color: palette.primaryStrong.withValues(alpha: 0.16),
                 border: Border.all(
-                  color: palette.primary.withValues(alpha: 0.26),
+                  color: palette.primaryStrong.withValues(alpha: 0.34),
                   width: 1.25,
                 ),
               ),
@@ -1573,7 +1578,7 @@ class _CurrentLocationMarker extends StatelessWidget {
               height: 18,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: palette.primary,
+                color: palette.primaryStrong,
                 boxShadow: [
                   BoxShadow(
                     color: palette.shadow.withValues(alpha: 0.18),

@@ -239,6 +239,7 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final mediaQuery = MediaQuery.of(context);
     final bottomInset = mediaQuery.viewInsets.bottom;
     final bottomPadding = mediaQuery.padding.bottom;
@@ -404,9 +405,12 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
                   child: ElevatedButton(
                     onPressed: _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: palette.primarySoft,
-                      foregroundColor: palette.primary,
-                      elevation: 0,
+                      backgroundColor: isDark
+                          ? palette.primary
+                          : palette.primarySoft,
+                      foregroundColor: isDark ? Colors.white : palette.primary,
+                      elevation: isDark ? 1 : 0,
+                      shadowColor: palette.primary.withValues(alpha: 0.28),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18),
                       ),
@@ -442,6 +446,7 @@ class _FixedDateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       width: double.infinity,
@@ -457,13 +462,13 @@ class _FixedDateCard extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: palette.primarySoft,
+              color: isDark ? palette.primary : palette.primarySoft,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               Icons.calendar_today_rounded,
               size: 18,
-              color: palette.primary,
+              color: isDark ? Colors.white : palette.primary,
             ),
           ),
           const SizedBox(width: 12),
@@ -737,6 +742,7 @@ class _WheelPickerColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Stack(
       alignment: Alignment.center,
@@ -749,8 +755,15 @@ class _WheelPickerColumn extends StatelessWidget {
                 width: double.infinity,
                 height: _VisitScheduleBottomSheetState._selectedPillHeight,
                 decoration: BoxDecoration(
-                  color: palette.primarySoft,
+                  color: isDark
+                      ? palette.primary.withValues(alpha: 0.52)
+                      : palette.primarySoft,
                   borderRadius: BorderRadius.circular(16),
+                  border: isDark
+                      ? Border.all(
+                          color: palette.primaryStrong.withValues(alpha: 0.42),
+                        )
+                      : null,
                 ),
               ),
             ),
@@ -788,7 +801,9 @@ class _WheelPickerColumn extends StatelessWidget {
                             ? FontWeight.w800
                             : FontWeight.w600,
                         color: isSelected
-                            ? palette.textPrimary
+                            ? isDark
+                                  ? Colors.white
+                                  : palette.textPrimary
                             : palette.textTertiary,
                       ),
                       child: Text(value.toString().padLeft(2, '0')),

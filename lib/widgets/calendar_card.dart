@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_palette.dart';
 
-const _homeSecondaryTextColor = Color(0xFF4B5563);
-const _scheduleInnerCardColor = Color(0xFFF6F7F9);
-
 class CalendarCardReservationItem {
   final String title;
   final String dateLabel;
@@ -30,6 +27,7 @@ class CalendarCard extends StatelessWidget {
   final VoidCallback? onTapSummary;
   final bool isLoginRequired;
   final bool showAddButton;
+  final bool showSummary;
   final int maxVisibleItems;
 
   const CalendarCard({
@@ -45,6 +43,7 @@ class CalendarCard extends StatelessWidget {
     this.onTapSummary,
     this.isLoginRequired = false,
     this.showAddButton = true,
+    this.showSummary = true,
     this.maxVisibleItems = 3,
   });
 
@@ -52,6 +51,7 @@ class CalendarCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final visibleReservations = reservations.take(maxVisibleItems).toList();
+    final innerCardColor = palette.surfaceSoft;
 
     if (isLoginRequired) {
       return _LoginReservationPrompt(onTap: onTapCard);
@@ -62,86 +62,88 @@ class CalendarCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-            child: InkWell(
-              onTap: onTapSummary,
+          if (showSummary) ...[
+            Material(
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(14),
-              child: Ink(
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                decoration: BoxDecoration(
-                  color: _scheduleInnerCardColor,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: -0.2,
-                              color: palette.textPrimary,
+              child: InkWell(
+                onTap: onTapSummary,
+                borderRadius: BorderRadius.circular(14),
+                child: Ink(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                  decoration: BoxDecoration(
+                    color: innerCardColor,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: -0.2,
+                                color: palette.textPrimary,
+                              ),
                             ),
-                          ),
-                          if (dDayLabel != null || subtitle != null) ...[
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                if (dDayLabel != null)
-                                  Text(
-                                    dDayLabel!,
-                                    style: TextStyle(
-                                      fontSize: 19,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -0.3,
-                                      color: palette.primaryStrong,
-                                    ),
-                                  ),
-                                if (dDayLabel != null && subtitle != null)
-                                  const SizedBox(width: 10),
-                                if (subtitle != null)
-                                  Expanded(
-                                    child: Text(
-                                      subtitle!,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                            if (dDayLabel != null || subtitle != null) ...[
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  if (dDayLabel != null)
+                                    Text(
+                                      dDayLabel!,
                                       style: TextStyle(
-                                        fontSize: 13,
-                                        color: _homeSecondaryTextColor,
-                                        fontWeight: FontWeight.w400,
+                                        fontSize: 19,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: -0.3,
+                                        color: palette.primaryStrong,
                                       ),
                                     ),
-                                  ),
-                              ],
-                            ),
+                                  if (dDayLabel != null && subtitle != null)
+                                    const SizedBox(width: 10),
+                                  if (subtitle != null)
+                                    Expanded(
+                                      child: Text(
+                                        subtitle!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: palette.textSecondary,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
-                    ),
-                    if (onTapSummary != null) ...[
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 22,
-                        color: palette.textSecondary,
-                      ),
+                      if (onTapSummary != null) ...[
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 22,
+                          color: palette.textSecondary,
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 14),
-          if (visibleReservations.isEmpty)
+            const SizedBox(height: 14),
+          ],
+          if (visibleReservations.isEmpty && !showSummary)
             const _EmptyReservationState()
-          else
+          else if (visibleReservations.isNotEmpty)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -151,7 +153,7 @@ class CalendarCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
-                      color: _homeSecondaryTextColor,
+                      color: palette.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -222,6 +224,7 @@ class _LoginReservationPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    final innerCardColor = palette.surfaceSoft;
 
     return Material(
       color: Colors.transparent,
@@ -231,7 +234,7 @@ class _LoginReservationPrompt extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           decoration: BoxDecoration(
-            color: _scheduleInnerCardColor,
+            color: innerCardColor,
             borderRadius: BorderRadius.circular(18),
           ),
           child: Center(
@@ -277,6 +280,7 @@ class _UpcomingReservationRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    final innerCardColor = palette.surfaceSoft;
 
     return Material(
       color: Colors.transparent,
@@ -287,7 +291,7 @@ class _UpcomingReservationRow extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
           decoration: BoxDecoration(
-            color: _scheduleInnerCardColor,
+            color: innerCardColor,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
@@ -312,7 +316,7 @@ class _UpcomingReservationRow extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w400,
-                        color: _homeSecondaryTextColor,
+                        color: palette.textSecondary,
                       ),
                     ),
                   ],
@@ -367,7 +371,7 @@ class _EmptyReservationState extends StatelessWidget {
           fontSize: 13,
           height: 1.45,
           fontWeight: FontWeight.w400,
-          color: _homeSecondaryTextColor,
+          color: palette.textSecondary,
         ),
       ),
     );
@@ -398,7 +402,7 @@ class _PrimaryButton extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: palette.surface,
+                color: Colors.white,
               ),
             ),
           ),
@@ -427,7 +431,9 @@ class _SecondaryButton extends StatelessWidget {
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: palette.primary.withValues(alpha: 0.22)),
+            border: Border.all(
+              color: palette.primaryStrong.withValues(alpha: 0.34),
+            ),
             color: palette.primarySoft.withValues(alpha: 0.28),
           ),
           child: SizedBox(
@@ -439,7 +445,7 @@ class _SecondaryButton extends StatelessWidget {
                   Icon(
                     Icons.calendar_month_rounded,
                     size: 15,
-                    color: palette.primary,
+                    color: palette.primaryStrong,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -447,7 +453,7 @@ class _SecondaryButton extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: palette.primary,
+                      color: palette.primaryStrong,
                     ),
                   ),
                 ],

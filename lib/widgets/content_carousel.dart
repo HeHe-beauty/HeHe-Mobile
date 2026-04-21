@@ -145,7 +145,9 @@ class _ContentCarouselState extends State<ContentCarousel> {
               width: index == _currentPage ? 28 : 8,
               height: 8,
               decoration: BoxDecoration(
-                color: index == _currentPage ? palette.primary : palette.border,
+                color: index == _currentPage
+                    ? palette.primaryStrong
+                    : palette.border,
                 borderRadius: BorderRadius.circular(999),
               ),
             ),

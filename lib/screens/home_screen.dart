@@ -30,9 +30,6 @@ import 'device_map_screen.dart';
 import 'settings_screen.dart';
 import 'my_page_screen.dart';
 
-const _homeBackgroundColor = Color(0xFFF0F1F4);
-const _homeSecondaryTextColor = Color(0xFF4B5563);
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -432,7 +429,7 @@ class _HomeScreenState extends State<HomeScreen>
             isLoggedIn && reservationItems.isNotEmpty ? '이후 예약 일정' : null;
 
         return Scaffold(
-          backgroundColor: _homeBackgroundColor,
+          backgroundColor: palette.bg,
           body: GestureDetector(
             behavior: HitTestBehavior.deferToChild,
             child: Stack(
@@ -453,15 +450,15 @@ class _HomeScreenState extends State<HomeScreen>
                             HeaderBar(
                               title: 'HeHe',
                               isLoggedIn: isLoggedIn,
-                              backgroundColor: _homeBackgroundColor,
-                              foregroundColor: palette.primary,
+                              backgroundColor: palette.bg,
+                              foregroundColor: palette.primaryStrong,
                               utilityIconColor: palette.textPrimary,
                               onTapProfile: () => _openMyPage(context),
                               onTapSettings: () => _openSettings(context),
                             ),
                             Container(
                               width: double.infinity,
-                              color: _homeBackgroundColor,
+                              color: palette.bg,
                               child: Padding(
                                 padding: const EdgeInsets.fromLTRB(
                                   20,
@@ -569,7 +566,7 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                         Container(
                           width: double.infinity,
-                          color: _homeBackgroundColor,
+                          color: palette.bg,
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(20, 24, 20, 18),
                             child: Column(
@@ -594,6 +591,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   reservations: reservationItems,
                                   isLoginRequired: !isLoggedIn,
                                   showAddButton: isLoggedIn,
+                                  showSummary: nearestSchedule != null,
                                   maxVisibleItems: _maxVisibleReservations,
                                   onTapCalendar: () =>
                                       _openCalendarIfLoggedIn(context),
@@ -735,7 +733,7 @@ class _PrimaryDeviceCard extends StatelessWidget {
                       _DeviceDescriptionText(
                         description,
                         style: TextStyle(
-                          color: _homeSecondaryTextColor,
+                          color: palette.textSecondary,
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
                           height: 1.25,
@@ -780,7 +778,7 @@ class _HomeGuideBanner extends StatelessWidget {
                 Text(
                   'HeHe(히히) 이용이 처음이신가요?',
                   style: AppTextStyles.homeBodyStrong.copyWith(
-                    color: palette.surface,
+                    color: Colors.white,
                     fontSize: 15,
                     height: 1.2,
                   ),
@@ -789,7 +787,7 @@ class _HomeGuideBanner extends StatelessWidget {
                 Text(
                   '서비스 안내 바로가기',
                   style: AppTextStyles.homeCaption.copyWith(
-                    color: palette.surface.withValues(alpha: 0.86),
+                    color: Colors.white.withValues(alpha: 0.86),
                     height: 1.2,
                   ),
                 ),
@@ -802,7 +800,11 @@ class _HomeGuideBanner extends StatelessWidget {
             child: IconButton(
               onPressed: onDismiss,
               padding: EdgeInsets.zero,
-              icon: Icon(Icons.close_rounded, size: 18, color: palette.surface),
+              icon: const Icon(
+                Icons.close_rounded,
+                size: 18,
+                color: Colors.white,
+              ),
               splashRadius: 18,
             ),
           ),

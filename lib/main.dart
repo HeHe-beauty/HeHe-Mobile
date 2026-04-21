@@ -18,6 +18,14 @@ void main() async {
 
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
+  try {
+    await AppSettingsState.restore();
+    debugPrint('🔥 app settings restore done');
+  } catch (e, stack) {
+    debugPrint('🔥 app settings restore error: $e');
+    debugPrint('$stack');
+  }
+
   await FlutterNaverMap().init(clientId: 'yi5mqthvb4');
   debugPrint('🔥 naver map init done');
 

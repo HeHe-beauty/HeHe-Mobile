@@ -245,7 +245,7 @@ class _MapBottomSheetState extends State<MapBottomSheet> {
                     final bottomInset = MediaQuery.of(
                       context,
                     ).viewPadding.bottom;
-                    final horizontalPadding = isShortHeight ? 16.0 : 18.0;
+                    const horizontalPadding = 18.0;
                     final defaultTopSpacer = isShortHeight ? 18.0 : 22.0;
                     final defaultChipBottomSpacer = isShortHeight ? 10.0 : 12.0;
                     final bottomPadding =
@@ -255,11 +255,9 @@ class _MapBottomSheetState extends State<MapBottomSheet> {
                             ? (isShortHeight ? 12.0 : 14.0)
                             : (isShortHeight ? 20.0 : 24.0)) +
                         bottomInset;
-                    final gridSpacing = isShortHeight ? 14.0 : 18.0;
+                    const gridSpacing = 18.0;
                     final crossAxisCount = constraints.maxWidth < 360 ? 1 : 2;
-                    final childAspectRatio = crossAxisCount == 1
-                        ? 1.68
-                        : (isShortHeight ? 0.68 : 0.64);
+                    final childAspectRatio = crossAxisCount == 1 ? 1.68 : 0.64;
 
                     return SingleChildScrollView(
                       controller: scrollController,
@@ -439,7 +437,11 @@ class _WideRegionChip extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(Icons.location_on_rounded, size: 20, color: palette.primary),
+          Icon(
+            Icons.location_on_rounded,
+            size: 20,
+            color: palette.primaryStrong,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -547,7 +549,7 @@ class _SinglePlaceSection extends StatelessWidget {
                         child: Icon(
                           Icons.location_on_rounded,
                           size: 15,
-                          color: palette.primary,
+                          color: palette.primaryStrong,
                         ),
                       ),
                       const SizedBox(width: 5),
@@ -630,7 +632,7 @@ class _PrimaryActionButton extends StatelessWidget {
     final palette = context.palette;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final buttonTextStyle = AppTextStyles.homeBodyStrong.copyWith(
-      color: palette.surface,
+      color: Colors.white,
       height: 1,
     );
 
@@ -644,11 +646,7 @@ class _PrimaryActionButton extends StatelessWidget {
           height: 42,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [palette.primaryStrong, palette.primary],
-            ),
+            color: palette.primary,
             boxShadow: [
               if (!isDark)
                 BoxShadow(
@@ -662,7 +660,7 @@ class _PrimaryActionButton extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 16, color: palette.surface),
+                Icon(icon, size: 16, color: Colors.white),
                 const SizedBox(width: 6),
                 Text(label, style: buttonTextStyle),
               ],
