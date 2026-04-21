@@ -17,16 +17,10 @@ class ScheduleApi {
     final body = await _apiClient.post(
       ApiEndpoints.scheduleCreate,
       body: request.toJson(),
-      headers: {'Authorization': 'Bearer $accessToken'},
+      headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('일정 생성 실패');
-    }
-
-    final data = body['data'] as Map<String, dynamic>;
-
-    return ScheduleCreateResponseDto.fromJson(data);
+    return ScheduleCreateResponseDto.fromJson(_dataMap(body, '일정 생성 실패'));
   }
 
   static Future<ScheduleDetailDto> updateSchedule({
@@ -37,16 +31,10 @@ class ScheduleApi {
     final body = await _apiClient.patch(
       ApiEndpoints.scheduleDetail(scheduleId),
       body: request.toJson(),
-      headers: {'Authorization': 'Bearer $accessToken'},
+      headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('일정 수정 실패');
-    }
-
-    final data = body['data'] as Map<String, dynamic>;
-
-    return ScheduleDetailDto.fromJson(data);
+    return ScheduleDetailDto.fromJson(_dataMap(body, '일정 수정 실패'));
   }
 
   static Future<ScheduleDetailDto> fetchScheduleDetail({
@@ -55,16 +43,10 @@ class ScheduleApi {
   }) async {
     final body = await _apiClient.get(
       ApiEndpoints.scheduleDetail(scheduleId),
-      headers: {'Authorization': 'Bearer $accessToken'},
+      headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('일정 상세 조회 실패');
-    }
-
-    final data = body['data'] as Map<String, dynamic>;
-
-    return ScheduleDetailDto.fromJson(data);
+    return ScheduleDetailDto.fromJson(_dataMap(body, '일정 상세 조회 실패'));
   }
 
   static Future<void> deleteSchedule({
@@ -73,12 +55,10 @@ class ScheduleApi {
   }) async {
     final body = await _apiClient.delete(
       ApiEndpoints.scheduleDetail(scheduleId),
-      headers: {'Authorization': 'Bearer $accessToken'},
+      headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('일정 삭제 실패');
-    }
+    _ensureSuccess(body, '일정 삭제 실패');
   }
 
   static Future<void> createScheduleAlarm({
@@ -89,12 +69,10 @@ class ScheduleApi {
     final body = await _apiClient.post(
       ApiEndpoints.scheduleAlarms(scheduleId),
       body: request.toJson(),
-      headers: {'Authorization': 'Bearer $accessToken'},
+      headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('일정 알림 등록 실패');
-    }
+    _ensureSuccess(body, '일정 알림 등록 실패');
   }
 
   static Future<void> deleteScheduleAlarm({
@@ -104,12 +82,10 @@ class ScheduleApi {
   }) async {
     final body = await _apiClient.delete(
       ApiEndpoints.scheduleAlarm(scheduleId, alarmType),
-      headers: {'Authorization': 'Bearer $accessToken'},
+      headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('일정 알림 삭제 실패');
-    }
+    _ensureSuccess(body, '일정 알림 삭제 실패');
   }
 
   static Future<List<ScheduleDetailDto>> fetchUpcomingSchedules({
@@ -119,21 +95,10 @@ class ScheduleApi {
     final body = await _apiClient.get(
       ApiEndpoints.scheduleUpcoming,
       queryParameters: {'limit': limit},
-      headers: {'Authorization': 'Bearer $accessToken'},
+      headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('다가오는 일정 조회 실패');
-    }
-
-    final data = body['data'] as List<dynamic>;
-
-    return data
-        .map(
-          (schedule) =>
-              ScheduleDetailDto.fromJson(schedule as Map<String, dynamic>),
-        )
-        .toList();
+    return _scheduleDetailList(body, '다가오는 일정 조회 실패');
   }
 
   static Future<ScheduleSummaryDto> fetchScheduleSummary({
@@ -141,16 +106,10 @@ class ScheduleApi {
   }) async {
     final body = await _apiClient.get(
       ApiEndpoints.scheduleSummary,
-      headers: {'Authorization': 'Bearer $accessToken'},
+      headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('일정 요약 조회 실패');
-    }
-
-    final data = body['data'] as Map<String, dynamic>;
-
-    return ScheduleSummaryDto.fromJson(data);
+    return ScheduleSummaryDto.fromJson(_dataMap(body, '일정 요약 조회 실패'));
   }
 
   static Future<List<ScheduleDetailDto>> fetchDailySchedules({
@@ -160,16 +119,39 @@ class ScheduleApi {
     final body = await _apiClient.get(
       ApiEndpoints.scheduleDaily,
       queryParameters: {'date': date},
-      headers: {'Authorization': 'Bearer $accessToken'},
+      headers: ApiClient.bearerHeaders(accessToken),
     );
 
+    return _scheduleDetailList(body, '일별 일정 조회 실패');
+  }
+
+  static void _ensureSuccess(Map<String, dynamic> body, String message) {
     if (body['success'] != true) {
-      throw Exception('일별 일정 조회 실패');
+      throw Exception(message);
     }
+  }
 
-    final data = body['data'] as List<dynamic>;
+  static Map<String, dynamic> _dataMap(
+    Map<String, dynamic> body,
+    String failureMessage,
+  ) {
+    _ensureSuccess(body, failureMessage);
+    return body['data'] as Map<String, dynamic>;
+  }
 
-    return data
+  static List<dynamic> _dataList(
+    Map<String, dynamic> body,
+    String failureMessage,
+  ) {
+    _ensureSuccess(body, failureMessage);
+    return body['data'] as List<dynamic>;
+  }
+
+  static List<ScheduleDetailDto> _scheduleDetailList(
+    Map<String, dynamic> body,
+    String failureMessage,
+  ) {
+    return _dataList(body, failureMessage)
         .map(
           (schedule) =>
               ScheduleDetailDto.fromJson(schedule as Map<String, dynamic>),

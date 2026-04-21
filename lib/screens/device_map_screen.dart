@@ -9,8 +9,8 @@ import '../core/auth/auth_gate.dart';
 import '../core/auth/auth_prompt.dart';
 import '../core/auth/auth_state.dart';
 import '../core/common/favorite_store.dart';
+import '../core/map/naver_map_styles.dart';
 import '../data/hospital/hospital_repository.dart';
-import '../dtos/common/hospital/hospital_detail_dto.dart';
 import '../dtos/common/hospital/hospital_dto.dart';
 import '../dtos/common/hospital/hospital_map_cluster_dto.dart';
 import '../models/place_item.dart';
@@ -19,11 +19,14 @@ import '../repositories/subway_station_repository.dart';
 import '../theme/app_palette.dart';
 import '../utils/app_snackbar.dart';
 import '../utils/naver_reverse_geocode.dart';
+import '../utils/place_item_mappers.dart';
 import '../widgets/cluster_count_marker.dart';
+import '../widgets/current_location_marker.dart';
 import '../widgets/device_map_controls.dart';
 import '../widgets/map_bottom_sheet.dart';
 import '../widgets/map_side_panel.dart';
 import '../widgets/selected_hospital_marker.dart';
+import '../widgets/station_line_badge.dart';
 import 'calendar_detail_screen.dart';
 import 'hospital_history_screen.dart';
 import 'my_page_screen.dart';
@@ -40,8 +43,6 @@ class DeviceMapScreen extends StatefulWidget {
 
 class _DeviceMapScreenState extends State<DeviceMapScreen> {
   static const double _individualMarkerZoom = 16.0;
-  static const String _lightMapStyleId = '65773ad2-304e-4b1c-8430-cde97f36ab3f';
-  static const String _darkMapStyleId = '8a258f07-dd94-4f51-84b7-dbb44ba00a58';
 
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
@@ -539,7 +540,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
         return node.copyWith(place: _placeItemFromClusterNode(node));
       }
 
-      final summaryPlace = _placeItemFromHospital(
+      final summaryPlace = placeItemFromHospital(
         hospitals.first,
         latitude: node.latitude,
         longitude: node.longitude,
@@ -551,7 +552,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
         );
 
         return node.copyWith(
-          place: _placeItemFromHospitalDetail(
+          place: placeItemFromHospitalDetail(
             detail,
             fallbackPlace: summaryPlace,
           ),
@@ -621,7 +622,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
       setState(() {
         _sheetPlaces = hospitals
             .map(
-              (hospital) => _placeItemFromHospital(
+              (hospital) => placeItemFromHospital(
                 hospital,
                 latitude: node.latitude,
                 longitude: node.longitude,
@@ -712,7 +713,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
 
     try {
       final detail = await HospitalRepository.getHospitalDetail(hospitalId);
-      return _placeItemFromHospitalDetail(detail, fallbackPlace: place);
+      return placeItemFromHospitalDetail(detail, fallbackPlace: place);
     } catch (e) {
       if (mounted && showFallbackError) {
         showTopAppSnackBar(context, '병원 정보를 불러오지 못했어요');
@@ -899,7 +900,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
       () => NOverlayImage.fromWidget(
         context: context,
         size: const Size(34, 34),
-        widget: const _CurrentLocationMarker(),
+        widget: const CurrentLocationMarker(),
       ),
     );
   }
@@ -1035,7 +1036,9 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final mapStyleId = isDark ? _darkMapStyleId : _lightMapStyleId;
+    final mapStyleId = isDark
+        ? NaverMapStyles.darkDynamicStyleId
+        : NaverMapStyles.lightDynamicStyleId;
 
     return Scaffold(
       backgroundColor: palette.bg,
@@ -1221,9 +1224,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
                                 spacing: 6,
                                 runSpacing: 6,
                                 children: station.lines
-                                    .map(
-                                      (line) => _StationLineBadge(line: line),
-                                    )
+                                    .map((line) => StationLineBadge(line: line))
                                     .toList(),
                               ),
                             ],
@@ -1499,24 +1500,6 @@ double _clusterMergePixelRadiusFor(
   return 54;
 }
 
-PlaceItem _placeItemFromHospital(
-  HospitalDto hospital, {
-  required double latitude,
-  required double longitude,
-}) {
-  return PlaceItem(
-    hospitalId: hospital.hospitalId,
-    id: 'hospital_${hospital.hospitalId}',
-    name: hospital.name,
-    tags: hospital.tags,
-    description: '',
-    address: hospital.address,
-    isBookmarked: false,
-    latitude: latitude,
-    longitude: longitude,
-  );
-}
-
 PlaceItem _placeItemFromClusterNode(_HospitalMarkerNode node) {
   return PlaceItem(
     id: 'hospital_marker_${node.id}',
@@ -1528,110 +1511,4 @@ PlaceItem _placeItemFromClusterNode(_HospitalMarkerNode node) {
     latitude: node.latitude,
     longitude: node.longitude,
   );
-}
-
-PlaceItem _placeItemFromHospitalDetail(
-  HospitalDetailDto hospital, {
-  required PlaceItem fallbackPlace,
-}) {
-  return PlaceItem(
-    hospitalId: hospital.hospitalId,
-    id: fallbackPlace.id,
-    name: hospital.name,
-    tags: hospital.tags,
-    description: fallbackPlace.description,
-    address: hospital.address,
-    isBookmarked: fallbackPlace.isBookmarked,
-    latitude: hospital.lat,
-    longitude: hospital.lng,
-  );
-}
-
-class _CurrentLocationMarker extends StatelessWidget {
-  const _CurrentLocationMarker();
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return SizedBox(
-      width: 34,
-      height: 34,
-      child: Center(
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: palette.primaryStrong.withValues(alpha: 0.16),
-                border: Border.all(
-                  color: palette.primaryStrong.withValues(alpha: 0.34),
-                  width: 1.25,
-                ),
-              ),
-            ),
-            Container(
-              width: 18,
-              height: 18,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: palette.primaryStrong,
-                boxShadow: [
-                  BoxShadow(
-                    color: palette.shadow.withValues(alpha: 0.18),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Container(
-                  width: 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: palette.surface,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StationLineBadge extends StatelessWidget {
-  final String line;
-
-  const _StationLineBadge({required this.line});
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: palette.primarySoft,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: palette.border.withValues(alpha: 0.85)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        child: Text(
-          line,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: palette.primaryStrong,
-            height: 1.1,
-          ),
-        ),
-      ),
-    );
-  }
 }

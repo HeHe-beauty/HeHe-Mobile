@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_palette.dart';
+import '../utils/word_wrap_utils.dart';
 
 class DeviceTile extends StatelessWidget {
   final String title;
@@ -105,8 +106,8 @@ class _DeviceTileDescriptionText extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final lines = _wordWrapLines(
-          text.trim().replaceAll(RegExp(r'\s+'), ' '),
+        final lines = wrapTextByWords(
+          text,
           style,
           constraints.maxWidth,
           context,
@@ -129,47 +130,4 @@ class _DeviceTileDescriptionText extends StatelessWidget {
       },
     );
   }
-}
-
-List<String> _wordWrapLines(
-  String text,
-  TextStyle style,
-  double maxWidth,
-  BuildContext context,
-) {
-  final words = text.split(RegExp(r'\s+')).where((word) => word.isNotEmpty);
-  final lines = <String>[];
-  var currentLine = '';
-
-  for (final word in words) {
-    final candidate = currentLine.isEmpty ? word : '$currentLine $word';
-    if (currentLine.isEmpty || _textFits(candidate, style, maxWidth, context)) {
-      currentLine = candidate;
-      continue;
-    }
-
-    lines.add(currentLine);
-    currentLine = word;
-  }
-
-  if (currentLine.isNotEmpty) {
-    lines.add(currentLine);
-  }
-
-  return lines.isEmpty ? const [''] : lines;
-}
-
-bool _textFits(
-  String text,
-  TextStyle style,
-  double maxWidth,
-  BuildContext context,
-) {
-  final painter = TextPainter(
-    text: TextSpan(text: text, style: style),
-    textDirection: Directionality.of(context),
-    maxLines: 1,
-  )..layout(maxWidth: maxWidth);
-
-  return !painter.didExceedMaxLines;
 }

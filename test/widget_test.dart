@@ -17,7 +17,7 @@ void main() {
 
     expect(find.text('추천 콘텐츠'), findsOneWidget);
     expect(
-      find.textContaining('관리는 HeHe에서', findRichText: true),
+      find.textContaining('기기를 선택하면 주변 병원 위치를 확인할 수 있어요', findRichText: true),
       findsOneWidget,
     );
   });

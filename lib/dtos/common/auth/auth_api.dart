@@ -27,7 +27,7 @@ class AuthApi {
   static Future<void> logout(String accessToken) async {
     await _apiClient.post(
       ApiEndpoints.authLogout,
-      headers: {'Authorization': 'Bearer $accessToken'},
+      headers: ApiClient.bearerHeaders(accessToken),
     );
   }
 

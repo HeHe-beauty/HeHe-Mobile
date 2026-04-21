@@ -3,6 +3,7 @@ import 'package:hehe/common/utils/app_time.dart';
 
 import '../common/helper/date_refresh_mixin.dart';
 import '../core/auth/auth_state.dart';
+import '../core/schedule/schedule_alarm_types.dart';
 import '../data/calendar_schedule_store.dart';
 import '../data/schedule/schedule_repository.dart';
 import '../dtos/common/schedule/schedule_detail_dto.dart';
@@ -369,7 +370,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
               },
               onChangedThreeDaysBefore: (value) => _setScheduleAlarm(
                 schedule: latestSchedule,
-                alarmType: '3D',
+                alarmType: ScheduleAlarmTypes.threeDaysBefore,
                 enabled: value,
                 applyLocalChange: () {
                   latestSchedule.isThreeDaysBefore = value;
@@ -378,7 +379,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
               ),
               onChangedOneDayBefore: (value) => _setScheduleAlarm(
                 schedule: latestSchedule,
-                alarmType: '1D',
+                alarmType: ScheduleAlarmTypes.oneDayBefore,
                 enabled: value,
                 applyLocalChange: () {
                   latestSchedule.isOneDayBefore = value;
@@ -387,7 +388,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
               ),
               onChangedOneHourBefore: (value) => _setScheduleAlarm(
                 schedule: latestSchedule,
-                alarmType: '1H',
+                alarmType: ScheduleAlarmTypes.oneHourBefore,
                 enabled: value,
                 applyLocalChange: () {
                   latestSchedule.isOneHourBefore = value;
@@ -478,9 +479,15 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
       id: detail.scheduleId,
       hospitalName: detail.hospitalName,
       dateTime: dateTimeFromUnixVisitTime(detail.visitTime),
-      isThreeDaysBefore: detail.alarms.any((alarm) => alarm.alarmType == '3D'),
-      isOneDayBefore: detail.alarms.any((alarm) => alarm.alarmType == '1D'),
-      isOneHourBefore: detail.alarms.any((alarm) => alarm.alarmType == '1H'),
+      isThreeDaysBefore: detail.alarms.any(
+        (alarm) => alarm.alarmType == ScheduleAlarmTypes.threeDaysBefore,
+      ),
+      isOneDayBefore: detail.alarms.any(
+        (alarm) => alarm.alarmType == ScheduleAlarmTypes.oneDayBefore,
+      ),
+      isOneHourBefore: detail.alarms.any(
+        (alarm) => alarm.alarmType == ScheduleAlarmTypes.oneHourBefore,
+      ),
     );
   }
 

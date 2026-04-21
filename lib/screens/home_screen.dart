@@ -4,6 +4,7 @@ import 'package:hehe/common/utils/app_time.dart';
 import '../core/auth/auth_prompt.dart';
 import '../core/auth/auth_gate.dart';
 import '../core/auth/auth_state.dart';
+import '../core/schedule/schedule_alarm_types.dart';
 import '../models/calendar_schedule.dart';
 import '../models/content_item.dart';
 import '../theme/app_palette.dart';
@@ -19,6 +20,7 @@ import '../dtos/common/schedule/schedule_detail_dto.dart';
 import '../utils/calendar_schedule_utils.dart';
 import '../utils/app_snackbar.dart';
 import '../utils/visit_time_utils.dart';
+import '../utils/word_wrap_utils.dart';
 import '../widgets/calendar_card.dart';
 import '../widgets/content_carousel.dart';
 import '../widgets/device_tile.dart';
@@ -360,9 +362,15 @@ class _HomeScreenState extends State<HomeScreen>
       id: detail.scheduleId,
       hospitalName: detail.hospitalName,
       dateTime: dateTimeFromUnixVisitTime(detail.visitTime),
-      isThreeDaysBefore: detail.alarms.any((alarm) => alarm.alarmType == '3D'),
-      isOneDayBefore: detail.alarms.any((alarm) => alarm.alarmType == '1D'),
-      isOneHourBefore: detail.alarms.any((alarm) => alarm.alarmType == '1H'),
+      isThreeDaysBefore: detail.alarms.any(
+        (alarm) => alarm.alarmType == ScheduleAlarmTypes.threeDaysBefore,
+      ),
+      isOneDayBefore: detail.alarms.any(
+        (alarm) => alarm.alarmType == ScheduleAlarmTypes.oneDayBefore,
+      ),
+      isOneHourBefore: detail.alarms.any(
+        (alarm) => alarm.alarmType == ScheduleAlarmTypes.oneHourBefore,
+      ),
     );
   }
 
@@ -824,8 +832,8 @@ class _DeviceDescriptionText extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final lines = _wordWrapLines(
-          text.trim().replaceAll(RegExp(r'\s+'), ' '),
+        final lines = wrapTextByWords(
+          text,
           style,
           constraints.maxWidth,
           context,
@@ -910,49 +918,6 @@ class _BubbleTailPainter extends CustomPainter {
   bool shouldRepaint(covariant _BubbleTailPainter oldDelegate) {
     return oldDelegate.color != color;
   }
-}
-
-List<String> _wordWrapLines(
-  String text,
-  TextStyle style,
-  double maxWidth,
-  BuildContext context,
-) {
-  final words = text.split(RegExp(r'\s+')).where((word) => word.isNotEmpty);
-  final lines = <String>[];
-  var currentLine = '';
-
-  for (final word in words) {
-    final candidate = currentLine.isEmpty ? word : '$currentLine $word';
-    if (currentLine.isEmpty || _textFits(candidate, style, maxWidth, context)) {
-      currentLine = candidate;
-      continue;
-    }
-
-    lines.add(currentLine);
-    currentLine = word;
-  }
-
-  if (currentLine.isNotEmpty) {
-    lines.add(currentLine);
-  }
-
-  return lines.isEmpty ? const [''] : lines;
-}
-
-bool _textFits(
-  String text,
-  TextStyle style,
-  double maxWidth,
-  BuildContext context,
-) {
-  final painter = TextPainter(
-    text: TextSpan(text: text, style: style),
-    textDirection: Directionality.of(context),
-    maxLines: 1,
-  )..layout(maxWidth: maxWidth);
-
-  return !painter.didExceedMaxLines;
 }
 
 String _deviceName(EquipDto? device, String fallback) {
