@@ -132,7 +132,10 @@ class _HomeScreenState extends State<HomeScreen>
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CalendarDetailScreen(initialScheduleId: schedule.id),
+        builder: (_) => CalendarDetailScreen(
+          initialScheduleId: schedule.id,
+          initialSchedule: schedule,
+        ),
       ),
     );
     if (mounted) {

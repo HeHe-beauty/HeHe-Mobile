@@ -17,11 +17,13 @@ import '../widgets/visit_schedule_bottom_sheet.dart';
 class CalendarDetailScreen extends StatefulWidget {
   final VisitScheduleResult? initialScheduleResult;
   final String? initialScheduleId;
+  final CalendarSchedule? initialSchedule;
 
   const CalendarDetailScreen({
     super.key,
     this.initialScheduleResult,
     this.initialScheduleId,
+    this.initialSchedule,
   });
 
   @override
@@ -52,6 +54,18 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
     _focusedMonth = DateTime(today.year, today.month, 1);
     _selectedDate = today;
     _refreshSchedules();
+
+    final initialSchedule = widget.initialSchedule;
+    if (initialSchedule != null) {
+      CalendarScheduleStore.upsert(initialSchedule);
+      _refreshSchedules();
+      final targetDate = calendarDateOnly(initialSchedule.dateTime);
+      _focusedMonth = DateTime(targetDate.year, targetDate.month, 1);
+      _selectedDate = targetDate;
+      _loadScheduleSummary(force: true);
+      _openInitialScheduleIfNeeded();
+      return;
+    }
 
     final initialScheduleResult = widget.initialScheduleResult;
     if (initialScheduleResult == null) {
@@ -96,7 +110,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
   }
 
   void _openInitialScheduleIfNeeded() {
-    final scheduleId = widget.initialScheduleId;
+    final scheduleId = widget.initialScheduleId ?? widget.initialSchedule?.id;
     if (_didOpenInitialSchedule || scheduleId == null) return;
 
     final schedule = _findScheduleById(scheduleId);

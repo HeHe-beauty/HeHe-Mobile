@@ -503,7 +503,7 @@ class _CompactInputField extends StatelessWidget {
     final palette = context.palette;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (hasError) ...[
           Padding(
