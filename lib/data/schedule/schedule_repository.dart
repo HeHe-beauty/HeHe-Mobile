@@ -108,6 +108,28 @@ class ScheduleRepository {
     invalidateReadCaches();
   }
 
+  static Future<void> setScheduleReminder({
+    required String accessToken,
+    required String scheduleId,
+    required String alarmType,
+    required bool enabled,
+  }) async {
+    if (enabled) {
+      await createScheduleAlarm(
+        accessToken: accessToken,
+        scheduleId: scheduleId,
+        alarmType: alarmType,
+      );
+      return;
+    }
+
+    await deleteScheduleAlarm(
+      accessToken: accessToken,
+      scheduleId: scheduleId,
+      alarmType: alarmType,
+    );
+  }
+
   static Future<void> deleteScheduleAlarm({
     required String accessToken,
     required String scheduleId,

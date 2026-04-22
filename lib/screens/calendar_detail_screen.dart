@@ -3,12 +3,14 @@ import 'package:hehe/common/utils/app_time.dart';
 
 import '../common/helper/date_refresh_mixin.dart';
 import '../core/auth/auth_state.dart';
+import '../core/notification/notification_permission_service.dart';
 import '../core/schedule/schedule_alarm_types.dart';
 import '../data/calendar_schedule_store.dart';
 import '../data/schedule/schedule_repository.dart';
 import '../dtos/common/schedule/schedule_detail_dto.dart';
 import '../models/calendar_schedule.dart';
 import '../theme/app_palette.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/app_snackbar.dart';
 import '../utils/calendar_schedule_utils.dart';
 import '../utils/visit_time_utils.dart';
@@ -498,6 +500,15 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
     required VoidCallback applyLocalChange,
     required StateSetter refreshSheet,
   }) async {
+    if (enabled) {
+      final hasNotificationPermission =
+          await NotificationPermissionService.ensureGrantedForReminder(context);
+      if (!hasNotificationPermission) {
+        debugPrint('FCM skipped reminder API call due to missing permission');
+        return;
+      }
+    }
+
     final accessToken = AuthState.session?.accessToken;
     if (accessToken == null || accessToken.isEmpty) {
       if (mounted) {
@@ -507,19 +518,12 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
     }
 
     try {
-      if (enabled) {
-        await ScheduleRepository.createScheduleAlarm(
-          accessToken: accessToken,
-          scheduleId: schedule.id,
-          alarmType: alarmType,
-        );
-      } else {
-        await ScheduleRepository.deleteScheduleAlarm(
-          accessToken: accessToken,
-          scheduleId: schedule.id,
-          alarmType: alarmType,
-        );
-      }
+      await ScheduleRepository.setScheduleReminder(
+        accessToken: accessToken,
+        scheduleId: schedule.id,
+        alarmType: alarmType,
+        enabled: enabled,
+      );
     } catch (e) {
       if (mounted) {
         showAppSnackBar(context, '일정 알림을 변경하지 못했어요. 잠시 후 다시 시도해주세요.');
@@ -677,16 +681,26 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
               child: Row(
                 children: [
+                  const SizedBox(width: 44),
+                  const Spacer(),
                   Expanded(
-                    child: Text(
-                      '캘린더',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: palette.textPrimary,
+                    child: SizedBox(
+                      height: 44,
+                      child: Center(
+                        child: Text(
+                          '캘린더',
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.homeSectionTitle.copyWith(
+                            height: 1,
+                            color: palette.textPrimary,
+                          ),
+                        ),
                       ),
                     ),
                   ),
+                  const Spacer(),
                   AppIconCircleButton(
                     icon: Icons.close_rounded,
                     onTap: () => Navigator.pop(context),

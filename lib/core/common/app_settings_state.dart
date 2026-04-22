@@ -4,8 +4,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class AppSettingsState {
   static const _storage = FlutterSecureStorage();
   static const _themeModeKey = 'settings.themeMode';
+  static const _notificationPermissionRequestedKey =
+      'settings.notificationPermissionRequested';
   static const _darkThemeValue = 'dark';
   static const _lightThemeValue = 'light';
+  static const _trueValue = 'true';
 
   static final ValueNotifier<bool> pushEnabled = ValueNotifier(true);
   static final ValueNotifier<bool> nightPushEnabled = ValueNotifier(false);
@@ -46,6 +49,18 @@ class AppSettingsState {
     _storage.write(
       key: _themeModeKey,
       value: isDark ? _darkThemeValue : _lightThemeValue,
+    );
+  }
+
+  static Future<bool> hasRequestedNotificationPermission() async {
+    final value = await _storage.read(key: _notificationPermissionRequestedKey);
+    return value == _trueValue;
+  }
+
+  static Future<void> markNotificationPermissionRequested() {
+    return _storage.write(
+      key: _notificationPermissionRequestedKey,
+      value: _trueValue,
     );
   }
 }

@@ -41,6 +41,8 @@ dependencies:
   kakao_flutter_sdk_user: ^2.0.0+1
   naver_login_sdk: ^3.2.1
   flutter_secure_storage: ^10.0.0
+  firebase_core: ^4.7.0
+  firebase_messaging: ^16.2.0
 
 dependency_overrides:
   path_provider_foundation: 2.5.1
