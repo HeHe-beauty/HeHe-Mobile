@@ -10,6 +10,7 @@ import '../theme/app_palette.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/app_snackbar.dart';
 import '../widgets/screen_header.dart';
+import 'calendar_detail_screen.dart';
 import 'hospital_history_screen.dart';
 
 class MyPageScreen extends StatefulWidget {
@@ -19,13 +20,28 @@ class MyPageScreen extends StatefulWidget {
   State<MyPageScreen> createState() => _MyPageScreenState();
 }
 
-class _MyPageScreenState extends State<MyPageScreen> {
+class _MyPageScreenState extends State<MyPageScreen>
+    with WidgetsBindingObserver {
   UserSummaryDto _summary = UserSummaryDto.empty();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadUserSummary();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadUserSummary();
+    }
   }
 
   Future<void> _loadUserSummary() async {
@@ -57,6 +73,42 @@ class _MyPageScreenState extends State<MyPageScreen> {
     }
   }
 
+  Future<void> _openCalendar() async {
+    final allowed = await AuthGate.ensureLoggedInWithPrompt(
+      context,
+      prompt: AuthPrompts.calendar,
+    );
+
+    if (!allowed || !mounted) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CalendarDetailScreen()),
+    );
+
+    if (!mounted) return;
+    await _loadUserSummary();
+  }
+
+  Future<void> _openRecentHospitals() async {
+    final allowed = await AuthGate.ensureLoggedInWithPrompt(
+      context,
+      prompt: AuthPrompts.recentPlaces,
+    );
+
+    if (!allowed || !mounted) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const HospitalHistoryScreen(initialTabIndex: 0),
+      ),
+    );
+
+    if (!mounted) return;
+    await _loadUserSummary();
+  }
+
   Future<void> _openFavoriteHospitals() async {
     final allowed = await AuthGate.ensureLoggedInWithPrompt(
       context,
@@ -71,6 +123,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
         builder: (_) => const HospitalHistoryScreen(initialTabIndex: 1),
       ),
     );
+
+    if (!mounted) return;
+    await _loadUserSummary();
   }
 
   Future<void> _openInquiryHospitals() async {
@@ -87,6 +142,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
         builder: (_) => const HospitalHistoryScreen(initialTabIndex: 2),
       ),
     );
+
+    if (!mounted) return;
+    await _loadUserSummary();
   }
 
   @override
@@ -135,7 +193,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             const SizedBox(height: 16),
                             _MenuSection(
                               onTapCalendar: () {
-                                showAppSnackBar(context, '내 캘린더 연결 예정');
+                                _openCalendar();
                               },
                               onTapFavorites: () {
                                 _openFavoriteHospitals();
@@ -144,7 +202,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                                 _openInquiryHospitals();
                               },
                               onTapRecent: () {
-                                showAppSnackBar(context, '최근 본 병원 연결 예정');
+                                _openRecentHospitals();
                               },
                             ),
                             const SizedBox(height: 16),

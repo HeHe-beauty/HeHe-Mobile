@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_palette.dart';
 import 'map_circle_button.dart';
-
-const double _kMapControlRadius = 14;
+import 'map_control_surface.dart';
 
 class DeviceMapTopBar extends StatelessWidget {
   final TextEditingController searchController;
@@ -44,67 +43,62 @@ class DeviceMapTopBar extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: palette.surface,
-                borderRadius: BorderRadius.circular(_kMapControlRadius),
-                boxShadow: [
-                  BoxShadow(
-                    color: palette.shadow,
-                    blurRadius: 1,
-                    offset: const Offset(0, 0.5),
-                  ),
-                ],
-              ),
+            child: Material(
+              color: palette.surface,
+              borderRadius: BorderRadius.circular(kMapControlRadius),
+              elevation: 0.5,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: 44),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: Center(
-                          child: Icon(
-                            Icons.search_rounded,
-                            size: 18,
-                            color: palette.primaryStrong,
+                child: DecoratedBox(
+                  decoration: mapControlDecoration(context),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: Center(
+                            child: Icon(
+                              Icons.search_rounded,
+                              size: 18,
+                              color: palette.primaryStrong,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: searchController,
-                          focusNode: searchFocusNode,
-                          textAlignVertical: TextAlignVertical.center,
-                          textInputAction: TextInputAction.search,
-                          maxLines: 1,
-                          onChanged: onSearchChanged,
-                          onSubmitted: onSearchSubmitted,
-                          decoration: InputDecoration(
-                            hintText: '지하철역 검색',
-                            hintStyle: TextStyle(
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: searchController,
+                            focusNode: searchFocusNode,
+                            textAlignVertical: TextAlignVertical.center,
+                            textInputAction: TextInputAction.search,
+                            maxLines: 1,
+                            onChanged: onSearchChanged,
+                            onSubmitted: onSearchSubmitted,
+                            decoration: InputDecoration(
+                              hintText: '지하철역 검색',
+                              hintStyle: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: palette.textSecondary,
+                                height: 1,
+                              ),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            style: TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: palette.textSecondary,
+                              fontWeight: FontWeight.w700,
+                              color: palette.textPrimary,
                               height: 1,
                             ),
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: palette.textPrimary,
-                            height: 1,
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

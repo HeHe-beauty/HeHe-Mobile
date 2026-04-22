@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../core/auth/auth_state.dart';
 import '../core/common/favorite_store.dart';
 import '../data/contact/contact_repository.dart';
@@ -6,7 +7,9 @@ import '../data/hospital/hospital_repository.dart';
 import '../data/recent_view/recent_view_repository.dart';
 import '../models/place_item.dart';
 import '../theme/app_palette.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/app_snackbar.dart';
+import '../utils/place_distance_utils.dart';
 import '../utils/place_item_mappers.dart';
 import '../widgets/place_card.dart';
 import '../widgets/screen_header.dart';
@@ -28,6 +31,8 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
 
   List<PlaceItem> recentPlaces = const [];
   List<PlaceItem> inquiryPlaces = const [];
+  double? _currentLatitude;
+  double? _currentLongitude;
   bool _isLoadingRecentViews = false;
   bool _isLoadingContacts = false;
 
@@ -35,6 +40,7 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
   void initState() {
     super.initState();
     selectedTabIndex = widget.initialTabIndex;
+    _loadCurrentLocationIfGranted();
     if (selectedTabIndex == 0) {
       _loadRecentPlaces();
     } else if (selectedTabIndex == 1) {
@@ -64,8 +70,28 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
 
       if (!mounted) return;
 
+      final places = await Future.wait(
+        recentViews.map((recentView) async {
+          final fallbackPlace = placeItemFromRecentView(recentView);
+
+          try {
+            final detail = await HospitalRepository.getHospitalDetail(
+              recentView.hospitalId,
+            );
+            return placeItemFromHospitalDetail(
+              detail,
+              fallbackPlace: fallbackPlace,
+            );
+          } catch (_) {
+            return fallbackPlace;
+          }
+        }),
+      );
+
+      if (!mounted) return;
+
       setState(() {
-        recentPlaces = recentViews.map(placeItemFromRecentView).toList();
+        recentPlaces = places;
       });
     } catch (e) {
       if (!mounted) return;
@@ -147,6 +173,40 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
         });
       }
     }
+  }
+
+  Future<void> _loadCurrentLocationIfGranted() async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return;
+    }
+
+    final position =
+        await Geolocator.getLastKnownPosition() ??
+        await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+          ),
+        );
+
+    if (!mounted) return;
+
+    setState(() {
+      _currentLatitude = position.latitude;
+      _currentLongitude = position.longitude;
+    });
+  }
+
+  String _distanceLabelForPlace(PlaceItem place) {
+    return formatPlaceDistanceLabel(
+      place: place,
+      currentLatitude: _currentLatitude,
+      currentLongitude: _currentLongitude,
+    );
   }
 
   List<PlaceItem> get currentPlaces {
@@ -270,9 +330,8 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       currentTitle,
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
+                      style: AppTextStyles.homeSectionTitle.copyWith(
+                        fontSize: 18,
                         color: palette.textPrimary,
                       ),
                     ),
@@ -302,7 +361,7 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
 
                             return PlaceCard(
                               place: place,
-                              distanceLabel: '여기서 1.2km',
+                              distanceLabel: _distanceLabelForPlace(place),
                               onTap: () => _openPlaceDetail(place),
                               onTapBookmark: () => _toggleBookmark(place),
                             );
@@ -349,9 +408,8 @@ class _TabChip extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
+            style: AppTextStyles.homeBodyStrong.copyWith(
+              fontWeight: FontWeight.w600,
               color: isSelected ? palette.primary : palette.textSecondary,
             ),
           ),
@@ -371,9 +429,8 @@ class _EmptyState extends StatelessWidget {
     return Center(
       child: Text(
         '아직 내역이 없어요',
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
+        style: AppTextStyles.homeBody.copyWith(
+          fontSize: 13,
           color: palette.textSecondary,
         ),
       ),

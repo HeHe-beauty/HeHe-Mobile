@@ -102,7 +102,7 @@ class MapSidePanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    '내 병원 활동',
+                    '내 활동',
                     style: AppTextStyles.homeCaption.copyWith(
                       fontWeight: FontWeight.w700,
                       color: palette.textSecondary,

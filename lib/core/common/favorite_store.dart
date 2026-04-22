@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../data/bookmark/bookmark_repository.dart';
+import '../../data/hospital/hospital_repository.dart';
 import '../../models/place_item.dart';
 import '../../utils/place_item_mappers.dart';
 
@@ -26,7 +27,23 @@ class FavoriteStore extends ChangeNotifier {
       final bookmarks = await BookmarkRepository.getBookmarks(
         accessToken: accessToken,
       );
-      _favoritePlaces = bookmarks.map(placeItemFromBookmark).toList();
+      _favoritePlaces = await Future.wait(
+        bookmarks.map((bookmark) async {
+          final fallbackPlace = placeItemFromBookmark(bookmark);
+
+          try {
+            final detail = await HospitalRepository.getHospitalDetail(
+              bookmark.hospitalId,
+            );
+            return placeItemFromHospitalDetail(
+              detail,
+              fallbackPlace: fallbackPlace,
+            );
+          } catch (_) {
+            return fallbackPlace;
+          }
+        }),
+      );
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_palette.dart';
+import 'map_control_surface.dart';
 
 class MapCircleButton extends StatelessWidget {
   final VoidCallback onTap;
@@ -20,15 +21,17 @@ class MapCircleButton extends StatelessWidget {
 
     return Material(
       color: palette.surface,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(kMapControlRadius),
       elevation: 0.5,
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(kMapControlRadius),
         onTap: onTap,
         child: Container(
           width: size,
           height: size,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(14)),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(kMapControlRadius),
+          ),
           child: Center(child: child),
         ),
       ),

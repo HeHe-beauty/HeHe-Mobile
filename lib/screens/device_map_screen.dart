@@ -22,6 +22,7 @@ import '../repositories/subway_station_repository.dart';
 import '../theme/app_palette.dart';
 import '../utils/app_snackbar.dart';
 import '../utils/naver_reverse_geocode.dart';
+import '../utils/place_distance_utils.dart';
 import '../utils/place_item_mappers.dart';
 import '../widgets/cluster_count_marker.dart';
 import '../widgets/current_location_marker.dart';
@@ -102,6 +103,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     _favoriteStore.addListener(_handleFavoriteStoreChanged);
     _searchFocusNode.addListener(_handleSearchFocusChanged);
     _loadSubwayStations();
+    unawaited(_loadCurrentLocationIfGranted());
   }
 
   @override
@@ -742,6 +744,39 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     }
   }
 
+  String _distanceLabelForPlace(PlaceItem place) {
+    return formatPlaceDistanceLabel(
+      place: place,
+      currentLatitude: _currentLocation?.latitude,
+      currentLongitude: _currentLocation?.longitude,
+    );
+  }
+
+  Future<void> _loadCurrentLocationIfGranted() async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return;
+    }
+
+    final position =
+        await Geolocator.getLastKnownPosition() ??
+        await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+          ),
+        );
+
+    if (!mounted) return;
+
+    setState(() {
+      _currentLocation = NLatLng(position.latitude, position.longitude);
+    });
+  }
+
   void _expandSinglePlaceSheet() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted || !_sheetController.isAttached) return;
@@ -1176,6 +1211,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
                   onTapPlaceCard: _onTapPlaceCard,
                   onTapInquiry: _handleProtectedInquiry,
                   onTapBookmark: _toggleBookmark,
+                  distanceLabelForPlace: _distanceLabelForPlace,
                   onDismissSingle: _clearSelection,
                 ),
                 if (_isSidePanelOpen)

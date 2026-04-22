@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/place_item.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_text_styles.dart';
+import 'map_control_surface.dart';
 import 'place_card.dart';
 
 const double _kMapSheetRadius = 28;
@@ -16,6 +17,7 @@ class MapBottomSheet extends StatefulWidget {
   final ValueChanged<PlaceItem> onTapPlaceCard;
   final ValueChanged<PlaceItem> onTapInquiry;
   final ValueChanged<PlaceItem> onTapBookmark;
+  final String Function(PlaceItem place) distanceLabelForPlace;
   final VoidCallback onDismissSingle;
 
   const MapBottomSheet({
@@ -28,6 +30,7 @@ class MapBottomSheet extends StatefulWidget {
     required this.onTapPlaceCard,
     required this.onTapInquiry,
     required this.onTapBookmark,
+    required this.distanceLabelForPlace,
     required this.onDismissSingle,
   });
 
@@ -154,6 +157,7 @@ class _MapBottomSheetState extends State<MapBottomSheet> {
           child: _SinglePlaceGestureBlocker(
             child: _SinglePlaceSection(
               place: widget.places.first,
+              distanceLabel: widget.distanceLabelForPlace(widget.places.first),
               onTapInquiry: widget.onTapInquiry,
               onTapBookmark: widget.onTapBookmark,
             ),
@@ -316,7 +320,8 @@ class _MapBottomSheetState extends State<MapBottomSheet> {
 
                                         return PlaceCard(
                                           place: place,
-                                          distanceLabel: '여기서 1.2km',
+                                          distanceLabel: widget
+                                              .distanceLabelForPlace(place),
                                           onTap: () =>
                                               widget.onTapPlaceCard(place),
                                           onTapBookmark: () =>
@@ -410,10 +415,8 @@ class _WideRegionChip extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 48),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       decoration: BoxDecoration(
-        color: isDark
-            ? palette.bottomSheetChipSurface
-            : palette.bottomSheetInnerSurface,
-        borderRadius: BorderRadius.circular(999),
+        color: isDark ? palette.bottomSheetChipSurface : palette.surface,
+        borderRadius: BorderRadius.circular(kMapControlRadius),
         border: Border.all(
           color: isDark
               ? palette.bottomSheetChipBorder
@@ -464,11 +467,13 @@ class _WideRegionChip extends StatelessWidget {
 
 class _SinglePlaceSection extends StatelessWidget {
   final PlaceItem place;
+  final String distanceLabel;
   final ValueChanged<PlaceItem> onTapInquiry;
   final ValueChanged<PlaceItem> onTapBookmark;
 
   const _SinglePlaceSection({
     required this.place,
+    required this.distanceLabel,
     required this.onTapInquiry,
     required this.onTapBookmark,
   });
@@ -510,7 +515,7 @@ class _SinglePlaceSection extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '선택한 병원',
+                  distanceLabel,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.homeCaption.copyWith(
