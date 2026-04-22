@@ -14,7 +14,7 @@ class MapBottomSheet extends StatefulWidget {
   final PlaceItem? selectedPlace;
   final bool isHidden;
   final ValueChanged<PlaceItem> onTapPlaceCard;
-  final VoidCallback onTapInquiry;
+  final ValueChanged<PlaceItem> onTapInquiry;
   final ValueChanged<PlaceItem> onTapBookmark;
   final VoidCallback onDismissSingle;
 
@@ -464,7 +464,7 @@ class _WideRegionChip extends StatelessWidget {
 
 class _SinglePlaceSection extends StatelessWidget {
   final PlaceItem place;
-  final VoidCallback onTapInquiry;
+  final ValueChanged<PlaceItem> onTapInquiry;
   final ValueChanged<PlaceItem> onTapBookmark;
 
   const _SinglePlaceSection({
@@ -573,7 +573,7 @@ class _SinglePlaceSection extends StatelessWidget {
                   _PrimaryActionButton(
                     icon: Icons.call_rounded,
                     label: '문의하기',
-                    onTap: onTapInquiry,
+                    onTap: () => onTapInquiry(place),
                   ),
                   const SizedBox(height: 8),
                   _SecondaryActionButton(
@@ -591,7 +591,7 @@ class _SinglePlaceSection extends StatelessWidget {
                         child: _PrimaryActionButton(
                           icon: Icons.call_rounded,
                           label: '문의하기',
-                          onTap: onTapInquiry,
+                          onTap: () => onTapInquiry(place),
                         ),
                       ),
                       const SizedBox(width: 8),

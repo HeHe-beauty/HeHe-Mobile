@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -10,7 +11,9 @@ import '../core/auth/auth_prompt.dart';
 import '../core/auth/auth_state.dart';
 import '../core/common/favorite_store.dart';
 import '../core/map/naver_map_styles.dart';
+import '../data/contact/contact_repository.dart';
 import '../data/hospital/hospital_repository.dart';
+import '../data/recent_view/recent_view_repository.dart';
 import '../dtos/common/hospital/hospital_dto.dart';
 import '../dtos/common/hospital/hospital_map_cluster_dto.dart';
 import '../models/place_item.dart';
@@ -115,10 +118,24 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   void _handleFavoriteStoreChanged() {
     if (!mounted) return;
 
+    final schedulerPhase = WidgetsBinding.instance.schedulerPhase;
+    if (schedulerPhase != SchedulerPhase.idle) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _applyFavoriteStoreChange();
+      });
+      return;
+    }
+
+    _applyFavoriteStoreChange();
+  }
+
+  void _applyFavoriteStoreChange() {
+    if (!mounted) return;
+
     setState(() {
       _sheetPlaces = _favoriteStore.applyFavoriteStateToAll(_sheetPlaces);
       if (_selectedPlace != null) {
-        _selectedPlace = _favoriteStore.findById(_selectedPlace!.id);
+        _selectedPlace = _favoriteStore.applyFavoriteState(_selectedPlace!);
       }
     });
 
@@ -321,14 +338,37 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     );
   }
 
-  Future<void> _handleProtectedInquiry() async {
+  Future<void> _handleProtectedInquiry(PlaceItem place) async {
     await AuthGate.runWithPrompt(
       context,
       prompt: AuthPrompts.contact,
       onAuthenticated: () async {
         if (!mounted) return;
 
-        showAppSnackBar(context, '문의하기 기능은 추후 연결 예정입니다.');
+        final accessToken = AuthState.session?.accessToken;
+        if (accessToken == null || accessToken.isEmpty) {
+          showAppSnackBar(context, '로그인이 필요해요');
+          return;
+        }
+
+        final hospitalId = place.hospitalId;
+        if (hospitalId == null) {
+          showAppSnackBar(context, '병원 정보를 확인하지 못했어요. 잠시 후 다시 시도해주세요.');
+          return;
+        }
+
+        try {
+          await ContactRepository.addCallContact(
+            accessToken: accessToken,
+            hospitalId: hospitalId,
+          );
+
+          if (!mounted) return;
+          showAppSnackBar(context, '문의 내역에 저장했어요.');
+        } catch (e) {
+          if (!mounted) return;
+          showAppSnackBar(context, '문의 내역을 저장하지 못했어요. 잠시 후 다시 시도해주세요.');
+        }
       },
     );
   }
@@ -652,6 +692,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
       _selectedClusterId = null;
       _sheetPlaces = [resolvedPlace];
     });
+    unawaited(_recordRecentView(resolvedPlace));
 
     _expandSinglePlaceSheet();
 
@@ -675,12 +716,30 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
       _selectedClusterId = null;
       _sheetPlaces = [resolvedPlace];
     });
+    unawaited(_recordRecentView(resolvedPlace));
 
     _expandSinglePlaceSheet();
 
     await _refreshMarkers();
     await _moveCameraToPlace(resolvedPlace, zoom: 16.2);
     _expandSinglePlaceSheet();
+  }
+
+  Future<void> _recordRecentView(PlaceItem place) async {
+    final accessToken = AuthState.session?.accessToken;
+    final hospitalId = place.hospitalId;
+    if (accessToken == null || accessToken.isEmpty || hospitalId == null) {
+      return;
+    }
+
+    try {
+      await RecentViewRepository.addRecentView(
+        accessToken: accessToken,
+        hospitalId: hospitalId,
+      );
+    } catch (e) {
+      debugPrint('recent view register error: $e');
+    }
   }
 
   void _expandSinglePlaceSheet() {
@@ -1029,7 +1088,27 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
 
     if (!allowed || !mounted) return;
 
-    _favoriteStore.toggleFavorite(place.id);
+    final accessToken = AuthState.session?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      showTopAppSnackBar(context, '로그인이 필요해요');
+      return;
+    }
+
+    if (place.hospitalId == null) {
+      showTopAppSnackBar(context, '병원 정보를 확인하지 못했어요. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+
+    try {
+      await _favoriteStore.setBookmark(
+        accessToken: accessToken,
+        place: place,
+        enabled: !_favoriteStore.isFavorite(place.id),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      showTopAppSnackBar(context, '찜하기를 변경하지 못했어요. 잠시 후 다시 시도해주세요.');
+    }
   }
 
   @override

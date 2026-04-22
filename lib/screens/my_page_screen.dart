@@ -1,14 +1,93 @@
 import 'package:flutter/material.dart';
+import '../core/auth/auth_gate.dart';
+import '../core/auth/auth_prompt.dart';
 import '../core/auth/auth_session_store.dart';
 import '../core/auth/auth_state.dart';
 import '../data/auth/auth_repository.dart';
+import '../data/user/user_repository.dart';
+import '../dtos/common/user/user_summary_dto.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/app_snackbar.dart';
 import '../widgets/screen_header.dart';
+import 'hospital_history_screen.dart';
 
-class MyPageScreen extends StatelessWidget {
+class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key});
+
+  @override
+  State<MyPageScreen> createState() => _MyPageScreenState();
+}
+
+class _MyPageScreenState extends State<MyPageScreen> {
+  UserSummaryDto _summary = UserSummaryDto.empty();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserSummary();
+  }
+
+  Future<void> _loadUserSummary() async {
+    final accessToken = AuthState.session?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      setState(() {
+        _summary = UserSummaryDto.empty();
+      });
+      return;
+    }
+
+    try {
+      final summary = await UserRepository.getUserSummary(
+        accessToken: accessToken,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _summary = summary;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _summary = UserSummaryDto.empty();
+      });
+      showAppSnackBar(context, '마이페이지 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
+    }
+  }
+
+  Future<void> _openFavoriteHospitals() async {
+    final allowed = await AuthGate.ensureLoggedInWithPrompt(
+      context,
+      prompt: AuthPrompts.favorites,
+    );
+
+    if (!allowed || !mounted) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const HospitalHistoryScreen(initialTabIndex: 1),
+      ),
+    );
+  }
+
+  Future<void> _openInquiryHospitals() async {
+    final allowed = await AuthGate.ensureLoggedInWithPrompt(
+      context,
+      prompt: AuthPrompts.inquiries,
+    );
+
+    if (!allowed || !mounted) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const HospitalHistoryScreen(initialTabIndex: 2),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,17 +131,17 @@ class MyPageScreen extends StatelessWidget {
                           children: [
                             _ProfileCard(userName: userName),
                             const SizedBox(height: 16),
-                            const _SummarySection(),
+                            _SummarySection(summary: _summary),
                             const SizedBox(height: 16),
                             _MenuSection(
                               onTapCalendar: () {
                                 showAppSnackBar(context, '내 캘린더 연결 예정');
                               },
                               onTapFavorites: () {
-                                showAppSnackBar(context, '찜한 병원 연결 예정');
+                                _openFavoriteHospitals();
                               },
                               onTapInquiries: () {
-                                showAppSnackBar(context, '문의 내역 연결 예정');
+                                _openInquiryHospitals();
                               },
                               onTapRecent: () {
                                 showAppSnackBar(context, '최근 본 병원 연결 예정');
@@ -214,32 +293,34 @@ class _ProfileCard extends StatelessWidget {
 }
 
 class _SummarySection extends StatelessWidget {
-  const _SummarySection();
+  final UserSummaryDto summary;
+
+  const _SummarySection({required this.summary});
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: const [
+      children: [
         Expanded(
           child: _SummaryCard(
             label: '찜한 병원',
-            value: '12',
+            value: summary.bookmarkCount.toString(),
             icon: Icons.star_rounded,
           ),
         ),
-        SizedBox(width: 12),
+        const SizedBox(width: 12),
         Expanded(
           child: _SummaryCard(
             label: '문의 내역',
-            value: '4',
+            value: summary.contactCount.toString(),
             icon: Icons.call_rounded,
           ),
         ),
-        SizedBox(width: 12),
+        const SizedBox(width: 12),
         Expanded(
           child: _SummaryCard(
             label: '캘린더',
-            value: '3',
+            value: summary.scheduleCount.toString(),
             icon: Icons.calendar_month_rounded,
           ),
         ),

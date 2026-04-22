@@ -1,53 +1,68 @@
 import 'package:flutter/foundation.dart';
 
-import '../../data/mock_place_data.dart';
+import '../../data/bookmark/bookmark_repository.dart';
 import '../../models/place_item.dart';
+import '../../utils/place_item_mappers.dart';
 
 class FavoriteStore extends ChangeNotifier {
-  FavoriteStore._internal() {
-    _allPlaces = MockPlaceData.buildMockHospitals();
-    _favoriteIds = MockPlaceData.buildInitialFavoriteIds(_allPlaces);
-  }
+  FavoriteStore._internal();
 
   static final FavoriteStore instance = FavoriteStore._internal();
 
-  late final List<PlaceItem> _allPlaces;
-  late final Set<String> _favoriteIds;
+  List<PlaceItem> _favoritePlaces = const [];
+  bool _isLoading = false;
 
-  List<PlaceItem> get allPlaces => applyFavoriteStateToAll(_allPlaces);
+  bool get isLoading => _isLoading;
 
-  List<PlaceItem> get favoritePlaces => _allPlaces
-      .where((place) => _favoriteIds.contains(place.id))
-      .map(applyFavoriteState)
-      .toList(growable: false);
+  List<PlaceItem> get allPlaces => favoritePlaces;
 
-  bool isFavorite(String placeId) => _favoriteIds.contains(placeId);
+  List<PlaceItem> get favoritePlaces => List.unmodifiable(_favoritePlaces);
+
+  Future<void> loadBookmarks({required String accessToken}) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final bookmarks = await BookmarkRepository.getBookmarks(
+        accessToken: accessToken,
+      );
+      _favoritePlaces = bookmarks.map(placeItemFromBookmark).toList();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void clear() {
+    _favoritePlaces = const [];
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  bool isFavorite(String placeId) {
+    return _favoritePlaces.any((place) => place.id == placeId);
+  }
 
   bool containsPlace(String placeId) {
-    return _allPlaces.any((place) => place.id == placeId);
+    return isFavorite(placeId);
   }
 
   PlaceItem? findById(String placeId) {
-    for (final place in _allPlaces) {
-      if (place.id == placeId) {
-        return applyFavoriteState(place);
-      }
-    }
-    return null;
+    final place = _findById(placeId);
+    return place == null ? null : applyFavoriteState(place);
   }
 
   PlaceItem? findByHospitalId(int hospitalId) {
-    final place = _findRawByHospitalId(hospitalId);
+    final place = _findByHospitalId(hospitalId);
     return place == null ? null : applyFavoriteState(place);
   }
 
   PlaceItem applyFavoriteState(PlaceItem place) {
-    final storedPlace = place.hospitalId == null
-        ? null
-        : _findRawByHospitalId(place.hospitalId!);
-
     return place.copyWith(
-      isBookmarked: isFavorite(storedPlace?.id ?? place.id),
+      isBookmarked:
+          isFavorite(place.id) ||
+          (place.hospitalId != null &&
+              _findByHospitalId(place.hospitalId!) != null),
     );
   }
 
@@ -55,20 +70,65 @@ class FavoriteStore extends ChangeNotifier {
     return places.map(applyFavoriteState).toList(growable: false);
   }
 
-  void toggleFavorite(String placeId) {
-    if (!containsPlace(placeId)) return;
-
-    if (_favoriteIds.contains(placeId)) {
-      _favoriteIds.remove(placeId);
-    } else {
-      _favoriteIds.add(placeId);
+  Future<void> setBookmark({
+    required String accessToken,
+    required PlaceItem place,
+    required bool enabled,
+  }) async {
+    final hospitalId = place.hospitalId ?? _findById(place.id)?.hospitalId;
+    if (hospitalId == null) {
+      throw ArgumentError('찜하기를 변경할 병원 정보가 없습니다.');
     }
+
+    if (enabled) {
+      await BookmarkRepository.addBookmark(
+        accessToken: accessToken,
+        hospitalId: hospitalId,
+      );
+      _addLocalFavorite(place.copyWith(hospitalId: hospitalId));
+      return;
+    }
+
+    await BookmarkRepository.removeBookmark(
+      accessToken: accessToken,
+      hospitalId: hospitalId,
+    );
+    _removeLocalFavorite(hospitalId: hospitalId, placeId: place.id);
+  }
+
+  void _addLocalFavorite(PlaceItem place) {
+    if (isFavorite(place.id)) return;
+
+    _favoritePlaces = [place.copyWith(isBookmarked: true), ..._favoritePlaces];
+    notifyListeners();
+  }
+
+  void _removeLocalFavorite({
+    required int hospitalId,
+    required String placeId,
+  }) {
+    _favoritePlaces = _favoritePlaces
+        .where(
+          (favoritePlace) =>
+              favoritePlace.id != placeId &&
+              favoritePlace.hospitalId != hospitalId,
+        )
+        .toList(growable: false);
 
     notifyListeners();
   }
 
-  PlaceItem? _findRawByHospitalId(int hospitalId) {
-    for (final place in _allPlaces) {
+  PlaceItem? _findById(String placeId) {
+    for (final place in _favoritePlaces) {
+      if (place.id == placeId) {
+        return place;
+      }
+    }
+    return null;
+  }
+
+  PlaceItem? _findByHospitalId(int hospitalId) {
+    for (final place in _favoritePlaces) {
       if (place.hospitalId == hospitalId) {
         return place;
       }

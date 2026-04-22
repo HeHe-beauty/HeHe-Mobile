@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import '../core/auth/auth_state.dart';
 import '../core/common/favorite_store.dart';
-import '../data/mock_place_data.dart';
+import '../data/contact/contact_repository.dart';
+import '../data/hospital/hospital_repository.dart';
+import '../data/recent_view/recent_view_repository.dart';
 import '../models/place_item.dart';
 import '../theme/app_palette.dart';
+import '../utils/app_snackbar.dart';
+import '../utils/place_item_mappers.dart';
 import '../widgets/place_card.dart';
 import '../widgets/screen_header.dart';
 
@@ -21,14 +26,127 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
 
   final List<String> tabs = const ['최근 본', '찜한', '문의한'];
 
-  late List<PlaceItem> recentPlaces = MockPlaceData.recentPlaces();
-
-  late List<PlaceItem> inquiryPlaces = MockPlaceData.inquiryPlaces();
+  List<PlaceItem> recentPlaces = const [];
+  List<PlaceItem> inquiryPlaces = const [];
+  bool _isLoadingRecentViews = false;
+  bool _isLoadingContacts = false;
 
   @override
   void initState() {
     super.initState();
     selectedTabIndex = widget.initialTabIndex;
+    if (selectedTabIndex == 0) {
+      _loadRecentPlaces();
+    } else if (selectedTabIndex == 1) {
+      _loadFavoritePlaces();
+    } else if (selectedTabIndex == 2) {
+      _loadInquiryPlaces();
+    }
+  }
+
+  Future<void> _loadRecentPlaces() async {
+    final accessToken = AuthState.session?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      setState(() {
+        recentPlaces = const [];
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingRecentViews = true;
+    });
+
+    try {
+      final recentViews = await RecentViewRepository.getRecentViews(
+        accessToken: accessToken,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        recentPlaces = recentViews.map(placeItemFromRecentView).toList();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, '최근 본 병원 목록을 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingRecentViews = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadFavoritePlaces() async {
+    final accessToken = AuthState.session?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      _favoriteStore.clear();
+      return;
+    }
+
+    try {
+      await _favoriteStore.loadBookmarks(accessToken: accessToken);
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, '찜한 병원 목록을 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
+    }
+  }
+
+  Future<void> _loadInquiryPlaces() async {
+    final accessToken = AuthState.session?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      setState(() {
+        inquiryPlaces = const [];
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingContacts = true;
+    });
+
+    try {
+      final contacts = await ContactRepository.getContacts(
+        accessToken: accessToken,
+      );
+
+      if (!mounted) return;
+
+      final places = await Future.wait(
+        contacts.map((contact) async {
+          final fallbackPlace = placeItemFromContact(contact);
+
+          try {
+            final detail = await HospitalRepository.getHospitalDetail(
+              contact.hospitalId,
+            );
+            return placeItemFromHospitalDetail(
+              detail,
+              fallbackPlace: fallbackPlace,
+            );
+          } catch (_) {
+            return fallbackPlace;
+          }
+        }),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        inquiryPlaces = places;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, '문의 내역을 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingContacts = false;
+        });
+      }
+    }
   }
 
   List<PlaceItem> get currentPlaces {
@@ -57,23 +175,44 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
     }
   }
 
-  void _toggleBookmark(PlaceItem place) {
-    if (_favoriteStore.containsPlace(place.id)) {
-      _favoriteStore.toggleFavorite(place.id);
+  Future<void> _toggleBookmark(PlaceItem place) async {
+    final accessToken = AuthState.session?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      showAppSnackBar(context, '로그인이 필요해요');
       return;
     }
 
-    setState(() {
-      recentPlaces = recentPlaces.map((item) {
-        if (item.id != place.id) return item;
-        return item.copyWith(isBookmarked: !item.isBookmarked);
-      }).toList();
+    if (place.hospitalId == null) {
+      showAppSnackBar(context, '병원 정보를 확인하지 못했어요. 잠시 후 다시 시도해주세요.');
+      return;
+    }
 
-      inquiryPlaces = inquiryPlaces.map((item) {
-        if (item.id != place.id) return item;
-        return item.copyWith(isBookmarked: !item.isBookmarked);
-      }).toList();
-    });
+    final nextValue = !_favoriteStore.isFavorite(place.id);
+
+    try {
+      await _favoriteStore.setBookmark(
+        accessToken: accessToken,
+        place: place,
+        enabled: nextValue,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        recentPlaces = recentPlaces.map((item) {
+          if (item.id != place.id) return item;
+          return item.copyWith(isBookmarked: nextValue);
+        }).toList();
+
+        inquiryPlaces = inquiryPlaces.map((item) {
+          if (item.id != place.id) return item;
+          return item.copyWith(isBookmarked: nextValue);
+        }).toList();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, '찜하기를 변경하지 못했어요. 잠시 후 다시 시도해주세요.');
+    }
   }
 
   void _openPlaceDetail(PlaceItem place) {
@@ -111,6 +250,13 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
                             setState(() {
                               selectedTabIndex = i;
                             });
+                            if (i == 0) {
+                              _loadRecentPlaces();
+                            } else if (i == 1) {
+                              _loadFavoritePlaces();
+                            } else if (i == 2) {
+                              _loadInquiryPlaces();
+                            }
                           },
                         ),
                         if (i != tabs.length - 1) const SizedBox(width: 10),
@@ -133,7 +279,13 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
                   ),
                 ),
                 Expanded(
-                  child: places.isEmpty
+                  child: _favoriteStore.isLoading && selectedTabIndex == 1
+                      ? const Center(child: CircularProgressIndicator())
+                      : _isLoadingRecentViews && selectedTabIndex == 0
+                      ? const Center(child: CircularProgressIndicator())
+                      : _isLoadingContacts && selectedTabIndex == 2
+                      ? const Center(child: CircularProgressIndicator())
+                      : places.isEmpty
                       ? const _EmptyState()
                       : GridView.builder(
                           padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
