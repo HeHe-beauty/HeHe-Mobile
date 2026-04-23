@@ -5,14 +5,20 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/push_token/push_token_repository.dart';
+import '../../screens/home_screen.dart';
+import '../../utils/app_snackbar.dart';
 import '../auth/auth_state.dart';
 import '../common/app_settings_state.dart';
 
 class NotificationPermissionService {
   const NotificationPermissionService._();
 
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
   static FirebaseMessaging get _messaging => FirebaseMessaging.instance;
   static StreamSubscription<String>? _tokenRefreshSubscription;
+  static StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
+  static StreamSubscription<RemoteMessage>? _messageOpenedAppSubscription;
 
   static Future<void> initializeForAppStart() async {
     final hasRequested =
@@ -40,6 +46,26 @@ class NotificationPermissionService {
     }
 
     debugPrint('FCM token: $token');
+  }
+
+  static Future<void> initializeMessageHandlers() async {
+    _foregroundMessageSubscription ??= FirebaseMessaging.onMessage.listen((
+      message,
+    ) {
+      _handleForegroundMessage(message);
+    });
+
+    _messageOpenedAppSubscription ??= FirebaseMessaging.onMessageOpenedApp
+        .listen((message) {
+          _handleOpenedMessage(message);
+        });
+
+    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _handleOpenedMessage(initialMessage);
+      });
+    }
   }
 
   static void listenTokenRefreshForSession() {
@@ -169,5 +195,35 @@ class NotificationPermissionService {
   static String get _currentPlatform {
     if (Platform.isIOS) return 'IOS';
     return 'ANDROID';
+  }
+
+  static void _handleForegroundMessage(RemoteMessage message) {
+    final context = navigatorKey.currentContext;
+    final notification = message.notification;
+    if (context == null || notification == null) {
+      debugPrint('FCM foreground message received: ${message.messageId}');
+      return;
+    }
+
+    final parts = <String>[
+      if ((notification.title ?? '').isNotEmpty) notification.title!,
+      if ((notification.body ?? '').isNotEmpty) notification.body!,
+    ];
+    if (parts.isEmpty) return;
+
+    showTopAppSnackBar(context, parts.join('\n'));
+  }
+
+  static void _handleOpenedMessage(RemoteMessage message) {
+    final navigator = navigatorKey.currentState;
+    if (navigator == null) {
+      debugPrint('FCM opened message received: ${message.messageId}');
+      return;
+    }
+
+    navigator.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      (route) => false,
+    );
   }
 }
