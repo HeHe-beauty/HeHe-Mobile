@@ -59,11 +59,16 @@ class ApiClient {
 
   Future<Map<String, dynamic>> delete(
     String path, {
+    Map<String, dynamic>? body,
     Map<String, String>? headers,
   }) async {
     final uri = ApiConfig.uri(path);
 
-    final response = await _client.delete(uri, headers: _jsonHeaders(headers));
+    final response = await _client.delete(
+      uri,
+      headers: _jsonHeaders(headers),
+      body: _encodeJsonBody(body),
+    );
     return _decodeJsonResponse(response, method: 'DELETE');
   }
 

@@ -61,6 +61,7 @@ void main() async {
 
 Future<void> _initializeFirebaseMessaging() async {
   await NotificationPermissionService.initializeForAppStart();
+  NotificationPermissionService.listenTokenRefreshForSession();
 }
 
 Future<void> _restoreAuthSession() async {
@@ -82,6 +83,9 @@ Future<void> _restoreAuthSession() async {
 
       await AuthSessionStore.write(refreshedSession);
       AuthState.restore(refreshedSession);
+      await NotificationPermissionService.registerCurrentDeviceToken(
+        accessToken: refreshedSession.accessToken,
+      );
     },
   );
 }

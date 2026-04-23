@@ -3,6 +3,7 @@ import '../core/auth/auth_gate.dart';
 import '../core/auth/auth_prompt.dart';
 import '../core/auth/auth_session_store.dart';
 import '../core/auth/auth_state.dart';
+import '../core/notification/notification_permission_service.dart';
 import '../data/auth/auth_repository.dart';
 import '../data/user/user_repository.dart';
 import '../dtos/common/user/user_summary_dto.dart';
@@ -224,6 +225,9 @@ class _MyPageScreenState extends State<MyPageScreen>
                                 }
 
                                 try {
+                                  await NotificationPermissionService.unregisterCurrentDeviceToken(
+                                    accessToken: accessToken,
+                                  );
                                   await AuthRepository.logout(accessToken);
 
                                   if (!context.mounted) return;

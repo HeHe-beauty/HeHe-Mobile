@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/auth/auth_session_store.dart';
 import '../core/auth/auth_state.dart';
 import '../core/auth/social_login_service.dart';
+import '../core/notification/notification_permission_service.dart';
 import '../data/auth/auth_repository.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_text_styles.dart';
@@ -52,6 +53,9 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
       if (!mounted) return;
 
       _completeLogin(context, session);
+      await NotificationPermissionService.registerCurrentDeviceToken(
+        accessToken: session.accessToken,
+      );
     } on SocialLoginException catch (e) {
       if (mounted) {
         showAppSnackBar(context, e.message);

@@ -11,6 +11,9 @@ class ApiEndpoints {
   /// 유저와 관련된 api 목록
   static const String userSummary = '/api/v1/users/summary';
 
+  /// 푸시 토큰과 관련된 api 목록
+  static const String pushTokens = '/api/v1/push-tokens';
+
   /// 장비와 관련된 api 목록
   static const String equipList = '/api/v1/equipments/main';
   static String equipDetail(int equipId) => '/api/v1/equipments/$equipId';

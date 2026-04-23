@@ -1,12 +1,18 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
+import '../../data/push_token/push_token_repository.dart';
+import '../auth/auth_state.dart';
 import '../common/app_settings_state.dart';
 
 class NotificationPermissionService {
   const NotificationPermissionService._();
 
   static FirebaseMessaging get _messaging => FirebaseMessaging.instance;
+  static StreamSubscription<String>? _tokenRefreshSubscription;
 
   static Future<void> initializeForAppStart() async {
     final hasRequested =
@@ -34,6 +40,74 @@ class NotificationPermissionService {
     }
 
     debugPrint('FCM token: $token');
+  }
+
+  static void listenTokenRefreshForSession() {
+    _tokenRefreshSubscription ??= FirebaseMessaging.instance.onTokenRefresh
+        .listen((token) async {
+          final accessToken = AuthState.session?.accessToken;
+          if (accessToken == null || accessToken.isEmpty) {
+            debugPrint('FCM token refreshed while logged out');
+            return;
+          }
+
+          await registerCurrentDeviceToken(
+            accessToken: accessToken,
+            tokenOverride: token,
+          );
+        });
+  }
+
+  static Future<void> registerCurrentDeviceToken({
+    required String accessToken,
+    String? tokenOverride,
+  }) async {
+    if (accessToken.isEmpty) return;
+
+    try {
+      final token = tokenOverride ?? await _messaging.getToken();
+      if (token == null || token.isEmpty) {
+        debugPrint('FCM skipped push token register: token is null');
+        return;
+      }
+
+      final settings = await _messaging.getNotificationSettings();
+      final response = await PushTokenRepository.register(
+        accessToken: accessToken,
+        token: token,
+        platform: _currentPlatform,
+        notificationPermissionGranted: _isGranted(settings.authorizationStatus),
+      );
+
+      debugPrint('FCM push token register success: ${response.success}');
+    } catch (e, stack) {
+      debugPrint('FCM push token register failed: $e');
+      debugPrint('$stack');
+    }
+  }
+
+  static Future<void> unregisterCurrentDeviceToken({
+    required String accessToken,
+  }) async {
+    if (accessToken.isEmpty) return;
+
+    try {
+      final token = await _messaging.getToken();
+      if (token == null || token.isEmpty) {
+        debugPrint('FCM skipped push token delete: token is null');
+        return;
+      }
+
+      final response = await PushTokenRepository.delete(
+        accessToken: accessToken,
+        token: token,
+      );
+
+      debugPrint('FCM push token delete success: ${response.success}');
+    } catch (e, stack) {
+      debugPrint('FCM push token delete failed: $e');
+      debugPrint('$stack');
+    }
   }
 
   static Future<bool> ensureGrantedForReminder(BuildContext context) async {
@@ -90,5 +164,10 @@ class NotificationPermissionService {
   static bool _isGranted(AuthorizationStatus status) {
     return status == AuthorizationStatus.authorized ||
         status == AuthorizationStatus.provisional;
+  }
+
+  static String get _currentPlatform {
+    if (Platform.isIOS) return 'IOS';
+    return 'ANDROID';
   }
 }
