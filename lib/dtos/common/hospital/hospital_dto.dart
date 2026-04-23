@@ -3,12 +3,14 @@ class HospitalDto {
   final String name;
   final String address;
   final List<String> tags;
+  final bool isBookmarked;
 
   HospitalDto({
     required this.hospitalId,
     required this.name,
     required this.address,
     required this.tags,
+    required this.isBookmarked,
   });
 
   factory HospitalDto.fromJson(Map<String, dynamic> json) {
@@ -19,6 +21,7 @@ class HospitalDto {
       tags: (json['tags'] as List<dynamic>? ?? const [])
           .map((e) => e as String)
           .toList(),
+      isBookmarked: json['isBookmarked'] as bool? ?? false,
     );
   }
 }

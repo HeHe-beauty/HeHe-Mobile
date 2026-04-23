@@ -12,6 +12,7 @@ class HospitalApi {
     required double lng,
     required int precision,
     int? equipId,
+    String? accessToken,
   }) async {
     final queryParameters = <String, dynamic>{
       'lat': lat,
@@ -26,6 +27,9 @@ class HospitalApi {
     final body = await _apiClient.get(
       ApiEndpoints.hospitalList,
       queryParameters: queryParameters,
+      headers: accessToken == null || accessToken.isEmpty
+          ? null
+          : ApiClient.bearerHeaders(accessToken),
     );
 
     final data = body['data'] as List<dynamic>;
@@ -35,8 +39,16 @@ class HospitalApi {
         .toList();
   }
 
-  static Future<HospitalDetailDto> fetchHospitalDetail(int hospitalId) async {
-    final body = await _apiClient.get(ApiEndpoints.hospitalDetail(hospitalId));
+  static Future<HospitalDetailDto> fetchHospitalDetail(
+    int hospitalId, {
+    String? accessToken,
+  }) async {
+    final body = await _apiClient.get(
+      ApiEndpoints.hospitalDetail(hospitalId),
+      headers: accessToken == null || accessToken.isEmpty
+          ? null
+          : ApiClient.bearerHeaders(accessToken),
+    );
 
     final data = body['data'] as Map<String, dynamic>;
 

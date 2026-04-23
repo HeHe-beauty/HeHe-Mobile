@@ -77,11 +77,12 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
           try {
             final detail = await HospitalRepository.getHospitalDetail(
               recentView.hospitalId,
+              accessToken: accessToken,
             );
             return placeItemFromHospitalDetail(
               detail,
               fallbackPlace: fallbackPlace,
-            );
+            ).copyWith(isBookmarked: fallbackPlace.isBookmarked);
           } catch (_) {
             return fallbackPlace;
           }
@@ -140,28 +141,8 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
 
       if (!mounted) return;
 
-      final places = await Future.wait(
-        contacts.map((contact) async {
-          final fallbackPlace = placeItemFromContact(contact);
-
-          try {
-            final detail = await HospitalRepository.getHospitalDetail(
-              contact.hospitalId,
-            );
-            return placeItemFromHospitalDetail(
-              detail,
-              fallbackPlace: fallbackPlace,
-            );
-          } catch (_) {
-            return fallbackPlace;
-          }
-        }),
-      );
-
-      if (!mounted) return;
-
       setState(() {
-        inquiryPlaces = places;
+        inquiryPlaces = contacts.map(placeItemFromContact).toList();
       });
     } catch (e) {
       if (!mounted) return;
@@ -247,7 +228,7 @@ class _HospitalHistoryScreenState extends State<HospitalHistoryScreen> {
       return;
     }
 
-    final nextValue = !_favoriteStore.isFavorite(place.id);
+    final nextValue = !_favoriteStore.isBookmarked(place);
 
     try {
       await _favoriteStore.setBookmark(

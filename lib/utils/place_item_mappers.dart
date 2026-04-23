@@ -17,7 +17,7 @@ PlaceItem placeItemFromHospital(
     tags: hospital.tags,
     description: '',
     address: hospital.address,
-    isBookmarked: false,
+    isBookmarked: hospital.isBookmarked,
     latitude: latitude,
     longitude: longitude,
   );
@@ -34,7 +34,7 @@ PlaceItem placeItemFromHospitalDetail(
     tags: hospital.tags,
     description: fallbackPlace.description,
     address: hospital.address,
-    isBookmarked: fallbackPlace.isBookmarked,
+    isBookmarked: hospital.isBookmarked,
     latitude: hospital.lat,
     longitude: hospital.lng,
   );
@@ -48,7 +48,7 @@ PlaceItem placeItemFromBookmark(BookmarkDto bookmark) {
     tags: bookmark.tags,
     description: '',
     address: bookmark.address,
-    isBookmarked: true,
+    isBookmarked: bookmark.isBookmarked,
     latitude: 0,
     longitude: 0,
   );
@@ -59,10 +59,10 @@ PlaceItem placeItemFromContact(ContactDto contact) {
     hospitalId: contact.hospitalId,
     id: 'hospital_${contact.hospitalId}',
     name: contact.hospitalName,
-    tags: const [],
+    tags: contact.tags,
     description: '',
-    address: '',
-    isBookmarked: false,
+    address: contact.address,
+    isBookmarked: contact.isBookmarked,
     latitude: 0,
     longitude: 0,
   );
@@ -76,7 +76,7 @@ PlaceItem placeItemFromRecentView(RecentViewDto recentView) {
     tags: recentView.tags,
     description: '',
     address: recentView.address,
-    isBookmarked: false,
+    isBookmarked: recentView.isBookmarked,
     latitude: 0,
     longitude: 0,
   );

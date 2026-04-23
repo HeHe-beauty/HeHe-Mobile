@@ -10,6 +10,7 @@ class HospitalDetailDto {
   final String contactUrl;
   final List<String> tags;
   final List<HospitalEquipmentDto> equipments;
+  final bool isBookmarked;
 
   HospitalDetailDto({
     required this.hospitalId,
@@ -21,6 +22,7 @@ class HospitalDetailDto {
     required this.contactUrl,
     required this.tags,
     required this.equipments,
+    required this.isBookmarked,
   });
 
   factory HospitalDetailDto.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,7 @@ class HospitalDetailDto {
       equipments: (json['equipments'] as List<dynamic>? ?? const [])
           .map((e) => HospitalEquipmentDto.fromJson(e as Map<String, dynamic>))
           .toList(),
+      isBookmarked: json['isBookmarked'] as bool? ?? false,
     );
   }
 }

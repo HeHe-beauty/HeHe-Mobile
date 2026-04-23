@@ -11,6 +11,8 @@ class FavoriteStore extends ChangeNotifier {
   static final FavoriteStore instance = FavoriteStore._internal();
 
   List<PlaceItem> _favoritePlaces = const [];
+  final Map<int, bool> _hospitalBookmarkOverrides = {};
+  final Map<String, bool> _placeBookmarkOverrides = {};
   bool _isLoading = false;
 
   bool get isLoading => _isLoading;
@@ -34,16 +36,19 @@ class FavoriteStore extends ChangeNotifier {
           try {
             final detail = await HospitalRepository.getHospitalDetail(
               bookmark.hospitalId,
+              accessToken: accessToken,
             );
             return placeItemFromHospitalDetail(
               detail,
               fallbackPlace: fallbackPlace,
-            );
+            ).copyWith(isBookmarked: fallbackPlace.isBookmarked);
           } catch (_) {
             return fallbackPlace;
           }
         }),
       );
+      _hospitalBookmarkOverrides.clear();
+      _placeBookmarkOverrides.clear();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -52,6 +57,8 @@ class FavoriteStore extends ChangeNotifier {
 
   void clear() {
     _favoritePlaces = const [];
+    _hospitalBookmarkOverrides.clear();
+    _placeBookmarkOverrides.clear();
     _isLoading = false;
     notifyListeners();
   }
@@ -75,8 +82,18 @@ class FavoriteStore extends ChangeNotifier {
   }
 
   PlaceItem applyFavoriteState(PlaceItem place) {
+    final hospitalOverride = place.hospitalId == null
+        ? null
+        : _hospitalBookmarkOverrides[place.hospitalId!];
+    final placeOverride = _placeBookmarkOverrides[place.id];
+
+    if (hospitalOverride != null || placeOverride != null) {
+      return place.copyWith(isBookmarked: hospitalOverride ?? placeOverride!);
+    }
+
     return place.copyWith(
       isBookmarked:
+          place.isBookmarked ||
           isFavorite(place.id) ||
           (place.hospitalId != null &&
               _findByHospitalId(place.hospitalId!) != null),
@@ -102,6 +119,12 @@ class FavoriteStore extends ChangeNotifier {
         accessToken: accessToken,
         hospitalId: hospitalId,
       );
+      HospitalRepository.clearCache();
+      _setBookmarkOverride(
+        hospitalId: hospitalId,
+        placeId: place.id,
+        enabled: true,
+      );
       _addLocalFavorite(place.copyWith(hospitalId: hospitalId));
       return;
     }
@@ -110,7 +133,26 @@ class FavoriteStore extends ChangeNotifier {
       accessToken: accessToken,
       hospitalId: hospitalId,
     );
+    HospitalRepository.clearCache();
+    _setBookmarkOverride(
+      hospitalId: hospitalId,
+      placeId: place.id,
+      enabled: false,
+    );
     _removeLocalFavorite(hospitalId: hospitalId, placeId: place.id);
+  }
+
+  bool isBookmarked(PlaceItem place) {
+    return applyFavoriteState(place).isBookmarked;
+  }
+
+  void _setBookmarkOverride({
+    required int hospitalId,
+    required String placeId,
+    required bool enabled,
+  }) {
+    _hospitalBookmarkOverrides[hospitalId] = enabled;
+    _placeBookmarkOverrides[placeId] = enabled;
   }
 
   void _addLocalFavorite(PlaceItem place) {

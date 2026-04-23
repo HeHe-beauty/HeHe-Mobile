@@ -591,6 +591,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
       try {
         final detail = await HospitalRepository.getHospitalDetail(
           hospitals.first.hospitalId,
+          accessToken: AuthState.session?.accessToken,
         );
 
         return node.copyWith(
@@ -618,6 +619,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
         lng: source.longitude,
         precision: source.precision,
         equipId: widget.equipId,
+        accessToken: AuthState.session?.accessToken,
       );
 
       for (final hospital in hospitals) {
@@ -806,7 +808,10 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     }
 
     try {
-      final detail = await HospitalRepository.getHospitalDetail(hospitalId);
+      final detail = await HospitalRepository.getHospitalDetail(
+        hospitalId,
+        accessToken: AuthState.session?.accessToken,
+      );
       return placeItemFromHospitalDetail(detail, fallbackPlace: place);
     } catch (e) {
       if (mounted && showFallbackError) {
@@ -1138,7 +1143,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
       await _favoriteStore.setBookmark(
         accessToken: accessToken,
         place: place,
-        enabled: !_favoriteStore.isFavorite(place.id),
+        enabled: !_favoriteStore.isBookmarked(place),
       );
     } catch (e) {
       if (!mounted) return;

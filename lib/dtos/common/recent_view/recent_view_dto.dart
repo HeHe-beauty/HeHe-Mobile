@@ -3,6 +3,7 @@ class RecentViewDto {
   final String name;
   final String address;
   final List<String> tags;
+  final bool isBookmarked;
   final DateTime? viewedAt;
 
   const RecentViewDto({
@@ -10,6 +11,7 @@ class RecentViewDto {
     required this.name,
     required this.address,
     required this.tags,
+    required this.isBookmarked,
     required this.viewedAt,
   });
 
@@ -21,6 +23,7 @@ class RecentViewDto {
       tags: (json['tags'] as List<dynamic>? ?? const [])
           .map((tag) => tag as String)
           .toList(),
+      isBookmarked: json['isBookmarked'] as bool? ?? false,
       viewedAt: DateTime.tryParse(json['viewedAt'] as String? ?? ''),
     );
   }
