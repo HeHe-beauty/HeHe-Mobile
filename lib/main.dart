@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'core/common/app_settings_state.dart';
 import 'core/auth/auth_session_store.dart';
 import 'core/auth/auth_state.dart';
+import 'core/network/api_client.dart';
 import 'core/notification/notification_permission_service.dart';
 import 'data/auth/auth_repository.dart';
 import 'core/auth/social_login_service.dart';
@@ -66,28 +67,43 @@ Future<void> _initializeFirebaseMessaging() async {
 
 Future<void> _restoreAuthSession() async {
   final savedSession = await AuthSessionStore.read();
-  if (savedSession == null) return;
+  if (savedSession == null) {
+    AuthState.logOut();
+    return;
+  }
 
-  AuthState.restore(savedSession);
+  try {
+    final refreshedToken = await AuthRepository.refreshToken(
+      savedSession.refreshToken,
+    );
+    final refreshedSession = savedSession.copyWith(
+      accessToken: refreshedToken.accessToken,
+      refreshToken: refreshedToken.refreshToken ?? savedSession.refreshToken,
+    );
 
-  await _runStartupTask(
-    successMessage: null,
-    errorMessage: '🔥 auth token refresh error',
-    task: () async {
-      final refreshedToken = await AuthRepository.refreshToken(
-        savedSession.refreshToken,
-      );
-      final refreshedSession = savedSession.copyWith(
-        accessToken: refreshedToken.accessToken,
-      );
+    await AuthSessionStore.write(refreshedSession);
+    AuthState.restore(refreshedSession);
+    await NotificationPermissionService.registerCurrentDeviceToken(
+      accessToken: refreshedSession.accessToken,
+    );
+  } on ApiException catch (e) {
+    debugPrint('🔥 auth token refresh error: $e');
 
-      await AuthSessionStore.write(refreshedSession);
-      AuthState.restore(refreshedSession);
-      await NotificationPermissionService.registerCurrentDeviceToken(
-        accessToken: refreshedSession.accessToken,
-      );
-    },
-  );
+    if (e.statusCode == 401 || e.statusCode == 403) {
+      await AuthSessionStore.clear();
+      AuthState.logOut();
+      debugPrint('🔥 auth session cleared due to invalid refresh token');
+      return;
+    }
+
+    AuthState.logOut();
+    rethrow;
+  } catch (e, stack) {
+    AuthState.logOut();
+    debugPrint('🔥 auth token refresh error: $e');
+    debugPrint('$stack');
+    rethrow;
+  }
 }
 
 Future<void> _runStartupTask({
