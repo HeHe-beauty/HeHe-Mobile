@@ -10,7 +10,7 @@ import '../models/content_item.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_text_styles.dart';
 import '../data/article/article_repository.dart';
-import '../data/calendar_schedule_store.dart';
+import '../data/fcm/fcm_repository.dart';
 import '../data/home_catalog.dart';
 import '../data/equipment/equip_repository.dart';
 import '../data/schedule/schedule_repository.dart';
@@ -74,14 +74,12 @@ class _HomeScreenState extends State<HomeScreen>
       return;
     }
 
-    late final String scheduleId;
     try {
-      final createdSchedule = await ScheduleRepository.createSchedule(
+      await ScheduleRepository.createSchedule(
         accessToken: accessToken,
         hospitalName: result.hospitalName,
         visitDateTime: result.dateTime,
       );
-      scheduleId = createdSchedule.scheduleId;
     } catch (e) {
       if (context.mounted) {
         showAppSnackBar(context, '일정을 등록하지 못했어요. 잠시 후 다시 시도해주세요.');
@@ -91,7 +89,6 @@ class _HomeScreenState extends State<HomeScreen>
 
     if (!mounted) return;
 
-    CalendarScheduleStore.upsertFromResult(result, scheduleId: scheduleId);
     await _loadUpcomingSchedules(force: true);
   }
 
@@ -112,6 +109,31 @@ class _HomeScreenState extends State<HomeScreen>
     if (mounted) {
       ScheduleRepository.invalidateUpcomingSchedulesCache();
       await _loadUpcomingSchedules(force: true);
+    }
+  }
+
+  Future<void> _sendFcmTestPush(BuildContext context) async {
+    _hideDeviceTooltip();
+
+    final accessToken = AuthState.session?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      showAppSnackBar(context, '로그인이 필요해요');
+      return;
+    }
+
+    try {
+      final response = await FcmRepository.sendTestPush(
+        accessToken: accessToken,
+      );
+      if (!context.mounted) return;
+
+      showAppSnackBar(
+        context,
+        '테스트 발송 완료 (${response.data.successCount}건 성공, ${response.data.failCount}건 실패)',
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      showAppSnackBar(context, '테스트 발송에 실패했어요.');
     }
   }
 
@@ -461,6 +483,7 @@ class _HomeScreenState extends State<HomeScreen>
                               backgroundColor: palette.bg,
                               foregroundColor: palette.primaryStrong,
                               utilityIconColor: palette.textPrimary,
+                              onTapFcmTest: () => _sendFcmTestPush(context),
                               onTapProfile: () => _openMyPage(context),
                               onTapSettings: () => _openSettings(context),
                             ),

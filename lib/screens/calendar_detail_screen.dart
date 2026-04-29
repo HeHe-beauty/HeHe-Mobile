@@ -3,6 +3,7 @@ import 'package:hehe/common/utils/app_time.dart';
 
 import '../common/helper/date_refresh_mixin.dart';
 import '../core/auth/auth_state.dart';
+import '../core/common/app_settings_state.dart';
 import '../core/notification/notification_permission_service.dart';
 import '../core/schedule/schedule_alarm_types.dart';
 import '../data/schedule/schedule_repository.dart';
@@ -17,13 +18,11 @@ import '../widgets/app_icon_circle_button.dart';
 import '../widgets/visit_schedule_bottom_sheet.dart';
 
 class CalendarDetailScreen extends StatefulWidget {
-  final VisitScheduleResult? initialScheduleResult;
   final String? initialScheduleId;
   final CalendarSchedule? initialSchedule;
 
   const CalendarDetailScreen({
     super.key,
-    this.initialScheduleResult,
     this.initialScheduleId,
     this.initialSchedule,
   });
@@ -66,17 +65,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
       return;
     }
 
-    final initialScheduleResult = widget.initialScheduleResult;
-    if (initialScheduleResult == null) {
-      _loadScheduleSummary();
-      _openInitialScheduleIfNeeded();
-      return;
-    }
-
-    final selectedDate = calendarDateOnly(initialScheduleResult.dateTime);
-    _focusedMonth = DateTime(selectedDate.year, selectedDate.month, 1);
-    _selectedDate = selectedDate;
-    _loadScheduleSummary(force: true);
+    _loadScheduleSummary();
     _openInitialScheduleIfNeeded();
   }
 
@@ -282,6 +271,13 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
     bool forceRefresh = false,
   }) async {
     final targetDate = calendarDateOnly(selectedDate);
+    if (!forceRefresh) {
+      final cachedSchedules = _scheduleMap[targetDate];
+      if (cachedSchedules != null) {
+        return cachedSchedules;
+      }
+    }
+
     final accessToken = AuthState.session?.accessToken;
     if (accessToken == null || accessToken.isEmpty) {
       if (mounted) {
@@ -296,15 +292,30 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
         date: formatScheduleQueryDate(targetDate),
         forceRefresh: forceRefresh,
       );
-      final schedules = dailySchedules.map(_scheduleFromDetail).toList()
-        ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+      final schedulesByDate = <DateTime, List<CalendarSchedule>>{};
+      for (final detail in dailySchedules) {
+        final schedule = _scheduleFromDetail(detail);
+        final scheduleDate = calendarDateOnly(schedule.dateTime);
+        schedulesByDate.putIfAbsent(scheduleDate, () => <CalendarSchedule>[]);
+        schedulesByDate[scheduleDate]!.add(schedule);
+      }
+
+      for (final schedules in schedulesByDate.values) {
+        schedules.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+      }
+
+      final targetSchedules =
+          schedulesByDate[targetDate] ?? const <CalendarSchedule>[];
+      final touchedDates = <DateTime>{targetDate, ...schedulesByDate.keys};
 
       if (!mounted) return null;
 
       setState(() {
-        _scheduleMap[targetDate] = schedules;
+        for (final date in touchedDates) {
+          _scheduleMap[date] = schedulesByDate[date] ?? const [];
+        }
       });
-      return schedules;
+      return targetSchedules;
     } catch (e) {
       if (mounted) {
         showAppSnackBar(context, '일정을 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
@@ -337,53 +348,62 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
       builder: (_) {
         return StatefulBuilder(
           builder: (sheetContext, setModalState) {
-            return _CalendarScheduleBottomSheetContent(
-              schedule: latestSchedule,
-              onTapBack: () {
-                Navigator.pop(
-                  sheetContext,
-                  _ScheduleDetailSheetResult.backToList,
+            return ValueListenableBuilder<bool>(
+              valueListenable: AppSettingsState.pushEnabled,
+              builder: (context, isPushEnabled, _) {
+                return _CalendarScheduleBottomSheetContent(
+                  schedule: latestSchedule,
+                  isPushEnabled: isPushEnabled,
+                  onTapBack: () {
+                    Navigator.pop(
+                      sheetContext,
+                      _ScheduleDetailSheetResult.backToList,
+                    );
+                  },
+                  onTapEdit: () async {
+                    Navigator.pop(
+                      sheetContext,
+                      _ScheduleDetailSheetResult.closed,
+                    );
+                    await _showScheduleEditorBottomSheet(
+                      initialSchedule: latestSchedule,
+                    );
+                  },
+                  onTapDelete: () async {
+                    Navigator.pop(
+                      sheetContext,
+                      _ScheduleDetailSheetResult.deleteRequested,
+                    );
+                  },
+                  onChangedThreeDaysBefore: (value) => _setScheduleAlarm(
+                    schedule: latestSchedule,
+                    alarmType: ScheduleAlarmTypes.threeDaysBefore,
+                    enabled: value,
+                    applyLocalChange: () {
+                      latestSchedule.isThreeDaysBefore = value;
+                    },
+                    refreshSheet: setModalState,
+                  ),
+                  onChangedOneDayBefore: (value) => _setScheduleAlarm(
+                    schedule: latestSchedule,
+                    alarmType: ScheduleAlarmTypes.oneDayBefore,
+                    enabled: value,
+                    applyLocalChange: () {
+                      latestSchedule.isOneDayBefore = value;
+                    },
+                    refreshSheet: setModalState,
+                  ),
+                  onChangedOneHourBefore: (value) => _setScheduleAlarm(
+                    schedule: latestSchedule,
+                    alarmType: ScheduleAlarmTypes.oneHourBefore,
+                    enabled: value,
+                    applyLocalChange: () {
+                      latestSchedule.isOneHourBefore = value;
+                    },
+                    refreshSheet: setModalState,
+                  ),
                 );
               },
-              onTapEdit: () async {
-                Navigator.pop(sheetContext, _ScheduleDetailSheetResult.closed);
-                await _showScheduleEditorBottomSheet(
-                  initialSchedule: latestSchedule,
-                );
-              },
-              onTapDelete: () async {
-                Navigator.pop(
-                  sheetContext,
-                  _ScheduleDetailSheetResult.deleteRequested,
-                );
-              },
-              onChangedThreeDaysBefore: (value) => _setScheduleAlarm(
-                schedule: latestSchedule,
-                alarmType: ScheduleAlarmTypes.threeDaysBefore,
-                enabled: value,
-                applyLocalChange: () {
-                  latestSchedule.isThreeDaysBefore = value;
-                },
-                refreshSheet: setModalState,
-              ),
-              onChangedOneDayBefore: (value) => _setScheduleAlarm(
-                schedule: latestSchedule,
-                alarmType: ScheduleAlarmTypes.oneDayBefore,
-                enabled: value,
-                applyLocalChange: () {
-                  latestSchedule.isOneDayBefore = value;
-                },
-                refreshSheet: setModalState,
-              ),
-              onChangedOneHourBefore: (value) => _setScheduleAlarm(
-                schedule: latestSchedule,
-                alarmType: ScheduleAlarmTypes.oneHourBefore,
-                enabled: value,
-                applyLocalChange: () {
-                  latestSchedule.isOneHourBefore = value;
-                },
-                refreshSheet: setModalState,
-              ),
             );
           },
         );
@@ -492,6 +512,13 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
     required VoidCallback applyLocalChange,
     required StateSetter refreshSheet,
   }) async {
+    if (enabled && !AppSettingsState.pushEnabled.value) {
+      if (mounted) {
+        showAppSnackBar(context, '홈 > 설정 > 푸시알림 동의를 켜주세요');
+      }
+      return;
+    }
+
     if (enabled) {
       final hasNotificationPermission =
           await NotificationPermissionService.ensureGrantedForReminder(context);
@@ -920,9 +947,12 @@ class _DateSchedulesBottomSheet extends StatelessWidget {
                           key: ValueKey(
                             'list_${selectedDate.toIso8601String()}',
                           ),
-                          itemCount: schedules.length,
+                          itemCount: schedules.length + 1,
                           padding: EdgeInsets.zero,
                           itemBuilder: (context, index) {
+                            if (index == schedules.length) {
+                              return _ScheduleAddCard(onTap: onTapAdd);
+                            }
                             final schedule = schedules[index];
                             return _ScheduleCard(
                               schedule: schedule,
@@ -1190,6 +1220,40 @@ class _ScheduleCard extends StatelessWidget {
   }
 }
 
+class _ScheduleAddCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _ScheduleAddCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Material(
+      color: palette.primarySoft.withValues(alpha: 0.82),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          height: 46,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: palette.primary.withValues(alpha: 0.55)),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.add_rounded,
+              size: 22,
+              color: palette.primaryStrong,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ScheduleStatusData {
   final String label;
   final Color backgroundColor;
@@ -1370,7 +1434,9 @@ class _CalendarScheduleMarker extends StatelessWidget {
       return const SizedBox(height: 10);
     }
 
-    final markerColor = isSelected ? Colors.white : palette.primaryStrong;
+    final markerColor = isSelected
+        ? const Color(0xFFFFA726)
+        : palette.primaryStrong;
     final markerCount = scheduleCount >= 2 ? 2 : scheduleCount;
 
     return SizedBox(
@@ -1431,6 +1497,7 @@ class _WeekdayHeader extends StatelessWidget {
 
 class _CalendarScheduleBottomSheetContent extends StatelessWidget {
   final CalendarSchedule schedule;
+  final bool isPushEnabled;
   final VoidCallback onTapBack;
   final VoidCallback onTapEdit;
   final VoidCallback onTapDelete;
@@ -1440,6 +1507,7 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
 
   const _CalendarScheduleBottomSheetContent({
     required this.schedule,
+    required this.isPushEnabled,
     required this.onTapBack,
     required this.onTapEdit,
     required this.onTapDelete,
@@ -1604,22 +1672,36 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
                             color: palette.textPrimary,
                           ),
                         ),
+                        if (!isPushEnabled) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            '홈 > 설정 > 푸시알림 동의를 켜주세요',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: palette.textSecondary,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 12),
                         _ChecklistTile(
                           label: '방문 3일 전에 알림',
                           value: schedule.isThreeDaysBefore,
+                          enabled: isPushEnabled,
                           onChanged: onChangedThreeDaysBefore,
                         ),
                         const SizedBox(height: 10),
                         _ChecklistTile(
                           label: '방문 1일 전에 알림',
                           value: schedule.isOneDayBefore,
+                          enabled: isPushEnabled,
                           onChanged: onChangedOneDayBefore,
                         ),
                         const SizedBox(height: 10),
                         _ChecklistTile(
                           label: '방문 1시간 전에 알림',
                           value: schedule.isOneHourBefore,
+                          enabled: isPushEnabled,
                           onChanged: onChangedOneHourBefore,
                         ),
                       ],
@@ -1661,11 +1743,13 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
 class _ChecklistTile extends StatelessWidget {
   final String label;
   final bool value;
+  final bool enabled;
   final Future<void> Function(bool value) onChanged;
 
   const _ChecklistTile({
     required this.label,
     required this.value,
+    required this.enabled,
     required this.onChanged,
   });
 
@@ -1674,7 +1758,7 @@ class _ChecklistTile extends StatelessWidget {
     final palette = context.palette;
 
     return InkWell(
-      onTap: () async => onChanged(!value),
+      onTap: enabled ? () async => onChanged(!value) : null,
       borderRadius: BorderRadius.circular(12),
       child: Row(
         children: [
@@ -1685,10 +1769,16 @@ class _ChecklistTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: value
                   ? palette.primary
-                  : palette.surface.withValues(alpha: 0),
+                  : enabled
+                  ? palette.surface.withValues(alpha: 0)
+                  : palette.surfaceMuted,
               borderRadius: BorderRadius.circular(7),
               border: Border.all(
-                color: value ? palette.primary : palette.border,
+                color: value
+                    ? palette.primary
+                    : enabled
+                    ? palette.border
+                    : palette.border.withValues(alpha: 0.72),
               ),
             ),
             child: value
@@ -1702,7 +1792,7 @@ class _ChecklistTile extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: palette.textPrimary,
+                color: enabled ? palette.textPrimary : palette.textTertiary,
               ),
             ),
           ),

@@ -10,6 +10,7 @@ import '../core/auth/auth_gate.dart';
 import '../core/auth/auth_prompt.dart';
 import '../core/auth/auth_state.dart';
 import '../core/common/favorite_store.dart';
+import '../core/location/location_permission_service.dart';
 import '../core/map/naver_map_styles.dart';
 import '../data/contact/contact_repository.dart';
 import '../data/hospital/hospital_repository.dart';
@@ -881,22 +882,17 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   Future<void> _moveToMyLocation() async {
     if (_isMovingToMyLocation) return;
 
+    final allowed =
+        await LocationPermissionService.ensureGrantedForCurrentLocation(
+          context,
+        );
+    if (!allowed) return;
+
     setState(() {
       _isMovingToMyLocation = true;
     });
 
     try {
-      LocationPermission permission = await Geolocator.checkPermission();
-
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        return;
-      }
-
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,

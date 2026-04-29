@@ -1,12 +1,57 @@
 import 'package:flutter/material.dart';
 import '../core/common/app_settings_state.dart';
+import '../core/notification/notification_permission_service.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/app_snackbar.dart';
 import '../widgets/screen_header.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  Future<void> _handlePushToggle(bool value) async {
+    if (!value) {
+      AppSettingsState.setPushEnabled(false);
+      return;
+    }
+
+    final granted =
+        await NotificationPermissionService.ensureGrantedForSettings(context);
+    if (!granted) return;
+
+    AppSettingsState.setPushEnabled(true);
+  }
+
+  Future<void> _handleNightPushToggle(bool value) async {
+    if (!value) {
+      AppSettingsState.setNightPushEnabled(false);
+      return;
+    }
+
+    final granted =
+        await NotificationPermissionService.ensureGrantedForSettings(context);
+    if (!granted) return;
+
+    AppSettingsState.setNightPushEnabled(true);
+  }
+
+  Future<void> _handleMarketingToggle(bool value) async {
+    if (!value) {
+      AppSettingsState.setMarketingEnabled(false);
+      return;
+    }
+
+    final granted =
+        await NotificationPermissionService.ensureGrantedForSettings(context);
+    if (!granted) return;
+
+    AppSettingsState.setMarketingEnabled(true);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,8 +87,7 @@ class SettingsScreen extends StatelessWidget {
                                         subtitle:
                                             '방문 일정, 문의 상태, 주요 알림을 받아볼 수 있어요.',
                                         value: pushEnabled,
-                                        onChanged:
-                                            AppSettingsState.setPushEnabled,
+                                        onChanged: _handlePushToggle,
                                       ),
                                       const SizedBox(height: 10),
                                       _SettingToggleTile(
@@ -51,8 +95,7 @@ class SettingsScreen extends StatelessWidget {
                                         subtitle: '늦은 시간에도 필요한 알림을 받을 수 있어요.',
                                         value: nightPushEnabled,
                                         onChanged: pushEnabled
-                                            ? AppSettingsState
-                                                  .setNightPushEnabled
+                                            ? _handleNightPushToggle
                                             : null,
                                       ),
                                       const SizedBox(height: 10),
@@ -60,8 +103,7 @@ class SettingsScreen extends StatelessWidget {
                                         title: '마케팅 수신 동의',
                                         subtitle: '이벤트, 혜택, 추천 소식을 받아볼 수 있어요.',
                                         value: marketingEnabled,
-                                        onChanged: AppSettingsState
-                                            .setMarketingEnabled,
+                                        onChanged: _handleMarketingToggle,
                                       ),
                                     ],
                                   ),
@@ -210,7 +252,7 @@ class _SettingToggleTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final bool value;
-  final ValueChanged<bool>? onChanged;
+  final Future<void> Function(bool)? onChanged;
 
   const _SettingToggleTile({
     required this.title,
@@ -262,7 +304,9 @@ class _SettingToggleTile extends StatelessWidget {
             scale: 0.95,
             child: Switch(
               value: value,
-              onChanged: onChanged,
+              onChanged: onChanged == null
+                  ? null
+                  : (nextValue) => onChanged!(nextValue),
               activeThumbColor: palette.primaryStrong,
               activeTrackColor: palette.primary.withValues(alpha: 0.58),
               inactiveThumbColor: palette.textTertiary,

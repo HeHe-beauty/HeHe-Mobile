@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'core/common/app_settings_state.dart';
 import 'core/auth/auth_session_store.dart';
@@ -15,6 +16,11 @@ import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 
 import 'common/utils/app_time.dart';
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,6 +67,7 @@ void main() async {
 }
 
 Future<void> _initializeFirebaseMessaging() async {
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   await NotificationPermissionService.initializeForAppStart();
   NotificationPermissionService.listenTokenRefreshForSession();
 }

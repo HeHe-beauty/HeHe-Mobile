@@ -224,7 +224,6 @@ class _LoginReservationPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final innerCardColor = palette.surfaceSoft;
 
     return Material(
       color: Colors.transparent,
@@ -232,37 +231,40 @@ class _LoginReservationPrompt extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
         child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: innerCardColor,
+            color: palette.surface,
             borderRadius: BorderRadius.circular(18),
           ),
-          child: Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '로그인하고 다가오는 예약 일정 확인하기',
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.visible,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: palette.primary,
-                      height: 1,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 56),
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '로그인하고 다가오는 예약 일정 확인하기',
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.visible,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: palette.primary,
+                        height: 1,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 14,
-                    weight: 700,
-                    color: palette.primary,
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 16,
+                      weight: 700,
+                      color: palette.primary,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

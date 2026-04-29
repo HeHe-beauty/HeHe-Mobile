@@ -13,6 +13,7 @@ class ApiEndpoints {
 
   /// 푸시 토큰과 관련된 api 목록
   static const String pushTokens = '/api/v1/push-tokens';
+  static const String fcmTest = '/api/v1/fcm/test';
 
   /// 장비와 관련된 api 목록
   static const String equipList = '/api/v1/equipments/main';

@@ -4,6 +4,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class AppSettingsState {
   static const _storage = FlutterSecureStorage();
   static const _themeModeKey = 'settings.themeMode';
+  static const _pushEnabledKey = 'settings.pushEnabled';
+  static const _nightPushEnabledKey = 'settings.nightPushEnabled';
+  static const _marketingEnabledKey = 'settings.marketingEnabled';
   static const _notificationPermissionRequestedKey =
       'settings.notificationPermissionRequested';
   static const _darkThemeValue = 'dark';
@@ -21,26 +24,42 @@ class AppSettingsState {
 
   static Future<void> restore() async {
     final savedThemeMode = await _storage.read(key: _themeModeKey);
+    final savedPushEnabled = await _storage.read(key: _pushEnabledKey);
+    final savedNightPushEnabled = await _storage.read(
+      key: _nightPushEnabledKey,
+    );
+    final savedMarketingEnabled = await _storage.read(
+      key: _marketingEnabledKey,
+    );
+
     themeMode.value = savedThemeMode == _darkThemeValue
         ? ThemeMode.dark
         : ThemeMode.light;
+    pushEnabled.value = savedPushEnabled != 'false';
+    nightPushEnabled.value =
+        pushEnabled.value && savedNightPushEnabled == _trueValue;
+    marketingEnabled.value = savedMarketingEnabled == _trueValue;
   }
 
   static void setPushEnabled(bool value) {
     pushEnabled.value = value;
+    _writeBool(_pushEnabledKey, value);
 
     if (!value) {
       nightPushEnabled.value = false;
+      _writeBool(_nightPushEnabledKey, false);
     }
   }
 
   static void setNightPushEnabled(bool value) {
     if (!pushEnabled.value) return;
     nightPushEnabled.value = value;
+    _writeBool(_nightPushEnabledKey, value);
   }
 
   static void setMarketingEnabled(bool value) {
     marketingEnabled.value = value;
+    _writeBool(_marketingEnabledKey, value);
   }
 
   static void setDarkMode(bool isDark) {
@@ -62,5 +81,9 @@ class AppSettingsState {
       key: _notificationPermissionRequestedKey,
       value: _trueValue,
     );
+  }
+
+  static Future<void> _writeBool(String key, bool value) {
+    return _storage.write(key: key, value: value ? _trueValue : 'false');
   }
 }
