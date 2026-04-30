@@ -19,6 +19,7 @@ class AppSettingsState {
   static final ValueNotifier<ThemeMode> themeMode = ValueNotifier(
     ThemeMode.light,
   );
+  static bool _pendingPushEnableFromSettings = false;
 
   static bool get isDarkMode => themeMode.value == ThemeMode.dark;
 
@@ -41,6 +42,36 @@ class AppSettingsState {
     marketingEnabled.value = savedMarketingEnabled == _trueValue;
   }
 
+  static Future<void> syncNotificationPermissionGranted({
+    required bool granted,
+  }) async {
+    final savedPushEnabled = await _storage.read(key: _pushEnabledKey);
+    final savedNightPushEnabled = await _storage.read(
+      key: _nightPushEnabledKey,
+    );
+    final savedMarketingEnabled = await _storage.read(
+      key: _marketingEnabledKey,
+    );
+
+    final nextPushEnabled =
+        granted &&
+        (_pendingPushEnableFromSettings || savedPushEnabled != 'false');
+    pushEnabled.value = nextPushEnabled;
+    await _writeBool(_pushEnabledKey, nextPushEnabled);
+
+    final nextNightPushEnabled =
+        nextPushEnabled && savedNightPushEnabled == _trueValue;
+    nightPushEnabled.value = nextNightPushEnabled;
+    await _writeBool(_nightPushEnabledKey, nextNightPushEnabled);
+
+    final nextMarketingEnabled =
+        nextPushEnabled && savedMarketingEnabled == _trueValue;
+    marketingEnabled.value = nextMarketingEnabled;
+    await _writeBool(_marketingEnabledKey, nextMarketingEnabled);
+
+    _pendingPushEnableFromSettings = false;
+  }
+
   static void setPushEnabled(bool value) {
     pushEnabled.value = value;
     _writeBool(_pushEnabledKey, value);
@@ -48,6 +79,8 @@ class AppSettingsState {
     if (!value) {
       nightPushEnabled.value = false;
       _writeBool(_nightPushEnabledKey, false);
+      marketingEnabled.value = false;
+      _writeBool(_marketingEnabledKey, false);
     }
   }
 
@@ -81,6 +114,10 @@ class AppSettingsState {
       key: _notificationPermissionRequestedKey,
       value: _trueValue,
     );
+  }
+
+  static void markPendingPushEnableFromSettings() {
+    _pendingPushEnableFromSettings = true;
   }
 
   static Future<void> _writeBool(String key, bool value) {

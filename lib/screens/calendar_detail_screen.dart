@@ -271,9 +271,17 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
     bool forceRefresh = false,
   }) async {
     final targetDate = calendarDateOnly(selectedDate);
+    final expectedScheduleCount = _scheduleCountFor(targetDate);
+
     if (!forceRefresh) {
       final cachedSchedules = _scheduleMap[targetDate];
       if (cachedSchedules != null) {
+        if (cachedSchedules.isEmpty && expectedScheduleCount > 0) {
+          return _loadDailySchedules(
+            selectedDate: targetDate,
+            forceRefresh: true,
+          );
+        }
         return cachedSchedules;
       }
     }
@@ -306,6 +314,14 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
 
       final targetSchedules =
           schedulesByDate[targetDate] ?? const <CalendarSchedule>[];
+      if (!forceRefresh &&
+          targetSchedules.isEmpty &&
+          expectedScheduleCount > 0) {
+        return _loadDailySchedules(
+          selectedDate: targetDate,
+          forceRefresh: true,
+        );
+      }
       final touchedDates = <DateTime>{targetDate, ...schedulesByDate.keys};
 
       if (!mounted) return null;

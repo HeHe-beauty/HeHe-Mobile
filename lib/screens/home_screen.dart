@@ -413,10 +413,10 @@ class _HomeScreenState extends State<HomeScreen>
     final d0 = _device(0);
     final d1 = _device(1);
     final d2 = _device(2);
-    final d0Name = _deviceName(d0, '젠틀맥스 프로');
+    final d0Name = _deviceName(d0, '장비');
     final d0Label = d0Name;
-    final d1Name = _deviceName(d1, '아포지');
-    final d2Name = _deviceName(d2, '클라리티2');
+    final d1Name = _deviceName(d1, '장비');
+    final d2Name = _deviceName(d2, '장비');
     final d0Asset = _deviceImageAsset(d0Name);
     final d1Asset = _deviceImageAsset(d1Name);
     final d2Asset = _deviceImageAsset(d2Name);

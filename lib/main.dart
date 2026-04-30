@@ -20,6 +20,10 @@ import 'common/utils/app_time.dart';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await NotificationPermissionService.showLocalNotificationForMessage(
+    message,
+    onlyWhenDataOnly: true,
+  );
 }
 
 void main() async {
@@ -90,9 +94,7 @@ Future<void> _restoreAuthSession() async {
 
     await AuthSessionStore.write(refreshedSession);
     AuthState.restore(refreshedSession);
-    await NotificationPermissionService.registerCurrentDeviceToken(
-      accessToken: refreshedSession.accessToken,
-    );
+    await NotificationPermissionService.syncCurrentDeviceTokenPreference();
   } on ApiException catch (e) {
     debugPrint('🔥 auth token refresh error: $e');
 

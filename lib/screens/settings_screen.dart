@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../core/common/app_settings_state.dart';
 import '../core/notification/notification_permission_service.dart';
@@ -13,10 +15,36 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_syncNotificationStateOnResume());
+    }
+  }
+
+  Future<void> _syncNotificationStateOnResume() async {
+    await NotificationPermissionService.syncNotificationPermissionState();
+    await NotificationPermissionService.syncCurrentDeviceTokenPreference();
+  }
+
   Future<void> _handlePushToggle(bool value) async {
     if (!value) {
       AppSettingsState.setPushEnabled(false);
+      await NotificationPermissionService.syncCurrentDeviceTokenPreference();
       return;
     }
 
@@ -25,6 +53,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!granted) return;
 
     AppSettingsState.setPushEnabled(true);
+    await NotificationPermissionService.syncCurrentDeviceTokenPreference();
   }
 
   Future<void> _handleNightPushToggle(bool value) async {
@@ -103,7 +132,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         title: '마케팅 수신 동의',
                                         subtitle: '이벤트, 혜택, 추천 소식을 받아볼 수 있어요.',
                                         value: marketingEnabled,
-                                        onChanged: _handleMarketingToggle,
+                                        onChanged: pushEnabled
+                                            ? _handleMarketingToggle
+                                            : null,
                                       ),
                                     ],
                                   ),

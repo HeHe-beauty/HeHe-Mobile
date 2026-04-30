@@ -53,9 +53,7 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
       if (!mounted) return;
 
       _completeLogin(context, session);
-      await NotificationPermissionService.registerCurrentDeviceToken(
-        accessToken: session.accessToken,
-      );
+      await NotificationPermissionService.syncCurrentDeviceTokenPreference();
     } on SocialLoginException catch (e) {
       if (mounted) {
         showAppSnackBar(context, e.message);

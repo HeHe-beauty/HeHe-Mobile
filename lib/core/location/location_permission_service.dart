@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class LocationPermissionService {
   const LocationPermissionService._();
@@ -39,8 +40,14 @@ class LocationPermissionService {
     }
 
     permission = await Geolocator.requestPermission();
-    return permission == LocationPermission.always ||
-        permission == LocationPermission.whileInUse;
+    if (permission == LocationPermission.always ||
+        permission == LocationPermission.whileInUse) {
+      return true;
+    }
+
+    await openAppSettings();
+
+    return false;
   }
 
   static Future<bool?> _showConfirm({

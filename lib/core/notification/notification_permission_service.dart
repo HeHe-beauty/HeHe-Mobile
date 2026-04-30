@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../data/push_token/push_token_repository.dart';
 import '../../screens/home_screen.dart';
@@ -33,7 +34,7 @@ class NotificationPermissionService {
   static int _notificationId = 0;
 
   static Future<void> initializeForAppStart() async {
-    await _initializeLocalNotifications();
+    await ensureLocalNotificationsInitialized();
     await _messaging.setForegroundNotificationPresentationOptions(
       alert: false,
       badge: true,
@@ -46,12 +47,18 @@ class NotificationPermissionService {
     if (!hasRequested) {
       final settings = await _messaging.requestPermission();
       await AppSettingsState.markNotificationPermissionRequested();
+      await AppSettingsState.syncNotificationPermissionGranted(
+        granted: _isGranted(settings.authorizationStatus),
+      );
       debugPrint(
         'FCM first-launch permission request result: '
         '${settings.authorizationStatus}',
       );
     } else {
       final settings = await _messaging.getNotificationSettings();
+      await AppSettingsState.syncNotificationPermissionGranted(
+        granted: _isGranted(settings.authorizationStatus),
+      );
       debugPrint(
         'FCM app-start permission request skipped: '
         '${settings.authorizationStatus}',
@@ -90,6 +97,11 @@ class NotificationPermissionService {
   static void listenTokenRefreshForSession() {
     _tokenRefreshSubscription ??= FirebaseMessaging.instance.onTokenRefresh
         .listen((token) async {
+          if (!AppSettingsState.pushEnabled.value) {
+            debugPrint('FCM token refresh ignored: push disabled');
+            return;
+          }
+
           final accessToken = AuthState.session?.accessToken;
           if (accessToken == null || accessToken.isEmpty) {
             debugPrint('FCM token refreshed while logged out');
@@ -107,7 +119,7 @@ class NotificationPermissionService {
     required String accessToken,
     String? tokenOverride,
   }) async {
-    if (accessToken.isEmpty) return;
+    if (accessToken.isEmpty || !AppSettingsState.pushEnabled.value) return;
 
     try {
       final token = tokenOverride ?? await _messaging.getToken();
@@ -155,6 +167,18 @@ class NotificationPermissionService {
     }
   }
 
+  static Future<void> syncCurrentDeviceTokenPreference() async {
+    final accessToken = AuthState.session?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) return;
+
+    if (AppSettingsState.pushEnabled.value) {
+      await registerCurrentDeviceToken(accessToken: accessToken);
+      return;
+    }
+
+    await unregisterCurrentDeviceToken(accessToken: accessToken);
+  }
+
   static Future<bool> ensureGrantedForReminder(BuildContext context) async {
     final currentSettings = await _messaging.getNotificationSettings();
     if (_isGranted(currentSettings.authorizationStatus)) {
@@ -199,6 +223,8 @@ class NotificationPermissionService {
       return true;
     }
 
+    await openAppSettings();
+
     debugPrint(
       'FCM skipped reminder API call due to missing permission: '
       '${requestedSettings.authorizationStatus}',
@@ -209,6 +235,7 @@ class NotificationPermissionService {
   static Future<bool> ensureGrantedForSettings(BuildContext context) async {
     final currentSettings = await _messaging.getNotificationSettings();
     if (_isGranted(currentSettings.authorizationStatus)) {
+      await AppSettingsState.syncNotificationPermissionGranted(granted: true);
       return true;
     }
 
@@ -239,7 +266,23 @@ class NotificationPermissionService {
     }
 
     final requestedSettings = await _messaging.requestPermission();
-    return _isGranted(requestedSettings.authorizationStatus);
+    final granted = _isGranted(requestedSettings.authorizationStatus);
+    await AppSettingsState.syncNotificationPermissionGranted(granted: granted);
+    if (granted) {
+      return true;
+    }
+
+    AppSettingsState.markPendingPushEnableFromSettings();
+    await openAppSettings();
+
+    return false;
+  }
+
+  static Future<void> syncNotificationPermissionState() async {
+    final settings = await _messaging.getNotificationSettings();
+    await AppSettingsState.syncNotificationPermissionGranted(
+      granted: _isGranted(settings.authorizationStatus),
+    );
   }
 
   static bool _isGranted(AuthorizationStatus status) {
@@ -253,6 +296,48 @@ class NotificationPermissionService {
   }
 
   static Future<void> _handleForegroundMessage(RemoteMessage message) async {
+    await showLocalNotificationForMessage(message);
+  }
+
+  static String? _stringData(Object? value) {
+    if (value is String && value.isNotEmpty) return value;
+    return null;
+  }
+
+  static void _handleOpenedMessage(RemoteMessage message) {
+    _routeToHome();
+  }
+
+  static Future<void> ensureLocalNotificationsInitialized() async {
+    if (_isLocalNotificationsInitialized) return;
+
+    const initializationSettings = InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      iOS: DarwinInitializationSettings(),
+    );
+
+    await _localNotifications.initialize(
+      settings: initializationSettings,
+      onDidReceiveNotificationResponse: (response) => _routeToHome(),
+    );
+
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(_androidNotificationChannel);
+
+    _isLocalNotificationsInitialized = true;
+  }
+
+  static Future<void> showLocalNotificationForMessage(
+    RemoteMessage message, {
+    bool onlyWhenDataOnly = false,
+  }) async {
+    if (onlyWhenDataOnly && message.notification != null) {
+      return;
+    }
+
     final notification = message.notification;
     final title = notification?.title ?? _stringData(message.data['title']);
     final body = notification?.body ?? _stringData(message.data['body']);
@@ -261,6 +346,7 @@ class NotificationPermissionService {
       return;
     }
 
+    await ensureLocalNotificationsInitialized();
     await _localNotifications.show(
       id: _notificationId++,
       title: title,
@@ -282,37 +368,6 @@ class NotificationPermissionService {
       ),
       payload: 'home',
     );
-  }
-
-  static String? _stringData(Object? value) {
-    if (value is String && value.isNotEmpty) return value;
-    return null;
-  }
-
-  static void _handleOpenedMessage(RemoteMessage message) {
-    _routeToHome();
-  }
-
-  static Future<void> _initializeLocalNotifications() async {
-    if (_isLocalNotificationsInitialized) return;
-
-    const initializationSettings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-      iOS: DarwinInitializationSettings(),
-    );
-
-    await _localNotifications.initialize(
-      settings: initializationSettings,
-      onDidReceiveNotificationResponse: (response) => _routeToHome(),
-    );
-
-    await _localNotifications
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.createNotificationChannel(_androidNotificationChannel);
-
-    _isLocalNotificationsInitialized = true;
   }
 
   static void _routeToHome() {
