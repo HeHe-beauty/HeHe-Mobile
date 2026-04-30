@@ -47,8 +47,6 @@ class DeviceMapScreen extends StatefulWidget {
 }
 
 class _DeviceMapScreenState extends State<DeviceMapScreen> {
-  static const double _individualMarkerZoom = 16.0;
-
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
   final TextEditingController _searchController = TextEditingController();
@@ -546,20 +544,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
         precision: mapData.precision,
         zoom: position.zoom,
       );
-
-      final hasSingleHospitalNode = nodes.any(
-        (node) => node.count == 1 && node.sources.length == 1,
-      );
-
-      if (position.zoom < _individualMarkerZoom && !hasSingleHospitalNode) {
-        return nodes;
-      }
-
-      final resolvedNodes = await Future.wait(
-        nodes.map(_resolveSingleHospitalMarkerNode),
-      );
-
-      return resolvedNodes;
+      return nodes;
     } catch (e) {
       if (mounted && !_hasShownHospitalMapError) {
         _hasShownHospitalMapError = true;
@@ -567,45 +552,6 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
       }
 
       return const [];
-    }
-  }
-
-  Future<_HospitalMarkerNode> _resolveSingleHospitalMarkerNode(
-    _HospitalMarkerNode node,
-  ) async {
-    if (node.count != 1 || node.sources.length != 1) {
-      return node;
-    }
-
-    try {
-      final hospitals = await _loadHospitalsForClusterNode(node);
-      if (hospitals.length != 1) {
-        return node.copyWith(place: _placeItemFromClusterNode(node));
-      }
-
-      final summaryPlace = placeItemFromHospital(
-        hospitals.first,
-        latitude: node.latitude,
-        longitude: node.longitude,
-      );
-
-      try {
-        final detail = await HospitalRepository.getHospitalDetail(
-          hospitals.first.hospitalId,
-          accessToken: AuthState.session?.accessToken,
-        );
-
-        return node.copyWith(
-          place: placeItemFromHospitalDetail(
-            detail,
-            fallbackPlace: summaryPlace,
-          ),
-        );
-      } catch (e) {
-        return node.copyWith(place: summaryPlace);
-      }
-    } catch (e) {
-      return node.copyWith(place: _placeItemFromClusterNode(node));
     }
   }
 
@@ -663,6 +609,33 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
       final hospitals = await _loadHospitalsForClusterNode(node);
 
       if (!mounted || requestToken != _hospitalListRequestToken) return;
+
+      if (hospitals.length == 1) {
+        final summaryPlace = placeItemFromHospital(
+          hospitals.first,
+          latitude: node.latitude,
+          longitude: node.longitude,
+        );
+        final resolvedPlace = await _resolvePlaceDetail(
+          summaryPlace,
+          showFallbackError: false,
+        );
+
+        if (!mounted || requestToken != _hospitalListRequestToken) return;
+
+        setState(() {
+          _selectedPlace = resolvedPlace;
+          _selectedClusterId = null;
+          _sheetPlaces = [resolvedPlace];
+        });
+        unawaited(_recordRecentView(resolvedPlace));
+
+        _expandSinglePlaceSheet();
+        await _refreshMarkers();
+        await _moveCameraToPlace(resolvedPlace, zoom: 16.2);
+        _expandSinglePlaceSheet();
+        return;
+      }
 
       setState(() {
         _sheetPlaces = hospitals
@@ -1614,17 +1587,4 @@ double _clusterMergePixelRadiusFor(
   if (largestCount >= 100) return 70;
   if (largestCount >= 10) return 62;
   return 54;
-}
-
-PlaceItem _placeItemFromClusterNode(_HospitalMarkerNode node) {
-  return PlaceItem(
-    id: 'hospital_marker_${node.id}',
-    name: '병원',
-    tags: const [],
-    description: '',
-    address: '',
-    isBookmarked: false,
-    latitude: node.latitude,
-    longitude: node.longitude,
-  );
 }
