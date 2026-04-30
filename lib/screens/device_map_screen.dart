@@ -11,7 +11,6 @@ import '../core/auth/auth_prompt.dart';
 import '../core/auth/auth_state.dart';
 import '../core/common/favorite_store.dart';
 import '../core/location/location_permission_service.dart';
-import '../core/map/naver_map_styles.dart';
 import '../data/contact/contact_repository.dart';
 import '../data/hospital/hospital_repository.dart';
 import '../data/recent_view/recent_view_repository.dart';
@@ -1124,9 +1123,6 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final mapStyleId = isDark
-        ? NaverMapStyles.darkDynamicStyleId
-        : NaverMapStyles.lightDynamicStyleId;
 
     return Scaffold(
       backgroundColor: palette.bg,
@@ -1152,10 +1148,11 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
                         target: NLatLng(37.4979, 127.0276),
                         zoom: 13.2,
                       ),
+                      mapType: isDark ? NMapType.navi : NMapType.basic,
+                      nightModeEnable: isDark,
                       scaleBarEnable: false,
-                      indoorEnable: true,
+                      indoorEnable: !isDark,
                       locationButtonEnable: false,
-                      customStyleId: mapStyleId,
                     ),
                     onMapReady: _onMapReady,
                     onMapTapped: (mapPoint, latLng) {
