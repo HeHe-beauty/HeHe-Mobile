@@ -65,7 +65,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
       return;
     }
 
-    _loadScheduleSummary();
+    _loadScheduleSummary(force: true);
     _openInitialScheduleIfNeeded();
   }
 
@@ -185,41 +185,68 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
     return dates;
   }
 
-  void _goToPreviousMonth() {
+  int _daysInMonth(int year, int month) {
+    return DateTime(year, month + 1, 0).day;
+  }
+
+  void _clearLocalScheduleCacheForMonth(DateTime month) {
+    _scheduleMap.removeWhere(
+      (date, _) => date.year == month.year && date.month == month.month,
+    );
+  }
+
+  void _moveFocusedMonth(int monthOffset) {
+    final nextFocusedMonth = DateTime(
+      _focusedMonth.year,
+      _focusedMonth.month + monthOffset,
+      1,
+    );
+    final nextSelectedDay = _selectedDate.day.clamp(
+      1,
+      _daysInMonth(nextFocusedMonth.year, nextFocusedMonth.month),
+    );
+
     setState(() {
-      _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1, 1);
+      _focusedMonth = nextFocusedMonth;
       _selectedDate = DateTime(
-        _focusedMonth.year,
-        _focusedMonth.month,
-        _selectedDate.day,
+        nextFocusedMonth.year,
+        nextFocusedMonth.month,
+        nextSelectedDay,
       );
+      _clearLocalScheduleCacheForMonth(nextFocusedMonth);
     });
   }
 
-  void _goToNextMonth() {
-    setState(() {
-      _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1);
-      _selectedDate = DateTime(
-        _focusedMonth.year,
-        _focusedMonth.month,
-        _selectedDate.day,
-      );
-    });
-  }
+  void _goToPreviousMonth() => _moveFocusedMonth(-1);
+
+  void _goToNextMonth() => _moveFocusedMonth(1);
 
   void _onTapDate(DateTime date) {
     final selectedDate = calendarDateOnly(date);
+    final nextFocusedMonth = DateTime(date.year, date.month, 1);
+    final didChangeMonth =
+        nextFocusedMonth.year != _focusedMonth.year ||
+        nextFocusedMonth.month != _focusedMonth.month;
 
     setState(() {
       _selectedDate = selectedDate;
-      _focusedMonth = DateTime(date.year, date.month, 1);
+      _focusedMonth = nextFocusedMonth;
+      if (didChangeMonth) {
+        _clearLocalScheduleCacheForMonth(nextFocusedMonth);
+      }
     });
 
     _showDateSchedulesBottomSheet(selectedDate);
   }
 
-  Future<void> _showDateSchedulesBottomSheet(DateTime selectedDate) async {
-    final schedules = await _loadDailySchedules(selectedDate: selectedDate);
+  Future<void> _showDateSchedulesBottomSheet(
+    DateTime selectedDate, {
+    bool forceRefresh = true,
+  }) async {
+    final schedules = await _loadDailySchedules(
+      selectedDate: selectedDate,
+      forceRefresh: forceRefresh,
+    );
     if (!mounted) return;
     if (schedules == null) return;
 
@@ -243,7 +270,10 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
             Navigator.pop(sheetContext);
             await _showScheduleEditorBottomSheet(selectedDate: selectedDate);
             if (!mounted) return;
-            await _showDateSchedulesBottomSheet(selectedDate);
+            await _showDateSchedulesBottomSheet(
+              selectedDate,
+              forceRefresh: true,
+            );
           },
           onTapSchedule: (schedule) async {
             Navigator.pop(sheetContext);
@@ -253,13 +283,19 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
                 result == _ScheduleDetailSheetResult.closed) {
               return;
             }
-            await _showDateSchedulesBottomSheet(selectedDate);
+            await _showDateSchedulesBottomSheet(
+              selectedDate,
+              forceRefresh: true,
+            );
           },
           onTapEdit: (schedule) async {
             Navigator.pop(sheetContext);
             await _showScheduleEditorBottomSheet(initialSchedule: schedule);
             if (!mounted) return;
-            await _showDateSchedulesBottomSheet(selectedDate);
+            await _showDateSchedulesBottomSheet(
+              selectedDate,
+              forceRefresh: true,
+            );
           },
         );
       },
@@ -271,17 +307,10 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
     bool forceRefresh = false,
   }) async {
     final targetDate = calendarDateOnly(selectedDate);
-    final expectedScheduleCount = _scheduleCountFor(targetDate);
 
     if (!forceRefresh) {
       final cachedSchedules = _scheduleMap[targetDate];
       if (cachedSchedules != null) {
-        if (cachedSchedules.isEmpty && expectedScheduleCount > 0) {
-          return _loadDailySchedules(
-            selectedDate: targetDate,
-            forceRefresh: true,
-          );
-        }
         return cachedSchedules;
       }
     }
@@ -300,36 +329,14 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
         date: formatScheduleQueryDate(targetDate),
         forceRefresh: forceRefresh,
       );
-      final schedulesByDate = <DateTime, List<CalendarSchedule>>{};
-      for (final detail in dailySchedules) {
-        final schedule = _scheduleFromDetail(detail);
-        final scheduleDate = calendarDateOnly(schedule.dateTime);
-        schedulesByDate.putIfAbsent(scheduleDate, () => <CalendarSchedule>[]);
-        schedulesByDate[scheduleDate]!.add(schedule);
-      }
-
-      for (final schedules in schedulesByDate.values) {
-        schedules.sort((a, b) => a.dateTime.compareTo(b.dateTime));
-      }
-
-      final targetSchedules =
-          schedulesByDate[targetDate] ?? const <CalendarSchedule>[];
-      if (!forceRefresh &&
-          targetSchedules.isEmpty &&
-          expectedScheduleCount > 0) {
-        return _loadDailySchedules(
-          selectedDate: targetDate,
-          forceRefresh: true,
-        );
-      }
-      final touchedDates = <DateTime>{targetDate, ...schedulesByDate.keys};
+      final targetSchedules = dailySchedules.map(_scheduleFromDetail).toList()
+        ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
       if (!mounted) return null;
 
       setState(() {
-        for (final date in touchedDates) {
-          _scheduleMap[date] = schedulesByDate[date] ?? const [];
-        }
+        _scheduleMap[targetDate] = targetSchedules;
+        _scheduleCountMap[targetDate] = targetSchedules.length;
       });
       return targetSchedules;
     } catch (e) {

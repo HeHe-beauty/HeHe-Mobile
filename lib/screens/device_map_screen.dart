@@ -543,7 +543,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
         precision: mapData.precision,
         zoom: position.zoom,
       );
-      return nodes;
+      return _attachPlacesToSingleHospitalNodes(nodes);
     } catch (e) {
       if (mounted && !_hasShownHospitalMapError) {
         _hasShownHospitalMapError = true;
@@ -552,6 +552,42 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
 
       return const [];
     }
+  }
+
+  Future<List<_HospitalMarkerNode>> _attachPlacesToSingleHospitalNodes(
+    List<_HospitalMarkerNode> nodes,
+  ) async {
+    final accessToken = AuthState.session?.accessToken;
+
+    return Future.wait(
+      nodes.map((node) async {
+        if (node.place != null || node.count != 1 || node.sources.length != 1) {
+          return node;
+        }
+
+        final source = node.sources.first;
+        final hospitals = await HospitalRepository.getHospitals(
+          lat: source.latitude,
+          lng: source.longitude,
+          precision: source.precision,
+          equipId: widget.equipId,
+          accessToken: accessToken,
+        );
+
+        if (hospitals.length != 1) {
+          return node;
+        }
+
+        final hospital = hospitals.first;
+        return node.copyWith(
+          place: placeItemFromHospital(
+            hospital,
+            latitude: source.latitude,
+            longitude: source.longitude,
+          ),
+        );
+      }),
+    );
   }
 
   Future<List<HospitalDto>> _loadHospitalsForClusterNode(

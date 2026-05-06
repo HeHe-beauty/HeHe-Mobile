@@ -225,49 +225,35 @@ class _LoginReservationPrompt extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: palette.surface,
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 56),
-            child: Center(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '로그인하고 다가오는 예약 일정 확인하기',
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.visible,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: palette.primary,
-                        height: 1,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 16,
-                      weight: 700,
-                      color: palette.primary,
-                    ),
-                  ],
+    return SectionLikeCard(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+        decoration: BoxDecoration(
+          color: palette.surfaceSoft,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                '로그인하고 다가오는 예약 일정 확인하기',
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.45,
+                  fontWeight: FontWeight.w400,
+                  color: palette.textSecondary,
                 ),
               ),
             ),
-          ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: palette.textSecondary,
+            ),
+          ],
         ),
       ),
     );
