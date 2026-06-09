@@ -42,6 +42,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with WidgetsBindingObserver, DateRefreshMixin {
   static const int _maxVisibleReservations = 2;
+  static const List<String> _tutorialImageAssets = [
+    'assets/images/tutorial/tutorial_1.png',
+    'assets/images/tutorial/tutorial_2.png',
+  ];
   List<EquipDto> _devices = [];
   List<ContentItem> _contents = HomeCatalog.contents;
   List<CalendarSchedule> _upcomingSchedules = const [];
@@ -406,6 +410,17 @@ class _HomeScreenState extends State<HomeScreen>
     });
   }
 
+  Future<void> _openTutorialGuide() {
+    _hideDeviceTooltip();
+
+    return showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.42),
+      builder: (_) =>
+          const _TutorialGuideDialog(imageAssets: _tutorialImageAssets),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
@@ -593,6 +608,7 @@ class _HomeScreenState extends State<HomeScreen>
                             padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                             child: _HomeGuideBanner(
                               onDismiss: _dismissGuideBanner,
+                              onTap: _openTutorialGuide,
                             ),
                           ),
                         Container(
@@ -784,62 +800,191 @@ class _PrimaryDeviceCard extends StatelessWidget {
 
 class _HomeGuideBanner extends StatelessWidget {
   final VoidCallback onDismiss;
+  final VoidCallback onTap;
 
-  const _HomeGuideBanner({required this.onDismiss});
+  const _HomeGuideBanner({required this.onDismiss, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 16, 8, 16),
-      decoration: BoxDecoration(
-        color: palette.primary,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'HeHe(히히) 이용이 처음이신가요?',
-                  style: AppTextStyles.homeBodyStrong.copyWith(
-                    color: Colors.white,
-                    fontSize: 15,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 7),
-                Text(
-                  '서비스 안내 바로가기',
-                  style: AppTextStyles.homeCaption.copyWith(
-                    color: Colors.white.withValues(alpha: 0.86),
-                    height: 1.2,
-                  ),
-                ),
-              ],
-            ),
+        child: Ink(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(18, 16, 8, 16),
+          decoration: BoxDecoration(
+            color: palette.primary,
+            borderRadius: BorderRadius.circular(18),
           ),
-          SizedBox(
-            width: 34,
-            height: 34,
-            child: IconButton(
-              onPressed: onDismiss,
-              padding: EdgeInsets.zero,
-              icon: const Icon(
-                Icons.close_rounded,
-                size: 18,
-                color: Colors.white,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'HeHe(히히) 이용이 처음이신가요?',
+                      style: AppTextStyles.homeBodyStrong.copyWith(
+                        color: Colors.white,
+                        fontSize: 15,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Text(
+                      '서비스 안내 바로가기',
+                      style: AppTextStyles.homeCaption.copyWith(
+                        color: Colors.white.withValues(alpha: 0.86),
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              splashRadius: 18,
-            ),
+              SizedBox(
+                width: 34,
+                height: 34,
+                child: IconButton(
+                  onPressed: onDismiss,
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                  splashRadius: 18,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TutorialGuideDialog extends StatefulWidget {
+  final List<String> imageAssets;
+
+  const _TutorialGuideDialog({required this.imageAssets});
+
+  @override
+  State<_TutorialGuideDialog> createState() => _TutorialGuideDialogState();
+}
+
+class _TutorialGuideDialogState extends State<_TutorialGuideDialog> {
+  late final PageController _pageController;
+  int _pageIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final size = MediaQuery.sizeOf(context);
+    final dialogWidth = size.width.clamp(0.0, 430.0) - 32;
+    final imageHeight = (dialogWidth * 0.68).clamp(220.0, size.height * 0.62);
+
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      backgroundColor: palette.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 430),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '서비스 안내',
+                      style: AppTextStyles.homeBodyStrong.copyWith(
+                        color: palette.textPrimary,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        height: 1.2,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: palette.textSecondary,
+                      size: 22,
+                    ),
+                    splashRadius: 20,
+                    tooltip: '닫기',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: imageHeight,
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: widget.imageAssets.length,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _pageIndex = index;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      return ColoredBox(
+                        color: palette.bg,
+                        child: Image.asset(
+                          widget.imageAssets[index],
+                          fit: BoxFit.contain,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  widget.imageAssets.length,
+                  (index) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: index == _pageIndex ? 18 : 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: index == _pageIndex
+                          ? palette.primary
+                          : palette.primary.withValues(alpha: 0.22),
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

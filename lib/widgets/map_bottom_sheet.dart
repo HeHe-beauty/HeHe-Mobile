@@ -514,15 +514,50 @@ class _SinglePlaceSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  distanceLabel,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.homeCaption.copyWith(
-                    color: palette.textTertiary,
-                    fontWeight: FontWeight.w700,
-                    height: 1.1,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        distanceLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.homeCaption.copyWith(
+                          color: palette.textTertiary,
+                          fontWeight: FontWeight.w700,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Icon(
+                            Icons.star_rounded,
+                            size: 14,
+                            color: palette.mapMarkerLightEnd,
+                          ),
+                          const SizedBox(width: 3),
+                          Flexible(
+                            child: Text(
+                              '${place.bookmarkCount ?? 0}명이 관심있게 보고있어요',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.right,
+                              style: AppTextStyles.homeCaption.copyWith(
+                                color: palette.mapMarkerLightEnd,
+                                fontWeight: FontWeight.w800,
+                                height: 1.1,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 5),
                 Text(

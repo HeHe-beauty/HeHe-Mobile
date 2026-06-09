@@ -1149,10 +1149,36 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
         place: place,
         enabled: !_favoriteStore.isBookmarked(place),
       );
+      await _refreshPlaceAfterBookmarkChange(place);
     } catch (e) {
       if (!mounted) return;
       showTopAppSnackBar(context, '찜하기를 변경하지 못했어요. 잠시 후 다시 시도해주세요.');
     }
+  }
+
+  Future<void> _refreshPlaceAfterBookmarkChange(PlaceItem place) async {
+    final refreshedPlace = await _resolvePlaceDetail(
+      place,
+      showFallbackError: false,
+    );
+    final visiblePlace = _favoriteStore.applyFavoriteState(refreshedPlace);
+
+    if (!mounted) return;
+
+    setState(() {
+      if (_selectedPlace != null && _isSamePlace(_selectedPlace!, place)) {
+        _selectedPlace = visiblePlace;
+      }
+
+      _sheetPlaces = _sheetPlaces
+          .map((sheetPlace) {
+            if (_isSamePlace(sheetPlace, place)) {
+              return visiblePlace;
+            }
+            return sheetPlace;
+          })
+          .toList(growable: false);
+    });
   }
 
   @override

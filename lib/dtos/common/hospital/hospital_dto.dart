@@ -4,6 +4,7 @@ class HospitalDto {
   final String address;
   final List<String> tags;
   final bool isBookmarked;
+  final int bookmarkCount;
 
   HospitalDto({
     required this.hospitalId,
@@ -11,6 +12,7 @@ class HospitalDto {
     required this.address,
     required this.tags,
     required this.isBookmarked,
+    required this.bookmarkCount,
   });
 
   factory HospitalDto.fromJson(Map<String, dynamic> json) {
@@ -22,6 +24,7 @@ class HospitalDto {
           .map((e) => e as String)
           .toList(),
       isBookmarked: json['isBookmarked'] as bool? ?? false,
+      bookmarkCount: json['bookmarkCount'] as int? ?? 0,
     );
   }
 }

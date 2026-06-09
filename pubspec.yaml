@@ -80,6 +80,7 @@ flutter:
     - assets/images/kakao_login_medium_wide.png
     - assets/images/naver_login_medium_wide.png
     - assets/images/
+    - assets/images/tutorial/
     - assets/data/subway/seoul_stations.json
 
   fonts:

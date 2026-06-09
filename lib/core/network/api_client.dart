@@ -138,7 +138,7 @@ class ApiClient {
     required http.Response response,
     required Map<String, String>? headers,
   }) {
-    if (response.statusCode != 401) return false;
+    if (response.statusCode != 401 && response.statusCode != 403) return false;
     if (path == ApiEndpoints.authTokenRefresh) return false;
 
     final authorization = headers?['Authorization'];

@@ -6,6 +6,7 @@ class PlaceItem {
   final String description;
   final String address;
   final bool isBookmarked;
+  final int? bookmarkCount;
   final double latitude;
   final double longitude;
 
@@ -17,6 +18,7 @@ class PlaceItem {
     required this.description,
     required this.address,
     required this.isBookmarked,
+    this.bookmarkCount = 0,
     required this.latitude,
     required this.longitude,
   });
@@ -29,6 +31,7 @@ class PlaceItem {
     String? description,
     String? address,
     bool? isBookmarked,
+    int? bookmarkCount,
     double? latitude,
     double? longitude,
   }) {
@@ -40,6 +43,7 @@ class PlaceItem {
       description: description ?? this.description,
       address: address ?? this.address,
       isBookmarked: isBookmarked ?? this.isBookmarked,
+      bookmarkCount: bookmarkCount ?? this.bookmarkCount ?? 0,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
     );

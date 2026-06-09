@@ -18,6 +18,7 @@ PlaceItem placeItemFromHospital(
     description: '',
     address: hospital.address,
     isBookmarked: hospital.isBookmarked,
+    bookmarkCount: hospital.bookmarkCount,
     latitude: latitude,
     longitude: longitude,
   );
@@ -35,6 +36,7 @@ PlaceItem placeItemFromHospitalDetail(
     description: fallbackPlace.description,
     address: hospital.address,
     isBookmarked: hospital.isBookmarked,
+    bookmarkCount: hospital.bookmarkCount,
     latitude: hospital.lat,
     longitude: hospital.lng,
   );
