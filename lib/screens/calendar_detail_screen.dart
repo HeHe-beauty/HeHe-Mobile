@@ -1543,11 +1543,13 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    final bottomPadding = bottomInset > 0 ? bottomInset : 12.0;
 
     return SafeArea(
       top: false,
+      bottom: false,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(20, 12, 20, bottomInset),
+        padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPadding),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1679,55 +1681,63 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
                   const SizedBox(height: 18),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
                     decoration: BoxDecoration(
-                      color: palette.surfaceSoft.withValues(alpha: 0.62),
+                      color: palette.surface,
                       borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: palette.primary.withValues(alpha: 0.28),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '알림 체크',
+                          '알림 설정',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: palette.textPrimary,
                           ),
                         ),
-                        if (!isPushEnabled) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            '홈 > 설정 > 푸시알림 동의를 켜주세요',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: palette.textSecondary,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 12),
-                        _ChecklistTile(
-                          label: '방문 3일 전에 알림',
+                        const SizedBox(height: 10),
+                        _NotificationSwitchRow(
+                          leadText: '방문 ',
+                          emphasizedText: '3일',
+                          tailText: ' 전에 알림',
                           value: schedule.isThreeDaysBefore,
                           enabled: isPushEnabled,
                           onChanged: onChangedThreeDaysBefore,
                         ),
-                        const SizedBox(height: 10),
-                        _ChecklistTile(
-                          label: '방문 1일 전에 알림',
+                        const SizedBox(height: 8),
+                        _NotificationSwitchRow(
+                          leadText: '방문 ',
+                          emphasizedText: '1일',
+                          tailText: ' 전에 알림',
                           value: schedule.isOneDayBefore,
                           enabled: isPushEnabled,
                           onChanged: onChangedOneDayBefore,
                         ),
-                        const SizedBox(height: 10),
-                        _ChecklistTile(
-                          label: '방문 1시간 전에 알림',
+                        const SizedBox(height: 8),
+                        _NotificationSwitchRow(
+                          leadText: '방문 ',
+                          emphasizedText: '1시간',
+                          tailText: ' 전에 알림',
                           value: schedule.isOneHourBefore,
                           enabled: isPushEnabled,
                           onChanged: onChangedOneHourBefore,
                         ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '알림은 설정에서 변경할 수 있어요.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: palette.textTertiary,
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -1763,14 +1773,18 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
   }
 }
 
-class _ChecklistTile extends StatelessWidget {
-  final String label;
+class _NotificationSwitchRow extends StatelessWidget {
+  final String leadText;
+  final String emphasizedText;
+  final String tailText;
   final bool value;
   final bool enabled;
   final Future<void> Function(bool value) onChanged;
 
-  const _ChecklistTile({
-    required this.label,
+  const _NotificationSwitchRow({
+    required this.leadText,
+    required this.emphasizedText,
+    required this.tailText,
     required this.value,
     required this.enabled,
     required this.onChanged,
@@ -1779,48 +1793,54 @@ class _ChecklistTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    final labelColor = enabled ? palette.textPrimary : palette.textTertiary;
+    final emphasisColor = enabled ? palette.primary : palette.textTertiary;
 
-    return InkWell(
-      onTap: enabled ? () async => onChanged(!value) : null,
-      borderRadius: BorderRadius.circular(12),
-      child: Row(
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            width: 22,
-            height: 22,
-            decoration: BoxDecoration(
-              color: value
-                  ? palette.primary
-                  : enabled
-                  ? palette.surface.withValues(alpha: 0)
-                  : palette.surfaceMuted,
-              borderRadius: BorderRadius.circular(7),
-              border: Border.all(
-                color: value
-                    ? palette.primary
-                    : enabled
-                    ? palette.border
-                    : palette.border.withValues(alpha: 0.72),
-              ),
-            ),
-            child: value
-                ? Icon(Icons.check_rounded, size: 14, color: palette.surface)
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
+    return Row(
+      children: [
+        Icon(
+          Icons.notifications_none_rounded,
+          size: 22,
+          color: enabled ? palette.textSecondary : palette.textTertiary,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: RichText(
+            text: TextSpan(
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: enabled ? palette.textPrimary : palette.textTertiary,
+                color: labelColor,
               ),
+              children: [
+                TextSpan(text: leadText),
+                TextSpan(
+                  text: emphasizedText,
+                  style: TextStyle(
+                    color: emphasisColor,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                TextSpan(text: tailText),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+        Transform.scale(
+          scale: 0.82,
+          child: Switch(
+            value: value,
+            onChanged: enabled
+                ? (nextValue) async => onChanged(nextValue)
+                : null,
+            activeThumbColor: palette.surface,
+            activeTrackColor: palette.primary,
+            inactiveThumbColor: palette.surface,
+            inactiveTrackColor: palette.border.withValues(alpha: 0.72),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ),
+      ],
     );
   }
 }
