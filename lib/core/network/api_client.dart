@@ -38,7 +38,6 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final uri = ApiConfig.uri(path, queryParameters);
-    _logRequest(method: 'GET', uri: uri, headers: headers);
 
     return _sendWithAuthRetry(
       path: path,
@@ -56,7 +55,6 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final uri = ApiConfig.uri(path);
-    _logRequest(method: 'POST', uri: uri, headers: headers, body: body);
 
     return _sendWithAuthRetry(
       path: path,
@@ -77,7 +75,6 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final uri = ApiConfig.uri(path);
-    _logRequest(method: 'PATCH', uri: uri, headers: headers, body: body);
 
     return _sendWithAuthRetry(
       path: path,
@@ -98,7 +95,6 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final uri = ApiConfig.uri(path);
-    _logRequest(method: 'DELETE', uri: uri, headers: headers, body: body);
 
     return _sendWithAuthRetry(
       path: path,
@@ -228,55 +224,6 @@ class ApiClient {
     }
 
     return jsonDecode(response.body) as Map<String, dynamic>;
-  }
-
-  static void _logRequest({
-    required String method,
-    required Uri uri,
-    required Map<String, String>? headers,
-    Map<String, dynamic>? body,
-  }) {
-    debugPrint(
-      '[ApiClient] request $method ${uri.path} '
-      'query=${uri.query.isEmpty ? '<none>' : uri.query} '
-      'headers=${_sanitizeHeaders(headers)} '
-      'body=${_sanitizeBody(body)}',
-    );
-  }
-
-  static Map<String, String>? _sanitizeHeaders(Map<String, String>? headers) {
-    if (headers == null || headers.isEmpty) return headers;
-
-    return headers.map((key, value) {
-      if (key.toLowerCase() == 'authorization') {
-        return MapEntry(key, _maskedAuthorization(value));
-      }
-
-      return MapEntry(key, value);
-    });
-  }
-
-  static Map<String, dynamic>? _sanitizeBody(Map<String, dynamic>? body) {
-    if (body == null || body.isEmpty) return body;
-
-    return body.map((key, value) {
-      final lowerKey = key.toLowerCase();
-      if (lowerKey.contains('token')) {
-        return MapEntry(
-          key,
-          value is String ? _maskedToken(value) : '<redacted>',
-        );
-      }
-
-      return MapEntry(key, value);
-    });
-  }
-
-  static String _maskedAuthorization(String authorization) {
-    const bearerPrefix = 'Bearer ';
-    if (!authorization.startsWith(bearerPrefix)) return '<redacted>';
-
-    return 'Bearer ${_maskedToken(authorization.substring(bearerPrefix.length))}';
   }
 
   static String _maskedToken(String token) {

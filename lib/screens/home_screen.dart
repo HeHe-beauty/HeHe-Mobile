@@ -42,9 +42,25 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with WidgetsBindingObserver, DateRefreshMixin {
   static const int _maxVisibleReservations = 2;
-  static const List<String> _tutorialImageAssets = [
-    'assets/images/tutorial/tutorial_1.png',
-    'assets/images/tutorial/tutorial_2.png',
+  static const List<_TutorialGuideItem> _tutorialGuides = [
+    _TutorialGuideItem(
+      title: '병원 찾아보기',
+      subtitle: '3단계로 사용 방법을 확인해요',
+      imageAssets: [
+        'assets/images/tutorial/1_1.png',
+        'assets/images/tutorial/1_2.png',
+        'assets/images/tutorial/1_3.png',
+      ],
+    ),
+    _TutorialGuideItem(
+      title: '일정 관리하기',
+      subtitle: '3단계로 사용 방법을 확인해요',
+      imageAssets: [
+        'assets/images/tutorial/2_1.png',
+        'assets/images/tutorial/2_2.png',
+        'assets/images/tutorial/2_3.png',
+      ],
+    ),
   ];
   List<EquipDto> _devices = [];
   List<ContentItem> _contents = HomeCatalog.contents;
@@ -416,8 +432,7 @@ class _HomeScreenState extends State<HomeScreen>
     return showDialog<void>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.42),
-      builder: (_) =>
-          const _TutorialGuideDialog(imageAssets: _tutorialImageAssets),
+      builder: (_) => const _TutorialGuideDialog(guides: _tutorialGuides),
     );
   }
 
@@ -869,10 +884,22 @@ class _HomeGuideBanner extends StatelessWidget {
   }
 }
 
-class _TutorialGuideDialog extends StatefulWidget {
+class _TutorialGuideItem {
+  final String title;
+  final String subtitle;
   final List<String> imageAssets;
 
-  const _TutorialGuideDialog({required this.imageAssets});
+  const _TutorialGuideItem({
+    required this.title,
+    required this.subtitle,
+    required this.imageAssets,
+  });
+}
+
+class _TutorialGuideDialog extends StatefulWidget {
+  final List<_TutorialGuideItem> guides;
+
+  const _TutorialGuideDialog({required this.guides});
 
   @override
   State<_TutorialGuideDialog> createState() => _TutorialGuideDialogState();
@@ -880,6 +907,7 @@ class _TutorialGuideDialog extends StatefulWidget {
 
 class _TutorialGuideDialogState extends State<_TutorialGuideDialog> {
   late final PageController _pageController;
+  _TutorialGuideItem? _selectedGuide;
   int _pageIndex = 0;
 
   @override
@@ -894,12 +922,30 @@ class _TutorialGuideDialogState extends State<_TutorialGuideDialog> {
     super.dispose();
   }
 
+  void _selectGuide(_TutorialGuideItem guide) {
+    setState(() {
+      _selectedGuide = guide;
+      _pageIndex = 0;
+    });
+
+    if (_pageController.hasClients) {
+      _pageController.jumpToPage(0);
+    }
+  }
+
+  void _backToGuideList() {
+    setState(() {
+      _selectedGuide = null;
+      _pageIndex = 0;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
     final size = MediaQuery.sizeOf(context);
-    final dialogWidth = size.width.clamp(0.0, 430.0) - 32;
-    final imageHeight = (dialogWidth * 0.68).clamp(220.0, size.height * 0.62);
+    final guide = _selectedGuide;
+    final imageHeight = (size.height * 0.64).clamp(420.0, 620.0);
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -914,9 +960,22 @@ class _TutorialGuideDialogState extends State<_TutorialGuideDialog> {
             children: [
               Row(
                 children: [
+                  if (guide != null) ...[
+                    IconButton(
+                      onPressed: _backToGuideList,
+                      icon: Icon(
+                        Icons.chevron_left_rounded,
+                        color: palette.textSecondary,
+                        size: 24,
+                      ),
+                      splashRadius: 20,
+                      tooltip: '뒤로',
+                    ),
+                    const SizedBox(width: 2),
+                  ],
                   Expanded(
                     child: Text(
-                      '서비스 안내',
+                      guide?.title ?? '서비스 안내',
                       style: AppTextStyles.homeBodyStrong.copyWith(
                         color: palette.textPrimary,
                         fontSize: 17,
@@ -938,49 +997,135 @@ class _TutorialGuideDialogState extends State<_TutorialGuideDialog> {
                 ],
               ),
               const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(18),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: imageHeight,
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: widget.imageAssets.length,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _pageIndex = index;
-                      });
-                    },
-                    itemBuilder: (context, index) {
-                      return ColoredBox(
-                        color: palette.bg,
-                        child: Image.asset(
-                          widget.imageAssets[index],
-                          fit: BoxFit.contain,
-                        ),
-                      );
-                    },
+              if (guide == null) ...[
+                for (final item in widget.guides) ...[
+                  _TutorialGuideOption(
+                    item: item,
+                    onTap: () => _selectGuide(item),
                   ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  widget.imageAssets.length,
-                  (index) => AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    width: index == _pageIndex ? 18 : 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      color: index == _pageIndex
-                          ? palette.primary
-                          : palette.primary.withValues(alpha: 0.22),
-                      borderRadius: BorderRadius.circular(99),
+                  if (item != widget.guides.last) const SizedBox(height: 10),
+                ],
+              ] else ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: imageHeight,
+                    child: PageView.builder(
+                      controller: _pageController,
+                      itemCount: guide.imageAssets.length,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _pageIndex = index;
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        return ColoredBox(
+                          color: palette.bg,
+                          child: Image.asset(
+                            guide.imageAssets[index],
+                            fit: BoxFit.contain,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    guide.imageAssets.length,
+                    (index) => AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: index == _pageIndex ? 18 : 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: index == _pageIndex
+                            ? palette.primary
+                            : palette.primary.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TutorialGuideOption extends StatelessWidget {
+  final _TutorialGuideItem item;
+  final VoidCallback onTap;
+
+  const _TutorialGuideOption({required this.item, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
+          decoration: BoxDecoration(
+            color: palette.surfaceSoft.withValues(alpha: 0.72),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: palette.border.withValues(alpha: 0.72)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: palette.primarySoft,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.menu_book_rounded,
+                  size: 20,
+                  color: palette.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: palette.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: palette.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 22,
+                color: palette.textTertiary,
               ),
             ],
           ),

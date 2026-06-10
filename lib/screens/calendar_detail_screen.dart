@@ -1837,6 +1837,7 @@ class _NotificationSwitchRow extends StatelessWidget {
             activeTrackColor: palette.primary,
             inactiveThumbColor: palette.surface,
             inactiveTrackColor: palette.border.withValues(alpha: 0.72),
+            trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ),
