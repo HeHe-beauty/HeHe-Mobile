@@ -646,7 +646,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
       initialDateTime: seedDate,
       fixedDate: fixedDate,
       initialHospitalName: initialSchedule?.hospitalName,
-      title: initialSchedule == null ? '일정을 등록할까요?' : '일정을 수정할까요?',
+      title: initialSchedule == null ? '병원 방문 일정을 등록할까요?' : '일정을 수정할까요?',
     );
 
     if (result == null) return;

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:naver_login_sdk/naver_login_sdk.dart';
 
@@ -42,11 +43,18 @@ class SocialLoginService {
   static bool _isNaverInitialized = false;
 
   static Future<void> initialize() async {
+    debugPrint(
+      '[Auth][Social] initialize start '
+      'kakaoConfigured=${OAuthConfig.isKakaoConfigured} '
+      'naverConfigured=${OAuthConfig.isNaverConfigured}',
+    );
+
     if (OAuthConfig.isKakaoConfigured) {
       await KakaoSdk.init(
         nativeAppKey: OAuthConfig.kakaoNativeAppKey,
         customScheme: OAuthConfig.resolvedKakaoCustomScheme,
       );
+      debugPrint('[Auth][Kakao] SDK initialized');
     }
 
     if (OAuthConfig.isNaverConfigured) {
@@ -56,6 +64,7 @@ class SocialLoginService {
         clientSecret: OAuthConfig.naverClientSecret,
         clientName: OAuthConfig.naverClientName,
       );
+      debugPrint('[Auth][Naver] SDK initialized=$_isNaverInitialized');
     }
   }
 
@@ -65,16 +74,24 @@ class SocialLoginService {
     }
 
     try {
+      debugPrint('[Auth][Kakao] login start');
       final isTalkInstalled = await isKakaoTalkInstalled();
+      debugPrint('[Auth][Kakao] kakaoTalkInstalled=$isTalkInstalled');
       final token = isTalkInstalled
           ? await UserApi.instance.loginWithKakaoTalk()
           : await UserApi.instance.loginWithKakaoAccount();
+      debugPrint(
+        '[Auth][Kakao] token received '
+        'accessToken=${_maskedToken(token.accessToken)} '
+        'idTokenPresent=${token.idToken != null}',
+      );
       return SocialLoginCredential(
         provider: SocialLoginProvider.kakao,
         accessToken: token.accessToken,
         idToken: token.idToken,
       );
     } catch (e) {
+      debugPrint('[Auth][Kakao] login error: $e');
       throw SocialLoginException(_messageForKakaoError(e));
     }
   }
@@ -84,31 +101,45 @@ class SocialLoginService {
       throw const SocialLoginException('네이버 로그인 설정이 아직 연결되지 않았어요.');
     }
 
+    debugPrint('[Auth][Naver] login start initialized=$_isNaverInitialized');
     String? failureMessage;
     final isLoggedIn = await NaverLoginSDK.login(
       callback: OAuthLoginCallback(
-        onSuccess: () {},
+        onSuccess: () {
+          debugPrint('[Auth][Naver] SDK login success callback');
+        },
         onFailure: (httpStatus, message) {
           failureMessage = message.isNotEmpty
               ? message
               : '네이버 로그인에 실패했어요. ($httpStatus)';
+          debugPrint(
+            '[Auth][Naver] SDK login failure '
+            'httpStatus=$httpStatus message=$message',
+          );
         },
         onError: (errorCode, message) {
           failureMessage = message.isNotEmpty
               ? message
               : '네이버 로그인에 실패했어요. ($errorCode)';
+          debugPrint(
+            '[Auth][Naver] SDK login error '
+            'errorCode=$errorCode message=$message',
+          );
         },
       ),
     );
 
     if (!isLoggedIn) {
+      debugPrint('[Auth][Naver] login canceled/failed: $failureMessage');
       throw SocialLoginException(failureMessage ?? '네이버 로그인이 취소되었어요.');
     }
 
     final accessToken = await NaverLoginSDK.getAccessToken();
     if (accessToken.isEmpty) {
+      debugPrint('[Auth][Naver] access token is empty after SDK login');
       throw const SocialLoginException('네이버 로그인 토큰을 가져오지 못했어요.');
     }
+    debugPrint('[Auth][Naver] token received ${_maskedToken(accessToken)}');
 
     return SocialLoginCredential(
       provider: SocialLoginProvider.naver,
@@ -125,5 +156,13 @@ class SocialLoginService {
     }
 
     return '카카오 로그인에 실패했어요.';
+  }
+
+  static String _maskedToken(String token) {
+    if (token.isEmpty) return '<empty>';
+    if (token.length <= 12) return '<len:${token.length}>';
+
+    return '${token.substring(0, 6)}...${token.substring(token.length - 4)}'
+        '(len:${token.length})';
   }
 }

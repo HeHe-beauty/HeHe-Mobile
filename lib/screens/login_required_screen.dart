@@ -29,10 +29,17 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
     });
 
     try {
+      debugPrint('[Auth][LoginScreen] login tapped provider=${provider.name}');
       final credential = switch (provider) {
         SocialLoginProvider.kakao => await SocialLoginService.loginWithKakao(),
         SocialLoginProvider.naver => await SocialLoginService.loginWithNaver(),
       };
+      debugPrint(
+        '[Auth][LoginScreen] social credential ready '
+        'provider=${credential.provider.name} '
+        'accessToken=${_maskedToken(credential.accessToken)} '
+        'idTokenPresent=${credential.idToken != null}',
+      );
 
       final auth = await AuthRepository.login(
         provider: credential.provider.name,
@@ -49,16 +56,19 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
       );
 
       await AuthSessionStore.write(session);
+      debugPrint('[Auth][LoginScreen] auth session saved');
 
       if (!mounted) return;
 
       _completeLogin(context, session);
       await NotificationPermissionService.syncCurrentDeviceTokenPreference();
     } on SocialLoginException catch (e) {
+      debugPrint('[Auth][LoginScreen] social login exception: $e');
       if (mounted) {
         showAppSnackBar(context, e.message);
       }
     } catch (e) {
+      debugPrint('[Auth][LoginScreen] login error: $e');
       if (mounted) {
         showAppSnackBar(context, '로그인에 실패했어요. 잠시 후 다시 시도해주세요.');
       }
@@ -73,6 +83,9 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
 
   void _completeLogin(BuildContext context, AuthSession session) {
     AuthState.logIn(authSession: session);
+    debugPrint(
+      '[Auth][LoginScreen] AuthState updated userId=${session.userId}',
+    );
     showAppSnackBar(context, '로그인 완료');
 
     Future.delayed(const Duration(milliseconds: 200), () {
@@ -80,6 +93,14 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
         Navigator.pop(context);
       }
     });
+  }
+
+  static String _maskedToken(String token) {
+    if (token.isEmpty) return '<empty>';
+    if (token.length <= 12) return '<len:${token.length}>';
+
+    return '${token.substring(0, 6)}...${token.substring(token.length - 4)}'
+        '(len:${token.length})';
   }
 
   @override

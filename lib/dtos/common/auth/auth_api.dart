@@ -12,7 +12,11 @@ class AuthApi {
 
   static Future<AuthLoginResponseDto> login(AuthLoginRequestDto request) async {
     final requestBody = request.toJson();
-    debugPrint('Auth login request body: $requestBody');
+    debugPrint(
+      '[Auth][Api] login request '
+      'provider=${request.provider} '
+      'accessToken=${_maskedToken(request.accessToken)}',
+    );
 
     final body = await _apiClient.post(
       ApiEndpoints.authLogin,
@@ -42,5 +46,13 @@ class AuthApi {
     final data = body['data'] as Map<String, dynamic>;
 
     return AuthTokenRefreshResponseDto.fromJson(data);
+  }
+
+  static String _maskedToken(String token) {
+    if (token.isEmpty) return '<empty>';
+    if (token.length <= 12) return '<len:${token.length}>';
+
+    return '${token.substring(0, 6)}...${token.substring(token.length - 4)}'
+        '(len:${token.length})';
   }
 }

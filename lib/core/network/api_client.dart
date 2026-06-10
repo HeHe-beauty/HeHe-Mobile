@@ -38,10 +38,12 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final uri = ApiConfig.uri(path, queryParameters);
+    _logRequest(method: 'GET', uri: uri, headers: headers);
 
     return _sendWithAuthRetry(
       path: path,
       method: 'GET',
+      uri: uri,
       headers: headers,
       send: (requestHeaders) =>
           _client.get(uri, headers: _jsonHeaders(requestHeaders)),
@@ -54,10 +56,12 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final uri = ApiConfig.uri(path);
+    _logRequest(method: 'POST', uri: uri, headers: headers, body: body);
 
     return _sendWithAuthRetry(
       path: path,
       method: 'POST',
+      uri: uri,
       headers: headers,
       send: (requestHeaders) => _client.post(
         uri,
@@ -73,10 +77,12 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final uri = ApiConfig.uri(path);
+    _logRequest(method: 'PATCH', uri: uri, headers: headers, body: body);
 
     return _sendWithAuthRetry(
       path: path,
       method: 'PATCH',
+      uri: uri,
       headers: headers,
       send: (requestHeaders) => _client.patch(
         uri,
@@ -92,10 +98,12 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final uri = ApiConfig.uri(path);
+    _logRequest(method: 'DELETE', uri: uri, headers: headers, body: body);
 
     return _sendWithAuthRetry(
       path: path,
       method: 'DELETE',
+      uri: uri,
       headers: headers,
       send: (requestHeaders) => _client.delete(
         uri,
@@ -112,6 +120,7 @@ class ApiClient {
   Future<Map<String, dynamic>> _sendWithAuthRetry({
     required String path,
     required String method,
+    required Uri uri,
     required Map<String, String>? headers,
     required Future<http.Response> Function(Map<String, String>? headers) send,
   }) async {
@@ -129,6 +138,7 @@ class ApiClient {
       ...?headers,
       'Authorization': 'Bearer $refreshedAccessToken',
     };
+    debugPrint('[ApiClient] retrying $method ${uri.path} after token refresh');
     final retriedResponse = await send(retriedHeaders);
     return _decodeJsonResponse(retriedResponse, method: method);
   }
@@ -164,12 +174,18 @@ class ApiClient {
   Future<String> _performRefreshAccessToken() async {
     final savedSession = await AuthSessionStore.read();
     if (savedSession == null) {
+      debugPrint('[ApiClient][Auth] refresh skipped: no saved session');
       AuthState.logOut();
       throw const ApiException(statusCode: 401, method: 'POST');
     }
 
+    final uri = ApiConfig.uri(ApiEndpoints.authTokenRefresh);
+    debugPrint(
+      '[ApiClient][Auth] refresh request '
+      'refreshToken=${_maskedToken(savedSession.refreshToken)}',
+    );
     final response = await _client.post(
-      ApiConfig.uri(ApiEndpoints.authTokenRefresh),
+      uri,
       headers: _jsonHeaders(null),
       body: _encodeJsonBody({'refreshToken': savedSession.refreshToken}),
     );
@@ -177,6 +193,7 @@ class ApiClient {
     if (response.statusCode == 401 || response.statusCode == 403) {
       await AuthSessionStore.clear();
       AuthState.logOut();
+      debugPrint('[ApiClient][Auth] refresh failed and session cleared');
       throw ApiException(statusCode: response.statusCode, method: 'POST');
     }
 
@@ -211,5 +228,62 @@ class ApiClient {
     }
 
     return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  static void _logRequest({
+    required String method,
+    required Uri uri,
+    required Map<String, String>? headers,
+    Map<String, dynamic>? body,
+  }) {
+    debugPrint(
+      '[ApiClient] request $method ${uri.path} '
+      'query=${uri.query.isEmpty ? '<none>' : uri.query} '
+      'headers=${_sanitizeHeaders(headers)} '
+      'body=${_sanitizeBody(body)}',
+    );
+  }
+
+  static Map<String, String>? _sanitizeHeaders(Map<String, String>? headers) {
+    if (headers == null || headers.isEmpty) return headers;
+
+    return headers.map((key, value) {
+      if (key.toLowerCase() == 'authorization') {
+        return MapEntry(key, _maskedAuthorization(value));
+      }
+
+      return MapEntry(key, value);
+    });
+  }
+
+  static Map<String, dynamic>? _sanitizeBody(Map<String, dynamic>? body) {
+    if (body == null || body.isEmpty) return body;
+
+    return body.map((key, value) {
+      final lowerKey = key.toLowerCase();
+      if (lowerKey.contains('token')) {
+        return MapEntry(
+          key,
+          value is String ? _maskedToken(value) : '<redacted>',
+        );
+      }
+
+      return MapEntry(key, value);
+    });
+  }
+
+  static String _maskedAuthorization(String authorization) {
+    const bearerPrefix = 'Bearer ';
+    if (!authorization.startsWith(bearerPrefix)) return '<redacted>';
+
+    return 'Bearer ${_maskedToken(authorization.substring(bearerPrefix.length))}';
+  }
+
+  static String _maskedToken(String token) {
+    if (token.isEmpty) return '<empty>';
+    if (token.length <= 12) return '<len:${token.length}>';
+
+    return '${token.substring(0, 6)}...${token.substring(token.length - 4)}'
+        '(len:${token.length})';
   }
 }
