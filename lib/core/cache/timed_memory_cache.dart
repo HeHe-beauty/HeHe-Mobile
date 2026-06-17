@@ -3,6 +3,8 @@ class TimedMemoryCache<K, V> {
   final Map<K, V> _values = {};
   final Map<K, DateTime> _fetchedAt = {};
   final Map<K, Future<V>> _inFlight = {};
+  final Map<K, Object> _inFlightTokens = {};
+  int _generation = 0;
 
   TimedMemoryCache({required this.ttl});
 
@@ -22,27 +24,37 @@ class TimedMemoryCache<K, V> {
     }
 
     final inFlight = _inFlight[key];
-    if (inFlight != null) {
+    if (!forceRefresh && inFlight != null) {
       return inFlight;
     }
 
+    final requestGeneration = _generation;
+    final requestToken = Object();
     final request = fetch()
         .then((value) {
-          _values[key] = value;
-          _fetchedAt[key] = DateTime.now();
+          if (requestGeneration == _generation) {
+            _values[key] = value;
+            _fetchedAt[key] = DateTime.now();
+          }
           return value;
         })
         .whenComplete(() {
-          _inFlight.remove(key);
+          if (identical(_inFlightTokens[key], requestToken)) {
+            _inFlight.remove(key);
+            _inFlightTokens.remove(key);
+          }
         });
 
     _inFlight[key] = request;
+    _inFlightTokens[key] = requestToken;
     return request;
   }
 
   void clear() {
+    _generation += 1;
     _values.clear();
     _fetchedAt.clear();
     _inFlight.clear();
+    _inFlightTokens.clear();
   }
 }

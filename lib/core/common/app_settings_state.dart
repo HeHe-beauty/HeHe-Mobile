@@ -45,29 +45,23 @@ class AppSettingsState {
   static Future<void> syncNotificationPermissionGranted({
     required bool granted,
   }) async {
-    final savedPushEnabled = await _storage.read(key: _pushEnabledKey);
-    final savedNightPushEnabled = await _storage.read(
-      key: _nightPushEnabledKey,
-    );
-    final savedMarketingEnabled = await _storage.read(
-      key: _marketingEnabledKey,
-    );
-
     final nextPushEnabled =
-        granted &&
-        (_pendingPushEnableFromSettings || savedPushEnabled != 'false');
-    pushEnabled.value = nextPushEnabled;
-    await _writeBool(_pushEnabledKey, nextPushEnabled);
+        granted && (_pendingPushEnableFromSettings || pushEnabled.value);
+    await _setBoolValue(pushEnabled, _pushEnabledKey, nextPushEnabled);
 
-    final nextNightPushEnabled =
-        nextPushEnabled && savedNightPushEnabled == _trueValue;
-    nightPushEnabled.value = nextNightPushEnabled;
-    await _writeBool(_nightPushEnabledKey, nextNightPushEnabled);
+    final nextNightPushEnabled = nextPushEnabled && nightPushEnabled.value;
+    await _setBoolValue(
+      nightPushEnabled,
+      _nightPushEnabledKey,
+      nextNightPushEnabled,
+    );
 
-    final nextMarketingEnabled =
-        nextPushEnabled && savedMarketingEnabled == _trueValue;
-    marketingEnabled.value = nextMarketingEnabled;
-    await _writeBool(_marketingEnabledKey, nextMarketingEnabled);
+    final nextMarketingEnabled = nextPushEnabled && marketingEnabled.value;
+    await _setBoolValue(
+      marketingEnabled,
+      _marketingEnabledKey,
+      nextMarketingEnabled,
+    );
 
     _pendingPushEnableFromSettings = false;
   }
@@ -122,5 +116,18 @@ class AppSettingsState {
 
   static Future<void> _writeBool(String key, bool value) {
     return _storage.write(key: key, value: value ? _trueValue : 'false');
+  }
+
+  static Future<void> _setBoolValue(
+    ValueNotifier<bool> notifier,
+    String key,
+    bool value,
+  ) {
+    if (notifier.value == value) {
+      return Future.value();
+    }
+
+    notifier.value = value;
+    return _writeBool(key, value);
   }
 }
