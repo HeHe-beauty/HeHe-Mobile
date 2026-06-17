@@ -75,23 +75,8 @@ class VisitScheduleBottomSheet extends StatefulWidget {
 }
 
 class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
-  static const double _datePickerViewportHeight = 98;
-  static const double _timePickerViewportHeight = 98;
-  static const double _selectedPillHeight = 36;
-
   late final TextEditingController _hospitalController;
   late final FocusNode _hospitalFocusNode;
-
-  late final List<int> _years;
-  late final List<int> _months;
-  late final List<int> _hours;
-  late final List<int> _minutes;
-
-  late FixedExtentScrollController _yearController;
-  late FixedExtentScrollController _monthController;
-  late FixedExtentScrollController _dayController;
-  late FixedExtentScrollController _hourController;
-  late FixedExtentScrollController _minuteController;
 
   bool _showHospitalNameError = false;
   late bool _hasSelectedDate;
@@ -125,15 +110,40 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
     return '${_selectedHour.toString().padLeft(2, '0')}:${_selectedMinute.toString().padLeft(2, '0')}';
   }
 
+  String get _selectedTimeDisplayLabel {
+    final period = _selectedHour < 12 ? '오전' : '오후';
+    final displayHour = _selectedHour % 12 == 0 ? 12 : _selectedHour % 12;
+    return '$period $displayHour:${_selectedMinute.toString().padLeft(2, '0')}';
+  }
+
   String get _fixedDateLabel {
     final date = _effectiveFixedDate;
     return '${date.year}년 ${date.month}월 ${date.day}일';
   }
 
-  List<int> get _days => List.generate(
-    _daysInMonth(_selectedYear, _selectedMonth),
-    (index) => index + 1,
-  );
+  List<_TimeOption> get _timeOptions {
+    final options = <_TimeOption>[
+      for (var hour = 0; hour < 24; hour++) ...[
+        _TimeOption(hour: hour, minute: 0),
+        _TimeOption(hour: hour, minute: 30),
+      ],
+    ];
+
+    final selectedOption = _TimeOption(
+      hour: _selectedHour,
+      minute: _selectedMinute,
+    );
+    if (!options.contains(selectedOption)) {
+      options.add(selectedOption);
+      options.sort((a, b) {
+        final aMinutes = (a.hour * 60) + a.minute;
+        final bMinutes = (b.hour * 60) + b.minute;
+        return aMinutes.compareTo(bMinutes);
+      });
+    }
+
+    return options;
+  }
 
   @override
   void initState() {
@@ -142,12 +152,6 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
     final now = AppTime.now();
     final initialDateTime = widget.initialDateTime ?? now;
     final minYear = now.year;
-    final maxYear = math.max(now.year + 10, initialDateTime.year);
-
-    _years = List.generate(maxYear - minYear + 1, (index) => minYear + index);
-    _months = List.generate(12, (index) => index + 1);
-    _hours = List.generate(24, (index) => index);
-    _minutes = List.generate(60, (index) => index);
 
     _selectedYear = math.max(initialDateTime.year, minYear);
     _selectedMonth = initialDateTime.month;
@@ -165,18 +169,6 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
     );
     _hospitalFocusNode = FocusNode();
     _hospitalController.addListener(_onHospitalNameChanged);
-
-    _yearController = FixedExtentScrollController(
-      initialItem: _years.indexOf(_selectedYear),
-    );
-    _monthController = FixedExtentScrollController(
-      initialItem: _selectedMonth - 1,
-    );
-    _dayController = FixedExtentScrollController(initialItem: _selectedDay - 1);
-    _hourController = FixedExtentScrollController(initialItem: _selectedHour);
-    _minuteController = FixedExtentScrollController(
-      initialItem: _selectedMinute,
-    );
   }
 
   @override
@@ -184,11 +176,6 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
     _hospitalController.removeListener(_onHospitalNameChanged);
     _hospitalController.dispose();
     _hospitalFocusNode.dispose();
-    _yearController.dispose();
-    _monthController.dispose();
-    _dayController.dispose();
-    _hourController.dispose();
-    _minuteController.dispose();
     super.dispose();
   }
 
@@ -232,57 +219,47 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
     Navigator.of(context).pop(result);
   }
 
-  void _onSelectedYear(int index) {
-    final nextYear = _years[index];
-    if (nextYear == _selectedYear) return;
-
-    HapticFeedback.selectionClick();
-    setState(() {
-      _selectedYear = nextYear;
-      _syncDaySelection();
-    });
-  }
-
-  void _onSelectedMonth(int index) {
-    final nextMonth = _months[index];
-    if (nextMonth == _selectedMonth) return;
-
-    HapticFeedback.selectionClick();
-    setState(() {
-      _selectedMonth = nextMonth;
-      _syncDaySelection();
-    });
-  }
-
-  void _onSelectedDay(int index) {
-    final nextDay = _days[index];
-    if (nextDay == _selectedDay) return;
-
-    HapticFeedback.selectionClick();
-    setState(() {
-      _selectedDay = nextDay;
-    });
-  }
-
   void _syncDaySelection() {
     final maxDay = _daysInMonth(_selectedYear, _selectedMonth);
     if (_selectedDay <= maxDay) return;
 
     _selectedDay = maxDay;
-    final previousController = _dayController;
-    _dayController = FixedExtentScrollController(initialItem: _selectedDay - 1);
-    previousController.dispose();
+  }
+
+  void _moveCalendarMonth(int offset) {
+    final nextMonth = DateTime(_selectedYear, _selectedMonth + offset);
+
+    HapticFeedback.selectionClick();
+    setState(() {
+      _selectedYear = nextMonth.year;
+      _selectedMonth = nextMonth.month;
+      _syncDaySelection();
+    });
+  }
+
+  void _selectCalendarDay(DateTime date) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _selectedYear = date.year;
+      _selectedMonth = date.month;
+      _selectedDay = date.day;
+      _hasSelectedDate = true;
+    });
+  }
+
+  void _selectTimeOption(_TimeOption option) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _selectedHour = option.hour;
+      _selectedMinute = option.minute;
+      _hasSelectedTime = true;
+    });
   }
 
   Future<void> _openDatePicker() async {
     if (_isFixedDateMode) return;
 
     FocusManager.instance.primaryFocus?.unfocus();
-    if (!_hasSelectedDate) {
-      setState(() {
-        _hasSelectedDate = true;
-      });
-    }
 
     await showModalBottomSheet<void>(
       context: context,
@@ -293,42 +270,30 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
         return StatefulBuilder(
           builder: (context, setPickerState) {
             return _PickerSheetFrame(
-              title: '언제 방문하세요?',
-              child: _DatePickerRow(
-                height: _datePickerViewportHeight,
-                yearCard: _WheelPickerCard(
-                  child: _WheelPickerColumn(
-                    values: _years,
-                    selectedValue: _selectedYear,
-                    scrollController: _yearController,
-                    onSelectedItemChanged: (index) {
-                      _onSelectedYear(index);
-                      setPickerState(() {});
-                    },
-                  ),
-                ),
-                monthCard: _WheelPickerCard(
-                  child: _WheelPickerColumn(
-                    values: _months,
-                    selectedValue: _selectedMonth,
-                    scrollController: _monthController,
-                    onSelectedItemChanged: (index) {
-                      _onSelectedMonth(index);
-                      setPickerState(() {});
-                    },
-                  ),
-                ),
-                dayCard: _WheelPickerCard(
-                  child: _WheelPickerColumn(
-                    values: _days,
-                    selectedValue: _selectedDay,
-                    scrollController: _dayController,
-                    onSelectedItemChanged: (index) {
-                      _onSelectedDay(index);
-                      setPickerState(() {});
-                    },
-                  ),
-                ),
+              title: '날짜 선택',
+              onClose: () => Navigator.of(context).pop(),
+              child: _CalendarDatePickerBody(
+                year: _selectedYear,
+                month: _selectedMonth,
+                selectedDay: _hasSelectedDate ? _selectedDay : null,
+                onPreviousMonth: () {
+                  _moveCalendarMonth(-1);
+                  setPickerState(() {});
+                },
+                onNextMonth: () {
+                  _moveCalendarMonth(1);
+                  setPickerState(() {});
+                },
+                onSelectDay: (date) {
+                  _selectCalendarDay(date);
+                  setPickerState(() {});
+                },
+                onConfirm: _hasSelectedDate
+                    ? () => Navigator.of(context).pop()
+                    : null,
+                confirmLabel: _hasSelectedDate
+                    ? '$_selectedDateLabel 선택'
+                    : '날짜를 선택해주세요',
               ),
             );
           },
@@ -339,11 +304,6 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
 
   Future<void> _openTimePicker() async {
     FocusManager.instance.primaryFocus?.unfocus();
-    if (!_hasSelectedTime) {
-      setState(() {
-        _hasSelectedTime = true;
-      });
-    }
 
     await showModalBottomSheet<void>(
       context: context,
@@ -354,43 +314,22 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
         return StatefulBuilder(
           builder: (context, setPickerState) {
             return _PickerSheetFrame(
-              title: '몇시에 방문하세요?',
-              child: _TimePickerRow(
-                height: _timePickerViewportHeight,
-                hourCard: _WheelPickerCard(
-                  child: _WheelPickerColumn(
-                    values: _hours,
-                    selectedValue: _selectedHour,
-                    scrollController: _hourController,
-                    onSelectedItemChanged: (index) {
-                      final nextHour = _hours[index];
-                      if (nextHour == _selectedHour) return;
-
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        _selectedHour = nextHour;
-                      });
-                      setPickerState(() {});
-                    },
-                  ),
-                ),
-                minuteCard: _WheelPickerCard(
-                  child: _WheelPickerColumn(
-                    values: _minutes,
-                    selectedValue: _selectedMinute,
-                    scrollController: _minuteController,
-                    onSelectedItemChanged: (index) {
-                      final nextMinute = _minutes[index];
-                      if (nextMinute == _selectedMinute) return;
-
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        _selectedMinute = nextMinute;
-                      });
-                      setPickerState(() {});
-                    },
-                  ),
-                ),
+              title: '시간 선택',
+              onClose: () => Navigator.of(context).pop(),
+              child: _TimeListPickerBody(
+                options: _timeOptions,
+                selectedHour: _hasSelectedTime ? _selectedHour : null,
+                selectedMinute: _hasSelectedTime ? _selectedMinute : null,
+                onSelect: (option) {
+                  _selectTimeOption(option);
+                  setPickerState(() {});
+                },
+                onConfirm: _hasSelectedTime
+                    ? () => Navigator.of(context).pop()
+                    : null,
+                confirmLabel: _hasSelectedTime
+                    ? _selectedTimeDisplayLabel
+                    : '시간을 선택해주세요',
               ),
             );
           },
@@ -552,9 +491,14 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
 
 class _PickerSheetFrame extends StatelessWidget {
   final String title;
+  final VoidCallback onClose;
   final Widget child;
 
-  const _PickerSheetFrame({required this.title, required this.child});
+  const _PickerSheetFrame({
+    required this.title,
+    required this.onClose,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -581,13 +525,39 @@ class _PickerSheetFrame extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: palette.textPrimary,
+            SizedBox(
+              height: 28,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Center(
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: palette.textPrimary,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: -8,
+                    top: 0,
+                    bottom: 0,
+                    child: IconButton(
+                      onPressed: onClose,
+                      icon: const Icon(Icons.close_rounded),
+                      color: palette.textSecondary,
+                      iconSize: 22,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 18),
@@ -597,6 +567,31 @@ class _PickerSheetFrame extends StatelessWidget {
       ),
     );
   }
+}
+
+class _TimeOption {
+  final int hour;
+  final int minute;
+
+  const _TimeOption({required this.hour, required this.minute});
+
+  String get label {
+    final period = hour < 12 ? '오전' : '오후';
+    final displayHour = hour % 12 == 0 ? 12 : hour % 12;
+    return '$period $displayHour:${minute.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is _TimeOption &&
+            runtimeType == other.runtimeType &&
+            hour == other.hour &&
+            minute == other.minute;
+  }
+
+  @override
+  int get hashCode => Object.hash(hour, minute);
 }
 
 class _HospitalInputRow extends StatelessWidget {
@@ -827,203 +822,337 @@ class _RequiredInputBubbleTailPainter extends CustomPainter {
   }
 }
 
-class _DatePickerRow extends StatelessWidget {
-  final double height;
-  final Widget yearCard;
-  final Widget monthCard;
-  final Widget dayCard;
+class _CalendarDatePickerBody extends StatelessWidget {
+  final int year;
+  final int month;
+  final int? selectedDay;
+  final VoidCallback onPreviousMonth;
+  final VoidCallback onNextMonth;
+  final ValueChanged<DateTime> onSelectDay;
+  final VoidCallback? onConfirm;
+  final String confirmLabel;
 
-  const _DatePickerRow({
-    required this.height,
-    required this.yearCard,
-    required this.monthCard,
-    required this.dayCard,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      child: Row(
-        children: [
-          Expanded(flex: 2, child: yearCard),
-          const SizedBox(width: 8),
-          const _PickerUnitLabel('년'),
-          const SizedBox(width: 8),
-          Expanded(child: monthCard),
-          const SizedBox(width: 8),
-          const _PickerUnitLabel('월'),
-          const SizedBox(width: 8),
-          Expanded(child: dayCard),
-          const SizedBox(width: 8),
-          const _PickerUnitLabel('일'),
-        ],
-      ),
-    );
-  }
-}
-
-class _TimePickerRow extends StatelessWidget {
-  final double height;
-  final Widget hourCard;
-  final Widget minuteCard;
-
-  const _TimePickerRow({
-    required this.height,
-    required this.hourCard,
-    required this.minuteCard,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      child: Row(
-        children: [
-          Expanded(child: hourCard),
-          const SizedBox(width: 10),
-          const _PickerUnitLabel('시'),
-          const SizedBox(width: 10),
-          Expanded(child: minuteCard),
-          const SizedBox(width: 10),
-          const _PickerUnitLabel('분'),
-        ],
-      ),
-    );
-  }
-}
-
-class _PickerUnitLabel extends StatelessWidget {
-  final String label;
-
-  const _PickerUnitLabel(this.label);
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Center(
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w800,
-          color: palette.textPrimary,
-        ),
-      ),
-    );
-  }
-}
-
-class _WheelPickerCard extends StatelessWidget {
-  final Widget child;
-
-  const _WheelPickerCard({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: palette.bottomSheetInnerSurface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: palette.bottomSheetBorder),
-      ),
-      child: ClipRRect(borderRadius: BorderRadius.circular(24), child: child),
-    );
-  }
-}
-
-class _WheelPickerColumn extends StatelessWidget {
-  final List<int> values;
-  final int selectedValue;
-  final FixedExtentScrollController scrollController;
-  final ValueChanged<int> onSelectedItemChanged;
-
-  const _WheelPickerColumn({
-    required this.values,
-    required this.selectedValue,
-    required this.scrollController,
-    required this.onSelectedItemChanged,
+  const _CalendarDatePickerBody({
+    required this.year,
+    required this.month,
+    required this.selectedDay,
+    required this.onPreviousMonth,
+    required this.onNextMonth,
+    required this.onSelectDay,
+    required this.onConfirm,
+    required this.confirmLabel,
   });
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final days = _calendarCells(year, month);
+    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
 
-    return Stack(
-      alignment: Alignment.center,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        IgnorePointer(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: Center(
-              child: Container(
-                width: double.infinity,
-                height: _VisitScheduleBottomSheetState._selectedPillHeight,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? palette.primary.withValues(alpha: 0.52)
-                      : palette.primarySoft,
-                  borderRadius: BorderRadius.circular(16),
-                  border: isDark
-                      ? Border.all(
-                          color: palette.primaryStrong.withValues(alpha: 0.42),
-                        )
-                      : null,
+        Row(
+          children: [
+            IconButton(
+              onPressed: onPreviousMonth,
+              icon: const Icon(Icons.chevron_left_rounded),
+              color: palette.textSecondary,
+              splashRadius: 20,
+            ),
+            Expanded(
+              child: Text(
+                '$year. $month',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                  color: palette.textPrimary,
                 ),
               ),
             ),
-          ),
+            IconButton(
+              onPressed: onNextMonth,
+              icon: const Icon(Icons.chevron_right_rounded),
+              color: palette.textSecondary,
+              splashRadius: 20,
+            ),
+          ],
         ),
-        ListWheelScrollView.useDelegate(
-          controller: scrollController,
-          itemExtent: 26,
-          diameterRatio: 3.2,
-          perspective: 0.002,
-          squeeze: 1.08,
-          physics: const FixedExtentScrollPhysics(),
-          onSelectedItemChanged: onSelectedItemChanged,
-          childDelegate: ListWheelChildBuilderDelegate(
-            childCount: values.length,
-            builder: (context, index) {
-              final value = values[index];
-              final isSelected = value == selectedValue;
+        const SizedBox(height: 8),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: weekdays.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 7,
+            mainAxisExtent: 30,
+          ),
+          itemBuilder: (context, index) {
+            final isSunday = index == 0;
+            final isSaturday = index == 6;
+            return Center(
+              child: Text(
+                weekdays[index],
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: isSunday
+                      ? palette.danger
+                      : isSaturday
+                      ? palette.primary
+                      : palette.textTertiary,
+                ),
+              ),
+            );
+          },
+        ),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: days.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 7,
+            mainAxisExtent: 45,
+          ),
+          itemBuilder: (context, index) {
+            final date = days[index];
+            final isCurrentMonth = date.month == month;
+            final now = AppTime.now();
+            final today = DateTime(now.year, now.month, now.day);
+            final cellDate = DateTime(date.year, date.month, date.day);
+            final isPastDate = cellDate.isBefore(today);
+            final isSelectable = isCurrentMonth && !isPastDate;
+            final isSelected =
+                selectedDay != null &&
+                isCurrentMonth &&
+                date.year == year &&
+                date.day == selectedDay;
+            final isToday =
+                isCurrentMonth &&
+                date.year == now.year &&
+                date.month == now.month &&
+                date.day == now.day;
+            final isSunday = index % 7 == 0;
+            final isSaturday = index % 7 == 6;
 
-              return Center(
-                child: AnimatedScale(
-                  duration: const Duration(milliseconds: 180),
-                  curve: Curves.easeOutCubic,
-                  scale: isSelected ? 1.0 : 0.92,
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 180),
-                    curve: Curves.easeOutCubic,
-                    opacity: isSelected ? 1.0 : 0.68,
-                    child: AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 180),
-                      curve: Curves.easeOutCubic,
-                      style: TextStyle(
-                        fontSize: isSelected ? 16 : 12,
-                        fontWeight: isSelected
-                            ? FontWeight.w800
-                            : FontWeight.w600,
-                        color: isSelected
-                            ? isDark
-                                  ? Colors.white
-                                  : palette.textPrimary
-                            : palette.textTertiary,
+            return Center(
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(999),
+                child: InkWell(
+                  onTap: isSelectable ? () => onSelectDay(date) : null,
+                  borderRadius: BorderRadius.circular(999),
+                  child: Ink(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: isSelected ? palette.primary : Colors.transparent,
+                      borderRadius: BorderRadius.circular(999),
+                      border: !isSelected && isToday
+                          ? Border.all(
+                              color: const Color(0xFFFF9F2D),
+                              width: 1.6,
+                            )
+                          : null,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${date.day}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: isSelected
+                              ? FontWeight.w900
+                              : FontWeight.w700,
+                          color: isSelected
+                              ? Colors.white
+                              : !isCurrentMonth || isPastDate
+                              ? palette.textTertiary.withValues(alpha: 0.52)
+                              : isSunday
+                              ? palette.danger
+                              : isSaturday
+                              ? palette.primary
+                              : palette.textPrimary,
+                        ),
                       ),
-                      child: Text(value.toString().padLeft(2, '0')),
                     ),
                   ),
                 ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 14),
+        _PickerConfirmButton(label: confirmLabel, onTap: onConfirm),
+      ],
+    );
+  }
+
+  static List<DateTime> _calendarCells(int year, int month) {
+    final firstDay = DateTime(year, month);
+    final daysInMonth = DateTime(year, month + 1, 0).day;
+    final leadingDays = firstDay.weekday % 7;
+    final cellCount = (((leadingDays + daysInMonth) / 7).ceil()) * 7;
+    final firstCell = firstDay.subtract(Duration(days: leadingDays));
+
+    return List.generate(cellCount, (index) {
+      return firstCell.add(Duration(days: index));
+    });
+  }
+}
+
+class _TimeListPickerBody extends StatelessWidget {
+  final List<_TimeOption> options;
+  final int? selectedHour;
+  final int? selectedMinute;
+  final ValueChanged<_TimeOption> onSelect;
+  final VoidCallback? onConfirm;
+  final String confirmLabel;
+
+  const _TimeListPickerBody({
+    required this.options,
+    required this.selectedHour,
+    required this.selectedMinute,
+    required this.onSelect,
+    required this.onConfirm,
+    required this.confirmLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          constraints: const BoxConstraints(maxHeight: 360),
+          decoration: BoxDecoration(
+            color: palette.bottomSheetInnerSurface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: palette.bottomSheetBorder),
+          ),
+          child: ListView.separated(
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            itemCount: options.length,
+            separatorBuilder: (_, _) =>
+                Divider(height: 1, color: palette.bottomSheetBorder),
+            itemBuilder: (context, index) {
+              final option = options[index];
+              final isSelected =
+                  selectedHour == option.hour &&
+                  selectedMinute == option.minute;
+
+              return _TimeOptionTile(
+                option: option,
+                isSelected: isSelected,
+                onTap: () => onSelect(option),
               );
             },
           ),
         ),
+        const SizedBox(height: 14),
+        _PickerConfirmButton(label: confirmLabel, onTap: onConfirm),
       ],
+    );
+  }
+}
+
+class _TimeOptionTile extends StatelessWidget {
+  final _TimeOption option;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _TimeOptionTile({
+    required this.option,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Material(
+      color: isSelected
+          ? palette.primary.withValues(alpha: 0.08)
+          : Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          height: 42,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    option.label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: isSelected
+                          ? FontWeight.w800
+                          : FontWeight.w600,
+                      color: isSelected ? palette.primary : palette.textPrimary,
+                    ),
+                  ),
+                ),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected
+                          ? palette.primary
+                          : palette.bottomSheetBorder,
+                      width: isSelected ? 6 : 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PickerConfirmButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onTap;
+
+  const _PickerConfirmButton({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final isEnabled = onTap != null;
+
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: Material(
+        color: isEnabled ? palette.primary : palette.primarySoft,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: isEnabled ? Colors.white : palette.primary,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

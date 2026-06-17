@@ -5,7 +5,7 @@ class ContentItem {
   final String title;
   final String? subTitle;
   final String? thumbnailUrl;
-  final String? htmlContent;
+  final String? markdownContent;
   final IconData icon;
   final String author;
 
@@ -14,7 +14,7 @@ class ContentItem {
     required this.title,
     this.subTitle,
     this.thumbnailUrl,
-    required this.htmlContent,
+    required this.markdownContent,
     required this.icon,
     required this.author,
   });

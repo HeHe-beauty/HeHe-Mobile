@@ -22,20 +22,19 @@ void main() {
     );
   });
 
-  testWidgets('renders content detail body from html', (tester) async {
+  testWidgets('renders content detail body from markdown', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.lightTheme,
         home: const ContentDetailScreen.content(
-          title: 'HTML 렌더링 테스트',
-          htmlContent:
-              '<html><body><p><strong>기존 내용</strong></p></body></html>',
+          title: 'Markdown 렌더링 테스트',
+          markdownContent: '**기존 내용**',
         ),
       ),
     );
 
-    expect(find.text('HTML 렌더링 테스트'), findsOneWidget);
+    expect(find.text('Markdown 렌더링 테스트'), findsOneWidget);
     expect(find.textContaining('기존 내용', findRichText: true), findsOneWidget);
-    expect(find.textContaining('<html>', findRichText: true), findsNothing);
+    expect(find.textContaining('**', findRichText: true), findsNothing);
   });
 }

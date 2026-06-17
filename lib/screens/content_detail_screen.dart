@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/content_item.dart';
 import '../theme/app_palette.dart';
 import '../widgets/app_icon_circle_button.dart';
 
 class ContentDetailScreen extends StatelessWidget {
   final String title;
-  final String? htmlContent;
+  final String? markdownContent;
   final IconData icon;
 
   ContentDetailScreen({super.key, required ContentItem item})
     : title = item.title,
-      htmlContent = item.htmlContent,
+      markdownContent = item.markdownContent,
       icon = item.icon;
 
   const ContentDetailScreen.content({
     super.key,
     required this.title,
-    required this.htmlContent,
+    required this.markdownContent,
     this.icon = Icons.article_rounded,
   });
 
@@ -42,7 +42,9 @@ class ContentDetailScreen extends StatelessWidget {
                 onClose: () => Navigator.pop(context),
               ),
               const SizedBox(height: 20),
-              Expanded(child: _ContentBodyArea(htmlContent: htmlContent ?? '')),
+              Expanded(
+                child: _ContentBodyArea(markdownContent: markdownContent ?? ''),
+              ),
             ],
           ),
         ),
@@ -96,38 +98,55 @@ class _ContentHeader extends StatelessWidget {
 }
 
 class _ContentBodyArea extends StatelessWidget {
-  final String htmlContent;
+  final String markdownContent;
 
-  const _ContentBodyArea({required this.htmlContent});
+  const _ContentBodyArea({required this.markdownContent});
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
 
-    return SingleChildScrollView(
-      child: Html(
-        data: htmlContent,
-        shrinkWrap: true,
-        style: {
-          'html': Style(margin: Margins.zero, padding: HtmlPaddings.zero),
-          'body': Style(
-            margin: Margins.zero,
-            padding: HtmlPaddings.zero,
-            color: palette.textSecondary,
-            fontSize: FontSize(12),
-            fontWeight: FontWeight.w600,
-            lineHeight: const LineHeight(1.6),
-          ),
-          'p': Style(
-            margin: Margins.only(bottom: 16),
-            padding: HtmlPaddings.zero,
-          ),
-          'strong': Style(
-            color: palette.textPrimary,
-            fontWeight: FontWeight.w800,
-          ),
-          'b': Style(color: palette.textPrimary, fontWeight: FontWeight.w800),
-        },
+    final bodyStyle = TextStyle(
+      color: palette.textSecondary,
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      height: 1.6,
+    );
+
+    return Markdown(
+      data: markdownContent,
+      padding: EdgeInsets.zero,
+      styleSheet: MarkdownStyleSheet(
+        p: bodyStyle,
+        strong: bodyStyle.copyWith(
+          color: palette.textPrimary,
+          fontWeight: FontWeight.w800,
+        ),
+        h1: TextStyle(
+          color: palette.textPrimary,
+          fontSize: 22,
+          fontWeight: FontWeight.w900,
+          height: 1.3,
+        ),
+        h2: TextStyle(
+          color: palette.textPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+          height: 1.35,
+        ),
+        h3: TextStyle(
+          color: palette.textPrimary,
+          fontSize: 15,
+          fontWeight: FontWeight.w800,
+          height: 1.4,
+        ),
+        listBullet: bodyStyle,
+        blockquote: bodyStyle.copyWith(color: palette.textTertiary),
+        blockquoteDecoration: BoxDecoration(
+          color: palette.surfaceMuted,
+          borderRadius: BorderRadius.circular(12),
+          border: Border(left: BorderSide(color: palette.border, width: 3)),
+        ),
       ),
     );
   }

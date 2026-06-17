@@ -220,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen>
         MaterialPageRoute(
           builder: (_) => ContentDetailScreen.content(
             title: detail.title,
-            htmlContent: detail.content,
+            markdownContent: detail.content,
             icon: item.icon,
           ),
         ),
@@ -1256,7 +1256,7 @@ ContentItem _contentItemFromArticle(ArticleDto article) {
     title: article.title,
     subTitle: article.subTitle,
     thumbnailUrl: article.thumbnailUrl,
-    htmlContent: null,
+    markdownContent: null,
     icon: Icons.article_rounded,
     author: 'HeHe',
   );
