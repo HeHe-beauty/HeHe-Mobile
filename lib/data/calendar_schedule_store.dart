@@ -18,7 +18,7 @@ class CalendarScheduleStore {
     return {
       for (final entry in _scheduleMap.entries)
         entry.key: entry.value.map((schedule) => schedule.copyWith()).toList()
-          ..sort((a, b) => a.dateTime.compareTo(b.dateTime)),
+          ..sort((a, b) => a.visitDateTime.compareTo(b.visitDateTime)),
     };
   }
 
@@ -28,7 +28,7 @@ class CalendarScheduleStore {
   }) {
     final schedule = createScheduleFromResult(result, scheduleId: scheduleId);
     upsert(schedule);
-    return calendarDateOnly(result.dateTime);
+    return calendarDateOnly(result.visitDateTime);
   }
 
   static CalendarSchedule createScheduleFromResult(
@@ -39,7 +39,7 @@ class CalendarScheduleStore {
     return CalendarSchedule(
       id: scheduleId ?? seedSchedule?.id ?? createId(),
       hospitalName: _normalizeHospitalName(result.hospitalName),
-      dateTime: result.dateTime,
+      visitDateTime: result.visitDateTime,
       isThreeDaysBefore: seedSchedule?.isThreeDaysBefore ?? false,
       isOneDayBefore: seedSchedule?.isOneDayBefore ?? false,
       isOneHourBefore: seedSchedule?.isOneHourBefore ?? false,
@@ -49,13 +49,13 @@ class CalendarScheduleStore {
   static void upsert(CalendarSchedule schedule) {
     removeById(schedule.id);
 
-    final targetDate = calendarDateOnly(schedule.dateTime);
+    final targetDate = calendarDateOnly(schedule.visitDateTime);
     final schedules = _scheduleMap.putIfAbsent(
       targetDate,
       () => <CalendarSchedule>[],
     );
     schedules.add(schedule.copyWith());
-    schedules.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+    schedules.sort((a, b) => a.visitDateTime.compareTo(b.visitDateTime));
   }
 
   static void removeById(String scheduleId) {

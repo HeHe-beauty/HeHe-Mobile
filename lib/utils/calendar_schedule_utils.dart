@@ -78,6 +78,6 @@ List<CalendarSchedule> upcomingSchedulesFromToday(
   final today = calendarDateOnly(now);
 
   return schedules.where((schedule) {
-    return !calendarDateOnly(schedule.dateTime).isBefore(today);
-  }).toList()..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+    return !calendarDateOnly(schedule.visitDateTime).isBefore(today);
+  }).toList()..sort((a, b) => a.visitDateTime.compareTo(b.visitDateTime));
 }

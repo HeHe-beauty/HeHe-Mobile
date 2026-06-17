@@ -57,7 +57,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
 
     final initialSchedule = widget.initialSchedule;
     if (initialSchedule != null) {
-      final targetDate = calendarDateOnly(initialSchedule.dateTime);
+      final targetDate = calendarDateOnly(initialSchedule.visitDateTime);
       _focusedMonth = DateTime(targetDate.year, targetDate.month, 1);
       _selectedDate = targetDate;
       _loadScheduleSummary(force: true);
@@ -102,7 +102,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
           scheduleId: scheduleId,
         );
         final schedule = _scheduleFromDetail(detail);
-        final targetDate = calendarDateOnly(schedule.dateTime);
+        final targetDate = calendarDateOnly(schedule.visitDateTime);
 
         if (!mounted) return;
 
@@ -330,7 +330,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
         forceRefresh: forceRefresh,
       );
       final targetSchedules = dailySchedules.map(_scheduleFromDetail).toList()
-        ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+        ..sort((a, b) => a.visitDateTime.compareTo(b.visitDateTime));
 
       if (!mounted) return null;
 
@@ -462,7 +462,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
       if (!mounted) return _ScheduleDetailSheetResult.closed;
 
       await _loadDailySchedules(
-        selectedDate: calendarDateOnly(latestSchedule.dateTime),
+        selectedDate: calendarDateOnly(latestSchedule.visitDateTime),
         forceRefresh: true,
       );
       await _loadScheduleSummary(force: true);
@@ -489,7 +489,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
         scheduleId: schedule.id,
       );
       final latestSchedule = _scheduleFromDetail(detail);
-      final targetDate = calendarDateOnly(latestSchedule.dateTime);
+      final targetDate = calendarDateOnly(latestSchedule.visitDateTime);
 
       if (!mounted) return null;
 
@@ -499,7 +499,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
             (schedule) => schedule.id != latestSchedule.id,
           ),
           latestSchedule,
-        ]..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+        ]..sort((a, b) => a.visitDateTime.compareTo(b.visitDateTime));
       });
 
       return latestSchedule;
@@ -515,7 +515,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
     return CalendarSchedule(
       id: detail.scheduleId,
       hospitalName: detail.hospitalName,
-      dateTime: dateTimeFromUnixVisitTime(detail.visitTime),
+      visitDateTime: dateTimeFromUnixVisitTime(detail.visitTime),
       isThreeDaysBefore: detail.alarms.any(
         (alarm) => alarm.alarmType == ScheduleAlarmTypes.threeDaysBefore,
       ),
@@ -628,7 +628,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
   }) async {
     final serverNow = AppTime.now();
     final seedDate =
-        initialSchedule?.dateTime ??
+        initialSchedule?.visitDateTime ??
         (selectedDate != null
             ? DateTime(
                 selectedDate.year,
@@ -664,7 +664,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
         await ScheduleRepository.createSchedule(
           accessToken: accessToken,
           hospitalName: result.hospitalName,
-          visitDateTime: result.dateTime,
+          visitDateTime: result.visitDateTime,
         );
       } catch (e) {
         if (!mounted) return;
@@ -683,11 +683,11 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
           accessToken: accessToken,
           scheduleId: initialSchedule.id,
           hospitalName: result.hospitalName,
-          visitDateTime: result.dateTime,
+          visitDateTime: result.visitDateTime,
         );
         scheduleResult = VisitScheduleResult(
           hospitalName: updatedSchedule.hospitalName,
-          dateTime: dateTimeFromUnixVisitTime(updatedSchedule.visitTime),
+          visitDateTime: dateTimeFromUnixVisitTime(updatedSchedule.visitTime),
         );
       } catch (e) {
         if (!mounted) return;
@@ -698,7 +698,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
 
     if (!mounted) return;
 
-    final targetDate = calendarDateOnly(scheduleResult.dateTime);
+    final targetDate = calendarDateOnly(scheduleResult.visitDateTime);
 
     setState(() {
       _focusedMonth = DateTime(targetDate.year, targetDate.month, 1);
@@ -1116,7 +1116,7 @@ class _ScheduleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final status = _scheduleStatus(context, schedule.dateTime);
+    final status = _scheduleStatus(context, schedule.visitDateTime);
 
     return Material(
       color: palette.surface.withValues(alpha: 0.94),
@@ -1151,7 +1151,7 @@ class _ScheduleCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
-                            formatScheduleTime(schedule.dateTime),
+                            formatScheduleTime(schedule.visitDateTime),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
@@ -1199,7 +1199,7 @@ class _ScheduleCard extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                '${formatScheduleDate(schedule.dateTime)} · ${formatReminderSummary(schedule)}',
+                '${formatScheduleDate(schedule.visitDateTime)} · ${formatReminderSummary(schedule)}',
                 style: TextStyle(
                   fontSize: 13,
                   height: 1.4,
@@ -1586,7 +1586,7 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    '${schedule.dateTime.month}월 ${schedule.dateTime.day}일 일정',
+                    '${schedule.visitDateTime.month}월 ${schedule.visitDateTime.day}일 일정',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -1667,7 +1667,7 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
                       ),
                       Expanded(
                         child: Text(
-                          formatScheduleTime(schedule.dateTime),
+                          formatScheduleTime(schedule.visitDateTime),
                           style: TextStyle(
                             fontSize: 19,
                             fontWeight: FontWeight.w700,

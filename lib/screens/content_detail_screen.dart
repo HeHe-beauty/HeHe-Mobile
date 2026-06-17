@@ -14,7 +14,7 @@ class ContentDetailScreen extends StatelessWidget {
       markdownContent = item.markdownContent,
       icon = item.icon;
 
-  const ContentDetailScreen.content({
+  const ContentDetailScreen.markdown({
     super.key,
     required this.title,
     required this.markdownContent,

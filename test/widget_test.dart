@@ -26,7 +26,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.lightTheme,
-        home: const ContentDetailScreen.content(
+        home: const ContentDetailScreen.markdown(
           title: 'Markdown 렌더링 테스트',
           markdownContent: '**기존 내용**',
         ),

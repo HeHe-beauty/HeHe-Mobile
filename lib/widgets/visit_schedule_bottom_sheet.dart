@@ -8,11 +8,11 @@ import '../theme/app_palette.dart';
 
 class VisitScheduleResult {
   final String hospitalName;
-  final DateTime dateTime;
+  final DateTime visitDateTime;
 
   const VisitScheduleResult({
     required this.hospitalName,
-    required this.dateTime,
+    required this.visitDateTime,
   });
 }
 
@@ -206,7 +206,7 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
 
     final result = VisitScheduleResult(
       hospitalName: hospitalName,
-      dateTime: DateTime(
+      visitDateTime: DateTime(
         _isFixedDateMode ? _effectiveFixedDate.year : _selectedYear,
         _isFixedDateMode ? _effectiveFixedDate.month : _selectedMonth,
         _isFixedDateMode ? _effectiveFixedDate.day : _selectedDay,

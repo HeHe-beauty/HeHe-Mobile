@@ -63,7 +63,8 @@ class _HomeScreenState extends State<HomeScreen>
     ),
   ];
   List<EquipDto> _devices = [];
-  List<ContentItem> _contents = HomeCatalog.contents;
+  List<ContentItem> _recommendationContents =
+      HomeCatalog.fallbackRecommendationContents;
   List<CalendarSchedule> _upcomingSchedules = const [];
   bool _showGuideBanner = true;
   bool _isLoadingUpcomingSchedules = false;
@@ -98,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen>
       await ScheduleRepository.createSchedule(
         accessToken: accessToken,
         hospitalName: result.hospitalName,
-        visitDateTime: result.dateTime,
+        visitDateTime: result.visitDateTime,
       );
     } catch (e) {
       if (context.mounted) {
@@ -218,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen>
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ContentDetailScreen.content(
+          builder: (_) => ContentDetailScreen.markdown(
             title: detail.title,
             markdownContent: detail.content,
             icon: item.icon,
@@ -338,13 +339,15 @@ class _HomeScreenState extends State<HomeScreen>
       if (!mounted) return;
 
       setState(() {
-        _contents = articles.map(_contentItemFromArticle).toList();
+        _recommendationContents = articles
+            .map(_contentItemFromArticle)
+            .toList();
       });
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        _contents = HomeCatalog.contents;
+        _recommendationContents = HomeCatalog.fallbackRecommendationContents;
       });
     }
   }
@@ -403,7 +406,7 @@ class _HomeScreenState extends State<HomeScreen>
     return CalendarSchedule(
       id: detail.scheduleId,
       hospitalName: detail.hospitalName,
-      dateTime: dateTimeFromUnixVisitTime(detail.visitTime),
+      visitDateTime: dateTimeFromUnixVisitTime(detail.visitTime),
       isThreeDaysBefore: detail.alarms.any(
         (alarm) => alarm.alarmType == ScheduleAlarmTypes.threeDaysBefore,
       ),
@@ -439,7 +442,7 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final contents = _contents;
+    final recommendationContents = _recommendationContents;
     final d0 = _device(0);
     final d1 = _device(1);
     final d2 = _device(2);
@@ -467,20 +470,20 @@ class _HomeScreenState extends State<HomeScreen>
         final reservationDday = !isLoggedIn
             ? null
             : nearestSchedule != null
-            ? formatDDay(nearestSchedule.dateTime)
+            ? formatDDay(nearestSchedule.visitDateTime)
             : null;
         final reservationSubtitle = !isLoggedIn
             ? null
             : nearestSchedule != null
-            ? formatCompactScheduleDate(nearestSchedule.dateTime)
+            ? formatCompactScheduleDate(nearestSchedule.visitDateTime)
             : '오늘 기준으로 예정된 예약이 없어요';
         final reservationItems = upcomingSchedules
             .skip(nearestSchedule != null ? 1 : 0)
             .map(
               (schedule) => CalendarCardReservationItem(
                 title: schedule.hospitalName,
-                dateLabel: formatCompactScheduleDate(schedule.dateTime),
-                dDayLabel: formatDDay(schedule.dateTime),
+                dateLabel: formatCompactScheduleDate(schedule.visitDateTime),
+                dDayLabel: formatDDay(schedule.visitDateTime),
                 onTap: () => _openReservationDetail(context, schedule),
               ),
             )
@@ -693,7 +696,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 ),
                                 const SizedBox(height: 14),
                                 ContentCarousel(
-                                  items: contents,
+                                  items: recommendationContents,
                                   cardBackgroundColor: palette.surface,
                                   thumbnailBackgroundColor: palette.primarySoft,
                                   onTapItem: (item) {

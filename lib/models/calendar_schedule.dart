@@ -1,7 +1,7 @@
 class CalendarSchedule {
   final String id;
   String hospitalName;
-  DateTime dateTime;
+  DateTime visitDateTime;
   bool isThreeDaysBefore;
   bool isOneDayBefore;
   bool isOneHourBefore;
@@ -9,7 +9,7 @@ class CalendarSchedule {
   CalendarSchedule({
     required this.id,
     required this.hospitalName,
-    required this.dateTime,
+    required this.visitDateTime,
     this.isThreeDaysBefore = false,
     this.isOneDayBefore = false,
     this.isOneHourBefore = false,
@@ -18,7 +18,7 @@ class CalendarSchedule {
   CalendarSchedule copyWith({
     String? id,
     String? hospitalName,
-    DateTime? dateTime,
+    DateTime? visitDateTime,
     bool? isThreeDaysBefore,
     bool? isOneDayBefore,
     bool? isOneHourBefore,
@@ -26,7 +26,7 @@ class CalendarSchedule {
     return CalendarSchedule(
       id: id ?? this.id,
       hospitalName: hospitalName ?? this.hospitalName,
-      dateTime: dateTime ?? this.dateTime,
+      visitDateTime: visitDateTime ?? this.visitDateTime,
       isThreeDaysBefore: isThreeDaysBefore ?? this.isThreeDaysBefore,
       isOneDayBefore: isOneDayBefore ?? this.isOneDayBefore,
       isOneHourBefore: isOneHourBefore ?? this.isOneHourBefore,

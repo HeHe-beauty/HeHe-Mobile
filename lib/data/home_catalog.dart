@@ -4,7 +4,7 @@ import '../models/content_item.dart';
 class HomeCatalog {
   const HomeCatalog._();
 
-  static const List<ContentItem> contents = [
+  static const List<ContentItem> fallbackRecommendationContents = [
     ContentItem(
       title: '생활 루틴 체크리스트',
       markdownContent:
