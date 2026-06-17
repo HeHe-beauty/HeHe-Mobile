@@ -1,9 +1,5 @@
 const Duration _kstOffset = Duration(hours: 9);
 
-String toUnixVisitTime(DateTime dateTime) {
-  return toUnixVisitTimeSeconds(dateTime).toString();
-}
-
 int toUnixVisitTimeSeconds(DateTime dateTime) {
   return dateTime.millisecondsSinceEpoch ~/ Duration.millisecondsPerSecond;
 }

@@ -69,15 +69,3 @@ String formatTodayReferenceLabel({DateTime? referenceDate}) {
   final weekdayLabel = calendarWeekdayLabels[now.weekday % 7];
   return 'Today · ${now.month}월 ${now.day}일 ($weekdayLabel)';
 }
-
-List<CalendarSchedule> upcomingSchedulesFromToday(
-  Iterable<CalendarSchedule> schedules, {
-  DateTime? referenceDate,
-}) {
-  final now = referenceDate ?? AppTime.now();
-  final today = calendarDateOnly(now);
-
-  return schedules.where((schedule) {
-    return !calendarDateOnly(schedule.visitDateTime).isBefore(today);
-  }).toList()..sort((a, b) => a.visitDateTime.compareTo(b.visitDateTime));
-}

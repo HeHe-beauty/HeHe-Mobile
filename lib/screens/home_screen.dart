@@ -1257,10 +1257,8 @@ ContentItem _contentItemFromArticle(ArticleDto article) {
   return ContentItem(
     articleId: article.articleId,
     title: article.title,
-    subTitle: article.subTitle,
     thumbnailUrl: article.thumbnailUrl,
     markdownContent: null,
     icon: Icons.article_rounded,
-    author: 'HeHe',
   );
 }
