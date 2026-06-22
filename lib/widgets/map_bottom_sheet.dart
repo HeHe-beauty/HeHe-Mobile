@@ -488,7 +488,12 @@ class _SinglePlaceSection extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final stackActions = constraints.maxWidth < 340;
-          final visibleTags = place.tags.take(4).toList();
+          final tags = place.tags
+              .map((tag) => tag.trim())
+              .where((tag) => tag.isNotEmpty)
+              .toList();
+          final visibleTags = tags.take(4).toList();
+          final hiddenTagCount = tags.length - visibleTags.length;
 
           return Container(
             width: double.infinity,
@@ -574,9 +579,14 @@ class _SinglePlaceSection extends StatelessWidget {
                   Wrap(
                     spacing: 5,
                     runSpacing: 5,
-                    children: visibleTags
-                        .map((tag) => _HospitalTagChip(label: tag))
-                        .toList(),
+                    children: [
+                      ...visibleTags.map((tag) => _HospitalTagChip(label: tag)),
+                      if (hiddenTagCount > 0)
+                        _HospitalTagChip(
+                          label: '+$hiddenTagCount',
+                          isCount: true,
+                        ),
+                    ],
                   ),
                 ],
                 if (place.address.isNotEmpty) ...[
@@ -807,27 +817,34 @@ class _SecondaryActionButton extends StatelessWidget {
 
 class _HospitalTagChip extends StatelessWidget {
   final String label;
+  final bool isCount;
 
-  const _HospitalTagChip({required this.label});
+  const _HospitalTagChip({required this.label, this.isCount = false});
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
-        color: palette.primarySoft.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: palette.primary.withValues(alpha: 0.12)),
+        color: isCount
+            ? palette.bottomSheetInnerSurface
+            : palette.primarySoft.withValues(alpha: 0.44),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isCount
+              ? palette.bottomSheetBorder
+              : palette.primary.withValues(alpha: 0.20),
+        ),
       ),
       child: Text(
-        '#$label',
+        label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: AppTextStyles.homeCaption.copyWith(
-          color: palette.primaryStrong,
-          fontWeight: FontWeight.w700,
+          color: isCount ? palette.textPrimary : palette.primaryStrong,
+          fontWeight: FontWeight.w800,
           height: 1,
         ),
       ),

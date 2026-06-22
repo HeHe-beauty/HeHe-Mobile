@@ -110,39 +110,9 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
     return '${_selectedHour.toString().padLeft(2, '0')}:${_selectedMinute.toString().padLeft(2, '0')}';
   }
 
-  String get _selectedTimeDisplayLabel {
-    final period = _selectedHour < 12 ? '오전' : '오후';
-    final displayHour = _selectedHour % 12 == 0 ? 12 : _selectedHour % 12;
-    return '$period $displayHour:${_selectedMinute.toString().padLeft(2, '0')}';
-  }
-
   String get _fixedDateLabel {
     final date = _effectiveFixedDate;
     return '${date.year}년 ${date.month}월 ${date.day}일';
-  }
-
-  List<_TimeOption> get _timeOptions {
-    final options = <_TimeOption>[
-      for (var hour = 0; hour < 24; hour++) ...[
-        _TimeOption(hour: hour, minute: 0),
-        _TimeOption(hour: hour, minute: 30),
-      ],
-    ];
-
-    final selectedOption = _TimeOption(
-      hour: _selectedHour,
-      minute: _selectedMinute,
-    );
-    if (!options.contains(selectedOption)) {
-      options.add(selectedOption);
-      options.sort((a, b) {
-        final aMinutes = (a.hour * 60) + a.minute;
-        final bMinutes = (b.hour * 60) + b.minute;
-        return aMinutes.compareTo(bMinutes);
-      });
-    }
-
-    return options;
   }
 
   @override
@@ -304,6 +274,7 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
 
   Future<void> _openTimePicker() async {
     FocusManager.instance.primaryFocus?.unfocus();
+    final initialMinute = _nearestQuarterMinute(_selectedMinute);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -311,28 +282,17 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
       backgroundColor: Colors.transparent,
       barrierColor: context.palette.modalBarrier,
       builder: (modalContext) {
-        return StatefulBuilder(
-          builder: (context, setPickerState) {
-            return _PickerSheetFrame(
-              title: '시간 선택',
-              onClose: () => Navigator.of(context).pop(),
-              child: _TimeListPickerBody(
-                options: _timeOptions,
-                selectedHour: _hasSelectedTime ? _selectedHour : null,
-                selectedMinute: _hasSelectedTime ? _selectedMinute : null,
-                onSelect: (option) {
-                  _selectTimeOption(option);
-                  setPickerState(() {});
-                },
-                onConfirm: _hasSelectedTime
-                    ? () => Navigator.of(context).pop()
-                    : null,
-                confirmLabel: _hasSelectedTime
-                    ? _selectedTimeDisplayLabel
-                    : '시간을 선택해주세요',
-              ),
-            );
-          },
+        return _PickerSheetFrame(
+          title: '시간 선택',
+          onClose: () => Navigator.of(modalContext).pop(),
+          child: _TimeWheelPickerBody(
+            selectedHour: _selectedHour,
+            selectedMinute: initialMinute,
+            onConfirm: (option) {
+              _selectTimeOption(option);
+              Navigator.of(modalContext).pop();
+            },
+          ),
         );
       },
     );
@@ -487,7 +447,17 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
   static int _daysInMonth(int year, int month) {
     return DateTime(year, month + 1, 0).day;
   }
+
+  static int _nearestQuarterMinute(int minute) {
+    return _allowedMinutes.reduce((nearest, candidate) {
+      final nearestDistance = (minute - nearest).abs();
+      final candidateDistance = (minute - candidate).abs();
+      return candidateDistance < nearestDistance ? candidate : nearest;
+    });
+  }
 }
+
+const List<int> _allowedMinutes = [0, 15, 30, 45];
 
 class _PickerSheetFrame extends StatelessWidget {
   final String title;
@@ -574,24 +544,6 @@ class _TimeOption {
   final int minute;
 
   const _TimeOption({required this.hour, required this.minute});
-
-  String get label {
-    final period = hour < 12 ? '오전' : '오후';
-    final displayHour = hour % 12 == 0 ? 12 : hour % 12;
-    return '$period $displayHour:${minute.toString().padLeft(2, '0')}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        other is _TimeOption &&
-            runtimeType == other.runtimeType &&
-            hour == other.hour &&
-            minute == other.minute;
-  }
-
-  @override
-  int get hashCode => Object.hash(hour, minute);
 }
 
 class _HospitalInputRow extends StatelessWidget {
@@ -1001,22 +953,78 @@ class _CalendarDatePickerBody extends StatelessWidget {
   }
 }
 
-class _TimeListPickerBody extends StatelessWidget {
-  final List<_TimeOption> options;
-  final int? selectedHour;
-  final int? selectedMinute;
-  final ValueChanged<_TimeOption> onSelect;
-  final VoidCallback? onConfirm;
-  final String confirmLabel;
+class _TimeWheelPickerBody extends StatefulWidget {
+  final int selectedHour;
+  final int selectedMinute;
+  final ValueChanged<_TimeOption> onConfirm;
 
-  const _TimeListPickerBody({
-    required this.options,
+  const _TimeWheelPickerBody({
     required this.selectedHour,
     required this.selectedMinute,
-    required this.onSelect,
     required this.onConfirm,
-    required this.confirmLabel,
   });
+
+  @override
+  State<_TimeWheelPickerBody> createState() => _TimeWheelPickerBodyState();
+}
+
+class _TimeWheelPickerBodyState extends State<_TimeWheelPickerBody> {
+  static const List<String> _periods = ['오전', '오후'];
+  static const List<int> _hours = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+  late int _periodIndex;
+  late int _hourIndex;
+  late int _minuteIndex;
+  late final FixedExtentScrollController _periodController;
+  late final FixedExtentScrollController _hourController;
+  late final FixedExtentScrollController _minuteController;
+
+  @override
+  void initState() {
+    super.initState();
+    _periodIndex = widget.selectedHour < 12 ? 0 : 1;
+    final displayHour = widget.selectedHour % 12 == 0
+        ? 12
+        : widget.selectedHour % 12;
+    _hourIndex = _hours.indexOf(displayHour);
+    _minuteIndex = _allowedMinutes.indexOf(widget.selectedMinute);
+
+    _periodController = FixedExtentScrollController(initialItem: _periodIndex);
+    _hourController = FixedExtentScrollController(initialItem: _hourIndex);
+    _minuteController = FixedExtentScrollController(initialItem: _minuteIndex);
+  }
+
+  @override
+  void dispose() {
+    _periodController.dispose();
+    _hourController.dispose();
+    _minuteController.dispose();
+    super.dispose();
+  }
+
+  _TimeOption get _selectedOption {
+    final displayHour = _hours[_hourIndex];
+    final hour = _periodIndex == 0
+        ? (displayHour == 12 ? 0 : displayHour)
+        : (displayHour == 12 ? 12 : displayHour + 12);
+
+    return _TimeOption(hour: hour, minute: _allowedMinutes[_minuteIndex]);
+  }
+
+  void _changePeriod(int index) {
+    HapticFeedback.selectionClick();
+    setState(() => _periodIndex = index);
+  }
+
+  void _changeHour(int index) {
+    HapticFeedback.selectionClick();
+    setState(() => _hourIndex = index);
+  }
+
+  void _changeMinute(int index) {
+    HapticFeedback.selectionClick();
+    setState(() => _minuteIndex = index);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1026,96 +1034,188 @@ class _TimeListPickerBody extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          constraints: const BoxConstraints(maxHeight: 360),
+          height: 232,
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
           decoration: BoxDecoration(
             color: palette.bottomSheetInnerSurface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: palette.bottomSheetBorder),
           ),
-          child: ListView.separated(
-            shrinkWrap: true,
-            padding: EdgeInsets.zero,
-            itemCount: options.length,
-            separatorBuilder: (_, _) =>
-                Divider(height: 1, color: palette.bottomSheetBorder),
-            itemBuilder: (context, index) {
-              final option = options[index];
-              final isSelected =
-                  selectedHour == option.hour &&
-                  selectedMinute == option.minute;
-
-              return _TimeOptionTile(
-                option: option,
-                isSelected: isSelected,
-                onTap: () => onSelect(option),
-              );
-            },
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  _WheelHeader(label: '오전/오후', flex: 5),
+                  _WheelHeader(label: '시', flex: 4),
+                  _WheelHeader(label: '분', flex: 4),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Container(
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: palette.primary.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: palette.primary.withValues(alpha: 0.16),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 5,
+                          child: _TimeWheel(
+                            controller: _periodController,
+                            labels: _periods,
+                            selectedIndex: _periodIndex,
+                            semanticLabel: '오전 오후',
+                            onSelectedItemChanged: _changePeriod,
+                          ),
+                        ),
+                        _WheelDivider(color: palette.bottomSheetBorder),
+                        Expanded(
+                          flex: 4,
+                          child: _TimeWheel(
+                            controller: _hourController,
+                            labels: _hours.map((hour) => '$hour').toList(),
+                            selectedIndex: _hourIndex,
+                            semanticLabel: '시',
+                            onSelectedItemChanged: _changeHour,
+                          ),
+                        ),
+                        _WheelDivider(color: palette.bottomSheetBorder),
+                        Expanded(
+                          flex: 4,
+                          child: _TimeWheel(
+                            controller: _minuteController,
+                            labels: _allowedMinutes
+                                .map(
+                                  (minute) => minute.toString().padLeft(2, '0'),
+                                )
+                                .toList(),
+                            selectedIndex: _minuteIndex,
+                            semanticLabel: '분',
+                            onSelectedItemChanged: _changeMinute,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 14),
-        _PickerConfirmButton(label: confirmLabel, onTap: onConfirm),
+        _PickerConfirmButton(
+          label: _timeOptionDisplayLabel(_selectedOption),
+          onTap: () => widget.onConfirm(_selectedOption),
+        ),
       ],
+    );
+  }
+
+  static String _timeOptionDisplayLabel(_TimeOption option) {
+    final period = option.hour < 12 ? '오전' : '오후';
+    final displayHour = option.hour % 12 == 0 ? 12 : option.hour % 12;
+    return '$period $displayHour:${option.minute.toString().padLeft(2, '0')} 선택';
+  }
+}
+
+class _WheelHeader extends StatelessWidget {
+  final String label;
+  final int flex;
+
+  const _WheelHeader({required this.label, required this.flex});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Expanded(
+      flex: flex,
+      child: Text(
+        label,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: palette.textTertiary,
+        ),
+      ),
     );
   }
 }
 
-class _TimeOptionTile extends StatelessWidget {
-  final _TimeOption option;
-  final bool isSelected;
-  final VoidCallback onTap;
+class _TimeWheel extends StatelessWidget {
+  final FixedExtentScrollController controller;
+  final List<String> labels;
+  final int selectedIndex;
+  final String semanticLabel;
+  final ValueChanged<int> onSelectedItemChanged;
 
-  const _TimeOptionTile({
-    required this.option,
-    required this.isSelected,
-    required this.onTap,
+  const _TimeWheel({
+    required this.controller,
+    required this.labels,
+    required this.selectedIndex,
+    required this.semanticLabel,
+    required this.onSelectedItemChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
 
-    return Material(
-      color: isSelected
-          ? palette.primary.withValues(alpha: 0.08)
-          : Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: SizedBox(
-          height: 42,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    option.label,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: isSelected
-                          ? FontWeight.w800
-                          : FontWeight.w600,
-                      color: isSelected ? palette.primary : palette.textPrimary,
-                    ),
-                  ),
+    return Semantics(
+      label: semanticLabel,
+      child: ListWheelScrollView.useDelegate(
+        controller: controller,
+        itemExtent: 44,
+        diameterRatio: 1.6,
+        perspective: 0.003,
+        physics: const FixedExtentScrollPhysics(),
+        onSelectedItemChanged: onSelectedItemChanged,
+        childDelegate: ListWheelChildBuilderDelegate(
+          childCount: labels.length,
+          builder: (context, index) {
+            final isSelected = index == selectedIndex;
+            return Center(
+              child: AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 120),
+                style: TextStyle(
+                  fontSize: isSelected ? 18 : 15,
+                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                  color: isSelected ? palette.primary : palette.textTertiary,
                 ),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 160),
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected
-                          ? palette.primary
-                          : palette.bottomSheetBorder,
-                      width: isSelected ? 6 : 1.4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+                child: Text(labels[index]),
+              ),
+            );
+          },
         ),
+      ),
+    );
+  }
+}
+
+class _WheelDivider extends StatelessWidget {
+  final Color color;
+
+  const _WheelDivider({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 1,
+        height: 104,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        color: color.withValues(alpha: 0.72),
       ),
     );
   }
