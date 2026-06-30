@@ -27,6 +27,7 @@ import '../widgets/device_tile.dart';
 import '../widgets/header_bar.dart';
 import '../widgets/visit_schedule_bottom_sheet.dart';
 import 'calendar_detail_screen.dart';
+import 'article_detail_screen.dart';
 import 'content_detail_screen.dart';
 import 'device_map_screen.dart';
 import 'settings_screen.dart';
@@ -195,10 +196,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Future<void> _openContentDetail(
-    BuildContext context,
-    ContentItem item,
-  ) async {
+  void _openContentDetail(BuildContext context, ContentItem item) {
     _hideDeviceTooltip();
 
     final articleId = item.articleId;
@@ -211,26 +209,12 @@ class _HomeScreenState extends State<HomeScreen>
       return;
     }
 
-    try {
-      final detail = await ArticleRepository.getArticleDetail(articleId);
-
-      if (!context.mounted) return;
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ContentDetailScreen.markdown(
-            title: detail.title,
-            markdownContent: detail.content,
-            icon: item.icon,
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-
-      showAppSnackBar(context, '콘텐츠를 불러오지 못했어요');
-    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ArticleDetailScreen(articleId: articleId),
+      ),
+    );
   }
 
   Future<void> _openSettings(BuildContext context) async {
