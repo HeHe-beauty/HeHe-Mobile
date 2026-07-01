@@ -197,7 +197,10 @@ class _ArticleBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final category = article.tags.isEmpty ? null : article.tags.first.trim();
+    final tags = article.tags
+        .map((tag) => tag.trim())
+        .where((tag) => tag.isNotEmpty)
+        .toList(growable: false);
 
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
@@ -209,15 +212,55 @@ class _ArticleBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (category != null && category.isNotEmpty) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-              decoration: BoxDecoration(
-                color: palette.primarySoft,
-                borderRadius: BorderRadius.circular(9),
-              ),
+          Text(
+            article.title,
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: 27,
+              fontWeight: FontWeight.w800,
+              height: 1.28,
+              letterSpacing: 0,
+            ),
+          ),
+          if (tags.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            _ArticleTagBadges(tags: tags),
+          ],
+          const SizedBox(height: 20),
+          _HeroImage(url: article.thumbnailUrl),
+          const SizedBox(height: 20),
+          ArticleContentRenderer(content: article.content),
+        ],
+      ),
+    );
+  }
+}
+
+class _ArticleTagBadges extends StatelessWidget {
+  final List<String> tags;
+
+  const _ArticleTagBadges({required this.tags});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final tag in tags)
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: palette.primarySoft,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               child: Text(
-                category,
+                tag,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: palette.primaryStrong,
                   fontSize: 12,
@@ -226,24 +269,8 @@ class _ArticleBody extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-          ],
-          Text(
-            article.title,
-            style: TextStyle(
-              color: palette.textPrimary,
-              fontSize: 27,
-              fontWeight: FontWeight.w800,
-              height: 1.28,
-              letterSpacing: -0.65,
-            ),
           ),
-          const SizedBox(height: 20),
-          _HeroImage(url: article.thumbnailUrl),
-          const SizedBox(height: 20),
-          ArticleContentRenderer(content: article.content),
-        ],
-      ),
+      ],
     );
   }
 }

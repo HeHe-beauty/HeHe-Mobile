@@ -31,7 +31,8 @@ class ArticleDetailDto {
       tags: rawTags is List
           ? rawTags
                 .whereType<String>()
-                .where((tag) => tag.trim().isNotEmpty)
+                .map((tag) => tag.trim())
+                .where((tag) => tag.isNotEmpty)
                 .toList()
           : const [],
       createdAt: _nullableString(json['createdAt']),

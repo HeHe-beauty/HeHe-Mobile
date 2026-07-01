@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:hehe/dtos/common/article/article_detail_dto.dart';
+import 'package:hehe/screens/article_detail_screen.dart';
 import 'package:hehe/screens/content_detail_screen.dart';
 import 'package:hehe/screens/splash_screen.dart';
 import 'package:hehe/theme/app_theme.dart';
@@ -39,6 +41,28 @@ void main() {
     expect(find.text('Markdown 렌더링 테스트'), findsOneWidget);
     expect(find.textContaining('기존 내용', findRichText: true), findsOneWidget);
     expect(find.textContaining('**', findRichText: true), findsNothing);
+  });
+
+  testWidgets('shows article detail tags as badges', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: const ArticleDetailScreen.data(
+          article: ArticleDetailDto(
+            articleId: 1,
+            title: '레이저 제모하면 피부도 좋아질까?',
+            thumbnailUrl: '',
+            content: '본문',
+            tags: ['레이저제모', '모공', '피부'],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('레이저 제모하면 피부도 좋아질까?'), findsOneWidget);
+    expect(find.text('레이저제모'), findsOneWidget);
+    expect(find.text('모공'), findsOneWidget);
+    expect(find.text('피부'), findsOneWidget);
   });
 
   testWidgets('renders custom article blocks as native widgets', (

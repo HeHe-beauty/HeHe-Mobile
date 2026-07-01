@@ -9,7 +9,7 @@ void main() {
       'subTitle': '시작 전 알아야 할 것들',
       'thumbnailUrl': 'https://example.com/thumb.jpg',
       'content': '본문',
-      'tags': ['제모', '피부관리'],
+      'tags': [' 제모 ', '피부관리'],
       'createdAt': '2025-01-01 12:00:00',
       'updatedAt': '2025-06-01 09:00:00',
     });
