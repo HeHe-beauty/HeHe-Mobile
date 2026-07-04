@@ -7,6 +7,7 @@ import 'package:hehe/screens/content_detail_screen.dart';
 import 'package:hehe/screens/splash_screen.dart';
 import 'package:hehe/theme/app_theme.dart';
 import 'package:hehe/widgets/article/article_content_renderer.dart';
+import 'package:hehe/widgets/article/article_icon.dart';
 
 void main() {
   testWidgets('shows splash screen and navigates to home', (tester) async {
@@ -96,5 +97,40 @@ void main() {
     expect(find.text('피부가 매끈해 보여요.'), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
     expect(find.textContaining(':::section'), findsNothing);
+  });
+
+  testWidgets('renders all semantic custom section icons', (tester) async {
+    const icons = {
+      'shield': Icons.verified_user_rounded,
+      'cycle': Icons.autorenew_rounded,
+      'beard': Icons.face_6_rounded,
+      'gauge': Icons.speed_rounded,
+      'checklist': Icons.fact_check_rounded,
+      'heart': Icons.favorite_rounded,
+      'map': Icons.map_rounded,
+      'equipment': Icons.biotech_rounded,
+      'location': Icons.location_city_rounded,
+      'door': Icons.meeting_room_rounded,
+      'aftercare': Icons.healing_rounded,
+      'link': Icons.link_rounded,
+      'pin': Icons.location_on_rounded,
+    };
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: Scaffold(
+          body: Column(
+            children: icons.keys
+                .map((name) => ArticleIcon(name: name))
+                .toList(),
+          ),
+        ),
+      ),
+    );
+
+    for (final icon in icons.values) {
+      expect(find.byIcon(icon), findsOneWidget);
+    }
   });
 }

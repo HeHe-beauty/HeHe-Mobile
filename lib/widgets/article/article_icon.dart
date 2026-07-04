@@ -47,6 +47,84 @@ class ArticleIcon extends StatelessWidget {
             color: palette.primary,
           ),
         );
+      case 'shield':
+        return _MaterialArticleIcon(
+          icon: Icons.verified_user_rounded,
+          color: const Color(0xFF3B82F6),
+          size: size,
+        );
+      case 'cycle':
+        return _MaterialArticleIcon(
+          icon: Icons.autorenew_rounded,
+          color: const Color(0xFF14B8A6),
+          size: size,
+        );
+      case 'beard':
+        return _MaterialArticleIcon(
+          icon: Icons.face_6_rounded,
+          color: const Color(0xFF475569),
+          size: size,
+        );
+      case 'gauge':
+        return _MaterialArticleIcon(
+          icon: Icons.speed_rounded,
+          color: const Color(0xFFF59E0B),
+          size: size,
+        );
+      case 'checklist':
+        return _MaterialArticleIcon(
+          icon: Icons.fact_check_rounded,
+          color: const Color(0xFF2563EB),
+          size: size,
+        );
+      case 'heart':
+        return _MaterialArticleIcon(
+          icon: Icons.favorite_rounded,
+          color: const Color(0xFFEC4899),
+          size: size,
+        );
+      case 'map':
+        return _MaterialArticleIcon(
+          icon: Icons.map_rounded,
+          color: const Color(0xFF3B82F6),
+          size: size,
+        );
+      case 'equipment':
+        return _MaterialArticleIcon(
+          icon: Icons.biotech_rounded,
+          color: const Color(0xFF7C3AED),
+          size: size,
+        );
+      case 'location':
+        return _MaterialArticleIcon(
+          icon: Icons.location_city_rounded,
+          color: const Color(0xFF0D9488),
+          size: size,
+        );
+      case 'door':
+        return _MaterialArticleIcon(
+          icon: Icons.meeting_room_rounded,
+          color: const Color(0xFFF59E0B),
+          size: size,
+        );
+      case 'aftercare':
+        return _MaterialArticleIcon(
+          icon: Icons.healing_rounded,
+          color: const Color(0xFF06B6D4),
+          size: size,
+        );
+      case 'link':
+        return _MaterialArticleIcon(
+          icon: Icons.link_rounded,
+          color: const Color(0xFF2563EB),
+          size: size,
+        );
+      case 'pin':
+        return _MaterialArticleIcon(
+          icon: Icons.location_on_rounded,
+          color: const Color(0xFFEF4444),
+          size: size,
+        );
       default:
         return Container(
           width: size,
@@ -62,6 +140,27 @@ class ArticleIcon extends StatelessWidget {
           ),
         );
     }
+  }
+}
+
+class _MaterialArticleIcon extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final double size;
+
+  const _MaterialArticleIcon({
+    required this.icon,
+    required this.color,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Icon(icon, size: size, color: color),
+    );
   }
 }
 
