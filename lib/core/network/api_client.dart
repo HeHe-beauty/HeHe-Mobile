@@ -176,10 +176,7 @@ class ApiClient {
     }
 
     final uri = ApiConfig.uri(ApiEndpoints.authTokenRefresh);
-    debugPrint(
-      '[ApiClient][Auth] refresh request '
-      'refreshToken=${_maskedToken(savedSession.refreshToken)}',
-    );
+    debugPrint('[ApiClient][Auth] refresh request');
     final response = await _client.post(
       uri,
       headers: _jsonHeaders(null),
@@ -224,13 +221,5 @@ class ApiClient {
     }
 
     return jsonDecode(response.body) as Map<String, dynamic>;
-  }
-
-  static String _maskedToken(String token) {
-    if (token.isEmpty) return '<empty>';
-    if (token.length <= 12) return '<len:${token.length}>';
-
-    return '${token.substring(0, 6)}...${token.substring(token.length - 4)}'
-        '(len:${token.length})';
   }
 }

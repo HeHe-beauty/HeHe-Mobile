@@ -4,7 +4,6 @@ import '../theme/app_text_styles.dart';
 
 class HeaderBar extends StatelessWidget {
   final String title;
-  final VoidCallback? onTapFcmTest;
   final VoidCallback? onTapProfile;
   final VoidCallback? onTapSettings;
   final bool isLoggedIn;
@@ -16,7 +15,6 @@ class HeaderBar extends StatelessWidget {
     super.key,
     required this.title,
     required this.isLoggedIn,
-    this.onTapFcmTest,
     this.onTapProfile,
     this.onTapSettings,
     this.backgroundColor,
@@ -49,12 +47,6 @@ class HeaderBar extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (onTapFcmTest != null)
-                _UtilityIconButton(
-                  icon: Icons.notifications_active_outlined,
-                  onTap: onTapFcmTest,
-                  color: utilityIconColor,
-                ),
               _UtilityIconButton(
                 icon: Icons.person_outline,
                 onTap: onTapProfile,

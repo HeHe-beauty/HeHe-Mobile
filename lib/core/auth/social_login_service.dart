@@ -82,7 +82,6 @@ class SocialLoginService {
           : await UserApi.instance.loginWithKakaoAccount();
       debugPrint(
         '[Auth][Kakao] token received '
-        'accessToken=${_maskedToken(token.accessToken)} '
         'idTokenPresent=${token.idToken != null}',
       );
       return SocialLoginCredential(
@@ -139,7 +138,7 @@ class SocialLoginService {
       debugPrint('[Auth][Naver] access token is empty after SDK login');
       throw const SocialLoginException('네이버 로그인 토큰을 가져오지 못했어요.');
     }
-    debugPrint('[Auth][Naver] token received ${_maskedToken(accessToken)}');
+    debugPrint('[Auth][Naver] token received');
 
     return SocialLoginCredential(
       provider: SocialLoginProvider.naver,
@@ -156,13 +155,5 @@ class SocialLoginService {
     }
 
     return '카카오 로그인에 실패했어요.';
-  }
-
-  static String _maskedToken(String token) {
-    if (token.isEmpty) return '<empty>';
-    if (token.length <= 12) return '<len:${token.length}>';
-
-    return '${token.substring(0, 6)}...${token.substring(token.length - 4)}'
-        '(len:${token.length})';
   }
 }

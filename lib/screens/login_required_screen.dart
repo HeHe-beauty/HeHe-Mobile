@@ -37,7 +37,6 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
       debugPrint(
         '[Auth][LoginScreen] social credential ready '
         'provider=${credential.provider.name} '
-        'accessToken=${_maskedToken(credential.accessToken)} '
         'idTokenPresent=${credential.idToken != null}',
       );
 
@@ -93,14 +92,6 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
         Navigator.pop(context);
       }
     });
-  }
-
-  static String _maskedToken(String token) {
-    if (token.isEmpty) return '<empty>';
-    if (token.length <= 12) return '<len:${token.length}>';
-
-    return '${token.substring(0, 6)}...${token.substring(token.length - 4)}'
-        '(len:${token.length})';
   }
 
   @override

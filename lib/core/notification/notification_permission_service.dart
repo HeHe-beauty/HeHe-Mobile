@@ -64,14 +64,6 @@ class NotificationPermissionService {
         '${settings.authorizationStatus}',
       );
     }
-
-    final token = await _messaging.getToken();
-    if (token == null || token.isEmpty) {
-      debugPrint('FCM token is null');
-      return;
-    }
-
-    debugPrint('FCM token: $token');
   }
 
   static Future<void> initializeMessageHandlers() async {
