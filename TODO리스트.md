@@ -37,11 +37,13 @@
   - 완료됨: 소스와 release AAB 바이너리에서 테스트 API·토큰 로그 문자열 미검출
   - 검증: `flutter analyze`, 전체 테스트, release AAB 빌드 통과
 
-- [ ] **6. Naver Reverse Geocode secret의 클라이언트 노출 제거** — 미완료
-  - 앱에서 Naver Map client secret을 직접 사용하는 구조 제거
-  - 리버스 지오코딩 요청을 백엔드 API로 이전
-  - 기존 노출 가능성이 있는 secret 교체
-  - 앱 바이너리에 해당 secret이 포함되지 않는지 검증
+- [ ] **6. Naver Reverse Geocode secret의 클라이언트 노출 제거** — 앱 작업 완료, 외부 확인 필요
+  - 완료됨: 앱에서 Naver Map client ID·secret을 직접 사용하는 구조 제거
+  - 완료됨: secret이 필요 없는 OS 네이티브 지오코더로 지역 라벨 기능 이전
+  - 완료됨: 좌표별 1일 메모리 캐시와 한국 주소 라벨 정규화 적용
+  - 완료됨: 소스와 release AAB 바이너리에서 Naver secret 관련 문자열 미검출
+  - 미완료: 기존 Naver Cloud secret을 실제 배포 빌드에 사용한 적이 있다면 콘솔에서 폐기·교체 확인
+  - 검증: `flutter analyze`, 전체 테스트, release AAB 빌드 통과
 
 ## 최종 출시 검증
 

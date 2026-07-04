@@ -21,7 +21,7 @@ import '../models/subway_station.dart';
 import '../repositories/subway_station_repository.dart';
 import '../theme/app_palette.dart';
 import '../utils/app_snackbar.dart';
-import '../utils/naver_reverse_geocode.dart';
+import '../utils/region_label_resolver.dart';
 import '../utils/place_distance_utils.dart';
 import '../utils/place_item_mappers.dart';
 import '../widgets/cluster_count_marker.dart';
@@ -1027,7 +1027,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   Future<void> _resolveRegionLabel(NLatLng target, String requestKey) async {
     final requestToken = ++_regionRequestToken;
 
-    final label = await NaverReverseGeocode.resolveRegionLabel(
+    final label = await RegionLabelResolver.resolve(
       latitude: target.latitude,
       longitude: target.longitude,
     );
