@@ -1,18 +1,29 @@
 # HeHe
-# hehe
 
-A new Flutter project.
+## Local setup
 
-## Getting Started
+Social login credentials are loaded from the ignored `env/dev.json` file at
+compile time. Run the app with:
 
-This project is a starting point for a Flutter application.
+```sh
+flutter run --dart-define-from-file=env/dev.json
+```
 
-A few resources to get you started if this is your first Flutter project:
+For Android Studio, add the following under **Run > Edit Configurations >
+Additional run args**:
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```text
+--dart-define-from-file=env/dev.json
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Running without this option intentionally leaves Kakao and Naver login
+unconfigured.
+
+## Android release
+
+Release signing credentials live in the ignored `android/key.properties` file.
+Build the signed app bundle with:
+
+```sh
+flutter build appbundle --release --dart-define-from-file=env/dev.json
+```

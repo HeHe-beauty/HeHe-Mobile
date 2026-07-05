@@ -1,3 +1,4 @@
+import java.util.Base64
 import java.util.Properties
 
 plugins {
@@ -16,14 +17,56 @@ if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
+}
+
+val releaseSigningKeys = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+val releaseSigningConfigured = releaseSigningKeys.all {
+    !keystoreProperties.getProperty(it).isNullOrBlank()
+} && file(keystoreProperties.getProperty("storeFile", "")).exists()
+val releaseBuildRequested = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+
+if (releaseBuildRequested && !releaseSigningConfigured) {
+    throw GradleException(
+        "Release signing is not configured. Copy android/key.properties.example " +
+            "to android/key.properties and provide the upload keystore credentials."
+    )
+}
+
 fun localOrProjectProperty(name: String, fallback: String): String {
     return localProperties.getProperty(name)
         ?: project.findProperty(name)?.toString()
         ?: fallback
 }
 
+val dartDefines = project.findProperty("dart-defines")
+    ?.toString()
+    ?.split(",")
+    ?.mapNotNull { encoded ->
+        runCatching {
+            String(Base64.getDecoder().decode(encoded), Charsets.UTF_8)
+        }.getOrNull()
+            ?.split("=", limit = 2)
+            ?.takeIf { it.size == 2 }
+            ?.let { it[0] to it[1] }
+    }
+    ?.toMap()
+    .orEmpty()
+
+val kakaoUrlScheme = localOrProjectProperty(
+    "KAKAO_URL_SCHEME",
+    dartDefines["KAKAO_CUSTOM_SCHEME"]
+        ?: dartDefines["KAKAO_NATIVE_APP_KEY"]?.let { "kakao$it" }
+        ?: "kakao_missing_native_app_key"
+)
+
 android {
-    namespace = "com.example.hehe"
+    namespace = "kr.hehehe.hehe"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -37,26 +80,33 @@ android {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
+    signingConfigs {
+        if (releaseSigningConfigured) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.hehe"
+        applicationId = "kr.hehehe.hehe"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders["kakaoUrlScheme"] = localOrProjectProperty(
-            "KAKAO_URL_SCHEME",
-            "kakao_missing_native_app_key"
-        )
+        manifestPlaceholders["kakaoUrlScheme"] = kakaoUrlScheme
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            if (releaseSigningConfigured) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 }
