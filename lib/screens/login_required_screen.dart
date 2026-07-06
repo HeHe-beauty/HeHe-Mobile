@@ -20,9 +20,14 @@ class LoginRequiredScreen extends StatefulWidget {
 
 class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
   SocialLoginProvider? _loadingProvider;
+  bool _isAgeConfirmed = false;
 
   Future<void> _loginWithProvider(SocialLoginProvider provider) async {
     if (_loadingProvider != null) return;
+    if (!_isAgeConfirmed) {
+      showAppSnackBar(context, '만 14세 이상임을 먼저 확인해주세요.');
+      return;
+    }
 
     setState(() {
       _loadingProvider = provider;
@@ -126,6 +131,12 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
                     const SizedBox(height: 28),
                     _LoginCard(
                       loadingProvider: _loadingProvider,
+                      isAgeConfirmed: _isAgeConfirmed,
+                      onAgeConfirmationChanged: (value) {
+                        setState(() {
+                          _isAgeConfirmed = value;
+                        });
+                      },
                       onTapKakao: () =>
                           _loginWithProvider(SocialLoginProvider.kakao),
                       onTapNaver: () =>
@@ -267,11 +278,15 @@ class _LoginCard extends StatelessWidget {
   final VoidCallback onTapKakao;
   final VoidCallback onTapNaver;
   final SocialLoginProvider? loadingProvider;
+  final bool isAgeConfirmed;
+  final ValueChanged<bool> onAgeConfirmationChanged;
 
   const _LoginCard({
     required this.onTapKakao,
     required this.onTapNaver,
     required this.loadingProvider,
+    required this.isAgeConfirmed,
+    required this.onAgeConfirmationChanged,
   });
 
   @override
@@ -318,18 +333,57 @@ class _LoginCard extends StatelessWidget {
               color: palette.textSecondary,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
+          Container(
+            decoration: BoxDecoration(
+              color: palette.surfaceSoft,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: palette.border),
+            ),
+            child: CheckboxListTile(
+              key: const ValueKey('age-confirmation-checkbox'),
+              value: isAgeConfirmed,
+              onChanged: loadingProvider == null
+                  ? (value) => onAgeConfirmationChanged(value ?? false)
+                  : null,
+              controlAffinity: ListTileControlAffinity.leading,
+              activeColor: palette.primary,
+              checkColor: palette.surface,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+              visualDensity: VisualDensity.compact,
+              title: Text(
+                '만 14세 이상입니다 (필수)',
+                style: AppTextStyles.homeBodyStrong.copyWith(
+                  color: palette.textPrimary,
+                ),
+              ),
+              subtitle: Text(
+                '만 14세 미만은 회원가입할 수 없어요.',
+                style: AppTextStyles.homeCaption.copyWith(
+                  color: palette.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
           _SocialLoginImageButton(
+            key: const ValueKey('kakao-login-button'),
             assetPath: 'assets/images/kakao_login_medium_wide.png',
             progressColor: const Color(0xFF191919),
-            onTap: loadingProvider == null ? onTapKakao : null,
+            onTap: loadingProvider == null && isAgeConfirmed
+                ? onTapKakao
+                : null,
             isLoading: loadingProvider == SocialLoginProvider.kakao,
           ),
           const SizedBox(height: 12),
           _SocialLoginImageButton(
+            key: const ValueKey('naver-login-button'),
             assetPath: 'assets/images/naver_login_medium_wide.png',
             progressColor: Colors.white,
-            onTap: loadingProvider == null ? onTapNaver : null,
+            onTap: loadingProvider == null && isAgeConfirmed
+                ? onTapNaver
+                : null,
             isLoading: loadingProvider == SocialLoginProvider.naver,
           ),
           const SizedBox(height: 18),
@@ -355,7 +409,7 @@ class _LoginCard extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    '로그인 시 서비스 이용약관 및 개인정보처리방침에 동의한 것으로 간주됩니다.',
+                    '로그인 전에 이용약관과 개인정보처리방침을 확인해주세요.',
                     style: AppTextStyles.homeCaption.copyWith(
                       color: palette.textSecondary,
                       height: 1.45,
@@ -432,6 +486,7 @@ class _SocialLoginImageButton extends StatelessWidget {
   final bool isLoading;
 
   const _SocialLoginImageButton({
+    super.key,
     required this.assetPath,
     required this.progressColor,
     required this.onTap,
@@ -440,37 +495,43 @@ class _SocialLoginImageButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(6),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: AspectRatio(
-          aspectRatio: _kakaoWideAspectRatio,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Positioned.fill(child: Image.asset(assetPath, fit: BoxFit.fill)),
-              if (isLoading)
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 160),
+      opacity: onTap == null && !isLoading ? 0.45 : 1,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(6),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: AspectRatio(
+            aspectRatio: _kakaoWideAspectRatio,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
                 Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.08),
-                    ),
-                    child: Center(
-                      child: SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.4,
-                          color: progressColor,
+                  child: Image.asset(assetPath, fit: BoxFit.fill),
+                ),
+                if (isLoading)
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.08),
+                      ),
+                      child: Center(
+                        child: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.4,
+                            color: progressColor,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
