@@ -9,6 +9,7 @@ class ApiEndpoints {
   static const String authTokenRefresh = '/api/v1/auth/token/refresh';
 
   /// 유저와 관련된 api 목록
+  static const String users = '/api/v1/users';
   static const String userSummary = '/api/v1/users/summary';
 
   /// 푸시 토큰과 관련된 api 목록

@@ -20,4 +20,15 @@ class UserApi {
     final data = body['data'] as Map<String, dynamic>;
     return UserSummaryDto.fromJson(data);
   }
+
+  static Future<void> deleteUser({required String accessToken}) async {
+    final body = await _apiClient.delete(
+      ApiEndpoints.users,
+      headers: ApiClient.bearerHeaders(accessToken),
+    );
+
+    if (body['success'] != true) {
+      throw Exception('회원 탈퇴 실패');
+    }
+  }
 }

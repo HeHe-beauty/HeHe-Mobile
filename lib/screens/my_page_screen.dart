@@ -3,6 +3,7 @@ import '../core/auth/auth_gate.dart';
 import '../core/auth/auth_prompt.dart';
 import '../core/auth/auth_session_store.dart';
 import '../core/auth/auth_state.dart';
+import '../core/common/favorite_store.dart';
 import '../core/notification/notification_permission_service.dart';
 import '../data/auth/auth_repository.dart';
 import '../data/user/user_repository.dart';
@@ -24,6 +25,7 @@ class MyPageScreen extends StatefulWidget {
 class _MyPageScreenState extends State<MyPageScreen>
     with WidgetsBindingObserver {
   UserSummaryDto _summary = UserSummaryDto.empty();
+  bool _isWithdrawing = false;
 
   @override
   void initState() {
@@ -148,6 +150,91 @@ class _MyPageScreenState extends State<MyPageScreen>
     await _loadUserSummary();
   }
 
+  Future<void> _withdrawAccount() async {
+    if (_isWithdrawing) return;
+
+    final accessToken = AuthState.session?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      await AuthSessionStore.clear();
+      AuthState.logOut();
+      if (!mounted) return;
+      showAppSnackBar(context, '로그인이 만료되었습니다.');
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final palette = dialogContext.palette;
+
+        return AlertDialog(
+          backgroundColor: palette.surface,
+          title: Text(
+            '회원탈퇴',
+            style: AppTextStyles.homeSectionTitle.copyWith(
+              color: palette.textPrimary,
+            ),
+          ),
+          content: Text(
+            '탈퇴하면 계정이 비활성화되고 로그인 토큰이 만료됩니다. 찜한 병원과 일정 등 연관 데이터는 정책에 따라 보관 후 삭제됩니다.',
+            style: AppTextStyles.homeBody.copyWith(
+              color: palette.textSecondary,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(
+                '취소',
+                style: AppTextStyles.homeBodyStrong.copyWith(
+                  color: palette.textSecondary,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(
+                '탈퇴',
+                style: AppTextStyles.homeBodyStrong.copyWith(
+                  color: palette.danger,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _isWithdrawing = true;
+    });
+
+    try {
+      await UserRepository.deleteUser(accessToken: accessToken);
+
+      if (!mounted) return;
+
+      FavoriteStore.instance.clear();
+      await AuthSessionStore.clear();
+      AuthState.logOut();
+
+      if (!mounted) return;
+      showAppSnackBar(context, '회원탈퇴가 완료되었습니다.');
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, '회원탈퇴에 실패했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isWithdrawing = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
@@ -209,6 +296,7 @@ class _MyPageScreenState extends State<MyPageScreen>
                             const SizedBox(height: 16),
                             _AccountSection(
                               isLoggedIn: isLoggedIn,
+                              isWithdrawing: _isWithdrawing,
                               onTapLogout: () async {
                                 final accessToken =
                                     AuthState.session?.accessToken;
@@ -247,12 +335,7 @@ class _MyPageScreenState extends State<MyPageScreen>
                                   }
                                 }
                               },
-                              onTapWithdraw: () {
-                                showAppSnackBar(
-                                  context,
-                                  '회원탈퇴 기능은 추후 연결 예정입니다.',
-                                );
-                              },
+                              onTapWithdraw: _withdrawAccount,
                             ),
                           ],
                         ),
@@ -597,11 +680,13 @@ class _MenuTile extends StatelessWidget {
 
 class _AccountSection extends StatelessWidget {
   final bool isLoggedIn;
+  final bool isWithdrawing;
   final VoidCallback onTapLogout;
   final VoidCallback onTapWithdraw;
 
   const _AccountSection({
     required this.isLoggedIn,
+    required this.isWithdrawing,
     required this.onTapLogout,
     required this.onTapWithdraw,
   });
@@ -635,12 +720,12 @@ class _AccountSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         InkWell(
-          onTap: onTapWithdraw,
+          onTap: isLoggedIn && !isWithdrawing ? onTapWithdraw : null,
           borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Text(
-              '회원탈퇴',
+              isWithdrawing ? '탈퇴 처리 중...' : '회원탈퇴',
               style: AppTextStyles.homeCaption.copyWith(color: palette.danger),
             ),
           ),

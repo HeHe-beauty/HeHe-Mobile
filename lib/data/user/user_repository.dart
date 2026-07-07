@@ -5,4 +5,8 @@ class UserRepository {
   static Future<UserSummaryDto> getUserSummary({required String accessToken}) {
     return UserApi.fetchUserSummary(accessToken: accessToken);
   }
+
+  static Future<void> deleteUser({required String accessToken}) {
+    return UserApi.deleteUser(accessToken: accessToken);
+  }
 }
