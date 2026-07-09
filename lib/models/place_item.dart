@@ -9,6 +9,8 @@ class PlaceItem {
   final int? bookmarkCount;
   final double latitude;
   final double longitude;
+  final String contactNumber;
+  final String contactUrl;
 
   const PlaceItem({
     this.hospitalId,
@@ -21,6 +23,8 @@ class PlaceItem {
     this.bookmarkCount = 0,
     required this.latitude,
     required this.longitude,
+    this.contactNumber = '',
+    this.contactUrl = '',
   });
 
   PlaceItem copyWith({
@@ -34,6 +38,8 @@ class PlaceItem {
     int? bookmarkCount,
     double? latitude,
     double? longitude,
+    String? contactNumber,
+    String? contactUrl,
   }) {
     return PlaceItem(
       hospitalId: hospitalId ?? this.hospitalId,
@@ -46,6 +52,8 @@ class PlaceItem {
       bookmarkCount: bookmarkCount ?? this.bookmarkCount ?? 0,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      contactNumber: contactNumber ?? this.contactNumber,
+      contactUrl: contactUrl ?? this.contactUrl,
     );
   }
 }

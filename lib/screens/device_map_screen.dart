@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/auth/auth_gate.dart';
 import '../core/auth/auth_prompt.dart';
@@ -360,20 +361,49 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
           return;
         }
 
+        final contactPlace = await _resolvePlaceDetail(
+          place,
+          showFallbackError: false,
+        );
+        if (!mounted) return;
+
         try {
           await ContactRepository.addCallContact(
             accessToken: accessToken,
             hospitalId: hospitalId,
           );
-
-          if (!mounted) return;
-          showAppSnackBar(context, '문의 내역에 저장했어요.');
         } catch (e) {
-          if (!mounted) return;
-          showAppSnackBar(context, '문의 내역을 저장하지 못했어요. 잠시 후 다시 시도해주세요.');
+          debugPrint('contact history register error: $e');
         }
+
+        await _launchHospitalCall(contactPlace);
       },
     );
+  }
+
+  Future<void> _launchHospitalCall(PlaceItem place) async {
+    final uri = _callUriForPlace(place);
+    if (uri == null) {
+      showAppSnackBar(context, '전화번호를 확인하지 못했어요.');
+      return;
+    }
+
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && mounted) {
+      showAppSnackBar(context, '전화 앱을 열 수 없어요.');
+    }
+  }
+
+  Uri? _callUriForPlace(PlaceItem place) {
+    final contactUrl = place.contactUrl.trim();
+    if (contactUrl.isNotEmpty) {
+      final uri = Uri.tryParse(contactUrl);
+      if (uri != null && uri.scheme == 'tel') return uri;
+    }
+
+    final digits = place.contactNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (digits.isEmpty) return null;
+    return Uri(scheme: 'tel', path: digits);
   }
 
   Future<void> _onMapReady(NaverMapController controller) async {

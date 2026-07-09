@@ -39,6 +39,8 @@ PlaceItem placeItemFromHospitalDetail(
     bookmarkCount: hospital.bookmarkCount,
     latitude: hospital.lat,
     longitude: hospital.lng,
+    contactNumber: hospital.contactNumber,
+    contactUrl: hospital.contactUrl,
   );
 }
 
