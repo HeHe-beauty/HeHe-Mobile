@@ -9,12 +9,16 @@ class AuthSessionStore {
   static const _refreshTokenKey = 'auth.refreshToken';
   static const _userIdKey = 'auth.userId';
   static const _nicknameKey = 'auth.nickname';
+  static const _providerKey = 'auth.provider';
+  static const _legacyProviderAccessTokenKey = 'auth.providerAccessToken';
 
   static Future<AuthSession?> read() async {
     final accessToken = await _storage.read(key: _accessTokenKey);
     final refreshToken = await _storage.read(key: _refreshTokenKey);
     final userIdValue = await _storage.read(key: _userIdKey);
     final nickname = await _storage.read(key: _nicknameKey);
+    final provider = await _storage.read(key: _providerKey);
+    await _storage.delete(key: _legacyProviderAccessTokenKey);
 
     if (accessToken == null ||
         refreshToken == null ||
@@ -34,6 +38,7 @@ class AuthSessionStore {
       refreshToken: refreshToken,
       userId: userId,
       nickname: nickname,
+      provider: provider,
     );
   }
 
@@ -42,6 +47,12 @@ class AuthSessionStore {
     await _storage.write(key: _refreshTokenKey, value: session.refreshToken);
     await _storage.write(key: _userIdKey, value: session.userId.toString());
     await _storage.write(key: _nicknameKey, value: session.nickname);
+    if (session.provider != null) {
+      await _storage.write(key: _providerKey, value: session.provider);
+    } else {
+      await _storage.delete(key: _providerKey);
+    }
+    await _storage.delete(key: _legacyProviderAccessTokenKey);
   }
 
   static Future<void> clear() async {
@@ -49,5 +60,7 @@ class AuthSessionStore {
     await _storage.delete(key: _refreshTokenKey);
     await _storage.delete(key: _userIdKey);
     await _storage.delete(key: _nicknameKey);
+    await _storage.delete(key: _providerKey);
+    await _storage.delete(key: _legacyProviderAccessTokenKey);
   }
 }

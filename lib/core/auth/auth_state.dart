@@ -5,12 +5,14 @@ class AuthSession {
   final String refreshToken;
   final int userId;
   final String nickname;
+  final String? provider;
 
   const AuthSession({
     required this.accessToken,
     required this.refreshToken,
     required this.userId,
     required this.nickname,
+    this.provider,
   });
 
   AuthSession copyWith({
@@ -18,12 +20,14 @@ class AuthSession {
     String? refreshToken,
     int? userId,
     String? nickname,
+    String? provider,
   }) {
     return AuthSession(
       accessToken: accessToken ?? this.accessToken,
       refreshToken: refreshToken ?? this.refreshToken,
       userId: userId ?? this.userId,
       nickname: nickname ?? this.nickname,
+      provider: provider ?? this.provider,
     );
   }
 }

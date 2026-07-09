@@ -3,6 +3,7 @@ import '../core/auth/auth_gate.dart';
 import '../core/auth/auth_prompt.dart';
 import '../core/auth/auth_session_store.dart';
 import '../core/auth/auth_state.dart';
+import '../core/auth/social_login_service.dart';
 import '../core/common/favorite_store.dart';
 import '../core/notification/notification_permission_service.dart';
 import '../data/auth/auth_repository.dart';
@@ -153,12 +154,23 @@ class _MyPageScreenState extends State<MyPageScreen>
   Future<void> _withdrawAccount() async {
     if (_isWithdrawing) return;
 
-    final accessToken = AuthState.session?.accessToken;
+    final session = AuthState.session;
+    final accessToken = session?.accessToken;
     if (accessToken == null || accessToken.isEmpty) {
       await AuthSessionStore.clear();
       AuthState.logOut();
       if (!mounted) return;
       showAppSnackBar(context, '로그인이 만료되었습니다.');
+      return;
+    }
+
+    final provider = session?.provider;
+    if (provider == null || provider.isEmpty) {
+      await AuthSessionStore.clear();
+      AuthState.logOut();
+      if (!mounted) return;
+      showAppSnackBar(context, '탈퇴를 위해 다시 로그인해주세요.');
+      Navigator.pop(context);
       return;
     }
 
@@ -176,9 +188,10 @@ class _MyPageScreenState extends State<MyPageScreen>
             ),
           ),
           content: Text(
-            '탈퇴하면 계정이 비활성화되고 로그인 토큰이 만료됩니다. 찜한 병원과 일정 등 연관 데이터는 정책에 따라 보관 후 삭제됩니다.',
+            '탈퇴를 진행하려면 가입한 소셜 계정으로 한 번 더 본인 인증이 필요합니다.\n\n인증 후 계정이 비활성화되고 로그인 토큰이 만료됩니다. 찜한 병원과 일정 등 연관 데이터는 정책에 따라 보관 후 삭제됩니다.',
             style: AppTextStyles.homeBody.copyWith(
               color: palette.textSecondary,
+              height: 1.45,
             ),
           ),
           actions: [
@@ -194,7 +207,7 @@ class _MyPageScreenState extends State<MyPageScreen>
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, true),
               child: Text(
-                '탈퇴',
+                '인증 후 탈퇴',
                 style: AppTextStyles.homeBodyStrong.copyWith(
                   color: palette.danger,
                 ),
@@ -212,7 +225,13 @@ class _MyPageScreenState extends State<MyPageScreen>
     });
 
     try {
-      await UserRepository.deleteUser(accessToken: accessToken);
+      final credential = await _reauthenticateForWithdrawal(provider);
+
+      await UserRepository.deleteUser(
+        accessToken: accessToken,
+        provider: credential.provider.name.toUpperCase(),
+        providerAccessToken: credential.accessToken,
+      );
 
       if (!mounted) return;
 
@@ -223,6 +242,9 @@ class _MyPageScreenState extends State<MyPageScreen>
       if (!mounted) return;
       showAppSnackBar(context, '회원탈퇴가 완료되었습니다.');
       Navigator.pop(context);
+    } on SocialLoginException catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, e.message);
     } catch (e) {
       if (!mounted) return;
       showAppSnackBar(context, '회원탈퇴에 실패했어요. 잠시 후 다시 시도해주세요.');
@@ -233,6 +255,17 @@ class _MyPageScreenState extends State<MyPageScreen>
         });
       }
     }
+  }
+
+  Future<SocialLoginCredential> _reauthenticateForWithdrawal(
+    String provider,
+  ) async {
+    final normalizedProvider = provider.toLowerCase();
+    return switch (normalizedProvider) {
+      'kakao' => SocialLoginService.loginWithKakao(),
+      'naver' => SocialLoginService.loginWithNaver(),
+      _ => throw const SocialLoginException('지원하지 않는 로그인 방식입니다.'),
+    };
   }
 
   @override

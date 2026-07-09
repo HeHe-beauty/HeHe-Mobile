@@ -4,6 +4,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/network/api_endpoints.dart';
 import 'auth_login_request_dto.dart';
 import 'auth_login_response_dto.dart';
+import 'auth_signup_request_dto.dart';
 import 'auth_token_refresh_request_dto.dart';
 import 'auth_token_refresh_response_dto.dart';
 
@@ -16,6 +17,22 @@ class AuthApi {
 
     final body = await _apiClient.post(
       ApiEndpoints.authLogin,
+      body: requestBody,
+    );
+
+    final data = body['data'] as Map<String, dynamic>;
+
+    return AuthLoginResponseDto.fromJson(data);
+  }
+
+  static Future<AuthLoginResponseDto> signup(
+    AuthSignupRequestDto request,
+  ) async {
+    final requestBody = request.toJson();
+    debugPrint('[Auth][Api] signup request provider=${request.provider}');
+
+    final body = await _apiClient.post(
+      ApiEndpoints.authSignup,
       body: requestBody,
     );
 

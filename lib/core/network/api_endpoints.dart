@@ -5,12 +5,14 @@ class ApiEndpoints {
 
   /// 인증과 관련된 api 목록
   static const String authLogin = '/api/v1/auth/login';
+  static const String authSignup = '/api/v1/auth/signup';
   static const String authLogout = '/api/v1/auth/logout';
   static const String authTokenRefresh = '/api/v1/auth/token/refresh';
 
   /// 유저와 관련된 api 목록
   static const String users = '/api/v1/users';
   static const String userSummary = '/api/v1/users/summary';
+  static const String userAgreements = '/api/v1/users/agreements';
 
   /// 푸시 토큰과 관련된 api 목록
   static const String pushTokens = '/api/v1/push-tokens';

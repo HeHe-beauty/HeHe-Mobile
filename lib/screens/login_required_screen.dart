@@ -2,40 +2,60 @@ import 'package:flutter/material.dart';
 import '../core/auth/auth_session_store.dart';
 import '../core/auth/auth_state.dart';
 import '../core/auth/social_login_service.dart';
+import '../core/common/app_settings_state.dart';
 import '../core/notification/notification_permission_service.dart';
 import '../data/auth/auth_repository.dart';
+import '../dtos/common/auth/auth_login_response_dto.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/app_snackbar.dart';
+import '../utils/legal_document_links.dart';
 
 class LoginRequiredScreen extends StatefulWidget {
   final String? title;
   final String? description;
+  final bool showSignupConsentPreview;
 
-  const LoginRequiredScreen({super.key, this.title, this.description});
+  const LoginRequiredScreen({
+    super.key,
+    this.title,
+    this.description,
+    this.showSignupConsentPreview = false,
+  });
 
   @override
   State<LoginRequiredScreen> createState() => _LoginRequiredScreenState();
 }
 
 class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
+  static const _termsVersion = 'v1.0.0';
+
   SocialLoginProvider? _loadingProvider;
+  SocialLoginCredential? _pendingSignupCredential;
+  late bool _isSignupConsentVisible;
+  bool _isSubmittingSignup = false;
+  bool _isNotificationAllowed = false;
+  bool _isMarketingAllowed = false;
+  bool _isNightPushAllowed = false;
   bool _isAgeConfirmed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isSignupConsentVisible = widget.showSignupConsentPreview;
+  }
 
   Future<void> _loginWithProvider(SocialLoginProvider provider) async {
     if (_loadingProvider != null) return;
-    if (!_isAgeConfirmed) {
-      showAppSnackBar(context, '만 14세 이상임을 먼저 확인해주세요.');
-      return;
-    }
 
     setState(() {
       _loadingProvider = provider;
     });
 
+    SocialLoginCredential? credential;
     try {
       debugPrint('[Auth][LoginScreen] login tapped provider=${provider.name}');
-      final credential = switch (provider) {
+      credential = switch (provider) {
         SocialLoginProvider.kakao => await SocialLoginService.loginWithKakao(),
         SocialLoginProvider.naver => await SocialLoginService.loginWithNaver(),
       };
@@ -52,20 +72,15 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
 
       if (!mounted) return;
 
-      final session = AuthSession(
-        accessToken: auth.accessToken,
-        refreshToken: auth.refreshToken,
-        userId: auth.user.userId,
-        nickname: auth.user.nickname,
+      if (!auth.exists) {
+        _showSignupConsentFlow(credential);
+        return;
+      }
+
+      await _completeLoginWithAuthResponse(
+        auth: auth,
+        provider: credential.provider.name,
       );
-
-      await AuthSessionStore.write(session);
-      debugPrint('[Auth][LoginScreen] auth session saved');
-
-      if (!mounted) return;
-
-      _completeLogin(context, session);
-      await NotificationPermissionService.syncCurrentDeviceTokenPreference();
     } on SocialLoginException catch (e) {
       debugPrint('[Auth][LoginScreen] social login exception: $e');
       if (mounted) {
@@ -73,6 +88,10 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
       }
     } catch (e) {
       debugPrint('[Auth][LoginScreen] login error: $e');
+      if (mounted && credential != null && _isSignupRequiredError(e)) {
+        _showSignupConsentFlow(credential);
+        return;
+      }
       if (mounted) {
         showAppSnackBar(context, '로그인에 실패했어요. 잠시 후 다시 시도해주세요.');
       }
@@ -83,6 +102,119 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
         });
       }
     }
+  }
+
+  bool _isSignupRequiredError(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('user_not_found') ||
+        message.contains('user not found') ||
+        message.contains('not found') ||
+        message.contains('가입된') ||
+        message.contains('찾을 수 없');
+  }
+
+  void _showSignupConsentFlow(SocialLoginCredential credential) {
+    setState(() {
+      _pendingSignupCredential = credential;
+      _isSignupConsentVisible = true;
+      _loadingProvider = null;
+      _isNotificationAllowed = false;
+      _isMarketingAllowed = false;
+      _isNightPushAllowed = false;
+      _isAgeConfirmed = false;
+    });
+  }
+
+  void _setNotificationAllowed(bool value) {
+    setState(() {
+      _isNotificationAllowed = value;
+      if (!value) {
+        _isMarketingAllowed = false;
+        _isNightPushAllowed = false;
+      }
+    });
+  }
+
+  Future<void> _submitSignupConsent() async {
+    if (!_isAgeConfirmed) return;
+    if (_isSubmittingSignup) return;
+
+    final credential = _pendingSignupCredential;
+    if (credential == null) {
+      showAppSnackBar(context, '소셜 인증 정보가 만료되었어요. 다시 로그인해주세요.');
+      setState(() {
+        _isSignupConsentVisible = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isSubmittingSignup = true;
+    });
+
+    try {
+      final auth = await AuthRepository.signup(
+        provider: credential.provider.name,
+        accessToken: credential.accessToken,
+        pushAgreed: _isNotificationAllowed,
+        nightAgreed: _isNotificationAllowed && _isNightPushAllowed,
+        mktAgreed: _isNotificationAllowed && _isMarketingAllowed,
+        isOverAge: _isAgeConfirmed,
+        termsVersion: _termsVersion,
+      );
+
+      AppSettingsState.setPushEnabled(_isNotificationAllowed);
+      AppSettingsState.setNightPushEnabled(
+        _isNotificationAllowed && _isNightPushAllowed,
+      );
+      AppSettingsState.setMarketingEnabled(
+        _isNotificationAllowed && _isMarketingAllowed,
+      );
+
+      if (!mounted) return;
+
+      await _completeLoginWithAuthResponse(
+        auth: auth,
+        provider: credential.provider.name,
+      );
+    } catch (e) {
+      debugPrint('[Auth][SignupConsent] signup error: $e');
+      if (mounted) {
+        showAppSnackBar(context, '회원가입에 실패했어요. 잠시 후 다시 시도해주세요.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmittingSignup = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _completeLoginWithAuthResponse({
+    required AuthLoginResponseDto auth,
+    required String provider,
+  }) async {
+    if (!auth.hasSession) {
+      throw StateError('Auth response does not include session data.');
+    }
+
+    final user = auth.user!;
+    final session = AuthSession(
+      accessToken: auth.accessToken!,
+      refreshToken: auth.refreshToken!,
+      userId: user.userId,
+      nickname: user.nickname,
+      provider: provider.toUpperCase(),
+    );
+
+    await AuthSessionStore.write(session);
+    debugPrint('[Auth][LoginScreen] auth session saved');
+
+    if (!mounted) return;
+
+    _completeLogin(context, session);
+    await NotificationPermissionService.syncCurrentDeviceTokenPreference();
   }
 
   void _completeLogin(BuildContext context, AuthSession session) {
@@ -121,34 +253,63 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
                 ),
                 child: Column(
                   children: [
-                    const SizedBox(height: 16),
-                    _HeroSection(
-                      title: widget.title ?? '로그인이 필요해요',
-                      description:
-                          widget.description ??
-                          '찜한 병원, 문의 내역, 내 캘린더 기능은\n로그인 후 이용할 수 있어요.',
-                    ),
+                    if (!_isSignupConsentVisible) ...[
+                      const SizedBox(height: 16),
+                      _HeroSection(
+                        title: widget.title ?? '로그인이 필요해요',
+                        description:
+                            widget.description ??
+                            '찜한 병원, 문의 내역, 내 캘린더 기능은\n로그인 후 이용할 수 있어요.',
+                      ),
+                    ] else
+                      const SizedBox(height: 8),
                     const SizedBox(height: 28),
-                    _LoginCard(
-                      loadingProvider: _loadingProvider,
-                      isAgeConfirmed: _isAgeConfirmed,
-                      onAgeConfirmationChanged: (value) {
-                        setState(() {
-                          _isAgeConfirmed = value;
-                        });
-                      },
-                      onTapKakao: () =>
-                          _loginWithProvider(SocialLoginProvider.kakao),
-                      onTapNaver: () =>
-                          _loginWithProvider(SocialLoginProvider.naver),
-                    ),
+                    if (_isSignupConsentVisible)
+                      _SignupConsentCard(
+                        isNotificationAllowed: _isNotificationAllowed,
+                        isMarketingAllowed: _isMarketingAllowed,
+                        isNightPushAllowed: _isNightPushAllowed,
+                        isAgeConfirmed: _isAgeConfirmed,
+                        isSubmitting: _isSubmittingSignup,
+                        onNotificationChanged: _setNotificationAllowed,
+                        onMarketingChanged: (value) {
+                          setState(() {
+                            _isMarketingAllowed = value;
+                          });
+                        },
+                        onNightPushChanged: (value) {
+                          setState(() {
+                            _isNightPushAllowed = value;
+                          });
+                        },
+                        onAgeConfirmationChanged: (value) {
+                          setState(() {
+                            _isAgeConfirmed = value;
+                          });
+                        },
+                        onSubmit: _submitSignupConsent,
+                      )
+                    else
+                      _LoginCard(
+                        loadingProvider: _loadingProvider,
+                        onTapKakao: () =>
+                            _loginWithProvider(SocialLoginProvider.kakao),
+                        onTapNaver: () =>
+                            _loginWithProvider(SocialLoginProvider.naver),
+                      ),
                     const SizedBox(height: 18),
                     _BottomAgreementSection(
                       onTapPrivacy: () {
-                        showAppSnackBar(context, '개인정보처리방침 페이지 연결 예정');
+                        LegalDocumentLinks.open(
+                          context,
+                          LegalDocumentLinks.privacy,
+                        );
                       },
                       onTapTerms: () {
-                        showAppSnackBar(context, '이용약관 페이지 연결 예정');
+                        LegalDocumentLinks.open(
+                          context,
+                          LegalDocumentLinks.terms,
+                        );
                       },
                     ),
                     const SizedBox(height: 14),
@@ -278,15 +439,11 @@ class _LoginCard extends StatelessWidget {
   final VoidCallback onTapKakao;
   final VoidCallback onTapNaver;
   final SocialLoginProvider? loadingProvider;
-  final bool isAgeConfirmed;
-  final ValueChanged<bool> onAgeConfirmationChanged;
 
   const _LoginCard({
     required this.onTapKakao,
     required this.onTapNaver,
     required this.loadingProvider,
-    required this.isAgeConfirmed,
-    required this.onAgeConfirmationChanged,
   });
 
   @override
@@ -334,46 +491,11 @@ class _LoginCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Container(
-            decoration: BoxDecoration(
-              color: palette.surfaceSoft,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: palette.border),
-            ),
-            child: CheckboxListTile(
-              key: const ValueKey('age-confirmation-checkbox'),
-              value: isAgeConfirmed,
-              onChanged: loadingProvider == null
-                  ? (value) => onAgeConfirmationChanged(value ?? false)
-                  : null,
-              controlAffinity: ListTileControlAffinity.leading,
-              activeColor: palette.primary,
-              checkColor: palette.surface,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-              visualDensity: VisualDensity.compact,
-              title: Text(
-                '만 14세 이상입니다 (필수)',
-                style: AppTextStyles.homeBodyStrong.copyWith(
-                  color: palette.textPrimary,
-                ),
-              ),
-              subtitle: Text(
-                '만 14세 미만은 회원가입할 수 없어요.',
-                style: AppTextStyles.homeCaption.copyWith(
-                  color: palette.textSecondary,
-                  height: 1.4,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 18),
           _SocialLoginImageButton(
             key: const ValueKey('kakao-login-button'),
             assetPath: 'assets/images/kakao_login_medium_wide.png',
             progressColor: const Color(0xFF191919),
-            onTap: loadingProvider == null && isAgeConfirmed
-                ? onTapKakao
-                : null,
+            onTap: loadingProvider == null ? onTapKakao : null,
             isLoading: loadingProvider == SocialLoginProvider.kakao,
           ),
           const SizedBox(height: 12),
@@ -381,9 +503,7 @@ class _LoginCard extends StatelessWidget {
             key: const ValueKey('naver-login-button'),
             assetPath: 'assets/images/naver_login_medium_wide.png',
             progressColor: Colors.white,
-            onTap: loadingProvider == null && isAgeConfirmed
-                ? onTapNaver
-                : null,
+            onTap: loadingProvider == null ? onTapNaver : null,
             isLoading: loadingProvider == SocialLoginProvider.naver,
           ),
           const SizedBox(height: 18),
@@ -420,6 +540,267 @@ class _LoginCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SignupConsentCard extends StatelessWidget {
+  final bool isNotificationAllowed;
+  final bool isMarketingAllowed;
+  final bool isNightPushAllowed;
+  final bool isAgeConfirmed;
+  final bool isSubmitting;
+  final ValueChanged<bool> onNotificationChanged;
+  final ValueChanged<bool> onMarketingChanged;
+  final ValueChanged<bool> onNightPushChanged;
+  final ValueChanged<bool> onAgeConfirmationChanged;
+  final VoidCallback onSubmit;
+
+  const _SignupConsentCard({
+    required this.isNotificationAllowed,
+    required this.isMarketingAllowed,
+    required this.isNightPushAllowed,
+    required this.isAgeConfirmed,
+    required this.isSubmitting,
+    required this.onNotificationChanged,
+    required this.onMarketingChanged,
+    required this.onNightPushChanged,
+    required this.onAgeConfirmationChanged,
+    required this.onSubmit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
+      decoration: BoxDecoration(
+        color: palette.surface,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: palette.shadow,
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 54,
+              height: 5,
+              decoration: BoxDecoration(
+                color: palette.border,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+          ),
+          const SizedBox(height: 22),
+          Text(
+            '회원가입 동의',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.homeSectionTitle.copyWith(
+              color: palette.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '알림 관련 동의는 선택사항이에요. 필수 확인을 완료하면 가입과 로그인이 이어져요.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.homeBody.copyWith(
+              height: 1.5,
+              color: palette.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 20),
+          _AgeConfirmationTile(
+            isAgeConfirmed: isAgeConfirmed,
+            onChanged: onAgeConfirmationChanged,
+          ),
+          const SizedBox(height: 10),
+          _ConsentSwitchTile(
+            key: const ValueKey('notification-consent-switch'),
+            icon: Icons.notifications_none_rounded,
+            title: '알림 동의 (선택)',
+            description: '예약 일정, 저장한 병원 소식 등 필요한 알림을 받을 수 있어요.',
+            value: isNotificationAllowed,
+            onChanged: onNotificationChanged,
+          ),
+          const SizedBox(height: 10),
+          _ConsentSwitchTile(
+            key: const ValueKey('marketing-consent-switch'),
+            icon: Icons.campaign_outlined,
+            title: '마케팅 수신 동의 (선택)',
+            description: '이벤트와 혜택 안내를 받을 수 있어요.',
+            value: isMarketingAllowed,
+            onChanged: isNotificationAllowed ? onMarketingChanged : null,
+          ),
+          const SizedBox(height: 10),
+          _ConsentSwitchTile(
+            key: const ValueKey('night-push-consent-switch'),
+            icon: Icons.nightlight_round,
+            title: '야간 푸시 동의 (선택)',
+            description: '밤 9시부터 다음 날 오전 8시 사이의 알림을 허용해요.',
+            value: isNightPushAllowed,
+            onChanged: isNotificationAllowed ? onNightPushChanged : null,
+          ),
+          const SizedBox(height: 18),
+          _PrimaryActionButton(
+            key: const ValueKey('signup-submit-button'),
+            label: isSubmitting ? '가입 처리 중...' : '회원가입하고 로그인하기',
+            onTap: isAgeConfirmed && !isSubmitting ? onSubmit : null,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ConsentSwitchTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  const _ConsentSwitchTile({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final isEnabled = onChanged != null;
+
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 160),
+      opacity: isEnabled ? 1 : 0.46,
+      child: Container(
+        decoration: BoxDecoration(
+          color: palette.surfaceSoft,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: palette.border),
+        ),
+        child: SwitchListTile.adaptive(
+          value: value,
+          onChanged: onChanged,
+          activeThumbColor: palette.primary,
+          contentPadding: const EdgeInsets.fromLTRB(12, 4, 8, 4),
+          secondary: Icon(icon, size: 21, color: palette.textSecondary),
+          title: Text(
+            title,
+            style: AppTextStyles.homeBodyStrong.copyWith(
+              color: palette.textPrimary,
+            ),
+          ),
+          subtitle: Text(
+            description,
+            style: AppTextStyles.homeCaption.copyWith(
+              color: palette.textSecondary,
+              height: 1.35,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AgeConfirmationTile extends StatelessWidget {
+  final bool isAgeConfirmed;
+  final ValueChanged<bool> onChanged;
+
+  const _AgeConfirmationTile({
+    required this.isAgeConfirmed,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: palette.primarySoft,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: palette.primary.withValues(alpha: 0.26)),
+      ),
+      child: CheckboxListTile(
+        key: const ValueKey('age-confirmation-checkbox'),
+        value: isAgeConfirmed,
+        onChanged: (value) => onChanged(value ?? false),
+        controlAffinity: ListTileControlAffinity.leading,
+        activeColor: palette.primary,
+        checkColor: palette.surface,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+        visualDensity: VisualDensity.compact,
+        title: Text(
+          '만 14세 이상입니다 (필수)',
+          style: AppTextStyles.homeBodyStrong.copyWith(
+            color: palette.textPrimary,
+          ),
+        ),
+        subtitle: Text(
+          '만 14세 미만은 회원가입할 수 없어요.',
+          style: AppTextStyles.homeCaption.copyWith(
+            color: palette.textSecondary,
+            height: 1.4,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PrimaryActionButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onTap;
+
+  const _PrimaryActionButton({
+    super.key,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final isEnabled = onTap != null;
+
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 160),
+      opacity: isEnabled ? 1 : 0.45,
+      child: Material(
+        color: isEnabled ? palette.primary : palette.surfaceMuted,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Container(
+            height: 52,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.homeBodyStrong.copyWith(
+                color: isEnabled ? palette.surface : palette.textSecondary,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

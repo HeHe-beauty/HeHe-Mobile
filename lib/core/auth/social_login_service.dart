@@ -89,8 +89,9 @@ class SocialLoginService {
         accessToken: token.accessToken,
         idToken: token.idToken,
       );
-    } catch (e) {
-      debugPrint('[Auth][Kakao] login error: $e');
+    } catch (e, stackTrace) {
+      debugPrint('[Auth][Kakao] login error type=${e.runtimeType} error=$e');
+      debugPrint('[Auth][Kakao] login stackTrace=$stackTrace');
       throw SocialLoginException(_messageForKakaoError(e));
     }
   }

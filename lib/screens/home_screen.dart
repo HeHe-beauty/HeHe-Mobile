@@ -227,15 +227,16 @@ class _HomeScreenState extends State<HomeScreen>
   Future<void> _openMyPage(BuildContext context) async {
     _hideDeviceTooltip();
 
-    final isLoggedIn = AuthState.isLoggedIn.value;
+    final wasLoggedIn = AuthState.isLoggedIn.value;
 
-    if (!isLoggedIn) {
+    if (!wasLoggedIn) {
       final allowed = await AuthGate.ensureLoggedInWithPrompt(
         context,
         prompt: AuthPrompts.myPage,
       );
 
       if (!allowed || !context.mounted) return;
+      return;
     }
 
     await Navigator.push(

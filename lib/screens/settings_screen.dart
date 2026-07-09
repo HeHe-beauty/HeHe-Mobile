@@ -1,11 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../core/auth/auth_state.dart';
 import '../core/common/app_settings_state.dart';
 import '../core/notification/notification_permission_service.dart';
+import '../data/user/user_repository.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/app_snackbar.dart';
+import '../utils/legal_document_links.dart';
 import '../widgets/screen_header.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -17,6 +20,8 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen>
     with WidgetsBindingObserver {
+  bool _isUpdatingAgreements = false;
+
   @override
   void initState() {
     super.initState();
@@ -42,9 +47,31 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _handlePushToggle(bool value) async {
+    if (_isUpdatingAgreements) return;
+
+    final previousPush = AppSettingsState.pushEnabled.value;
+    final previousNightPush = AppSettingsState.nightPushEnabled.value;
+    final previousMarketing = AppSettingsState.marketingEnabled.value;
+
     if (!value) {
       AppSettingsState.setPushEnabled(false);
-      await NotificationPermissionService.syncCurrentDeviceTokenPreference();
+      try {
+        await _updateAgreements(
+          pushAgreed: false,
+          nightAgreed: false,
+          mktAgreed: false,
+        );
+        await NotificationPermissionService.syncCurrentDeviceTokenPreference();
+      } catch (e) {
+        _restoreNotificationSettings(
+          pushEnabled: previousPush,
+          nightPushEnabled: previousNightPush,
+          marketingEnabled: previousMarketing,
+        );
+        if (mounted) {
+          showAppSnackBar(context, '알림 동의를 변경하지 못했어요. 잠시 후 다시 시도해주세요.');
+        }
+      }
       return;
     }
 
@@ -53,12 +80,36 @@ class _SettingsScreenState extends State<SettingsScreen>
     if (!granted) return;
 
     AppSettingsState.setPushEnabled(true);
-    await NotificationPermissionService.syncCurrentDeviceTokenPreference();
+    try {
+      await _updateAgreements(pushAgreed: true);
+      await NotificationPermissionService.syncCurrentDeviceTokenPreference();
+    } catch (e) {
+      _restoreNotificationSettings(
+        pushEnabled: previousPush,
+        nightPushEnabled: previousNightPush,
+        marketingEnabled: previousMarketing,
+      );
+      if (mounted) {
+        showAppSnackBar(context, '알림 동의를 변경하지 못했어요. 잠시 후 다시 시도해주세요.');
+      }
+    }
   }
 
   Future<void> _handleNightPushToggle(bool value) async {
+    if (_isUpdatingAgreements) return;
+
+    final previousValue = AppSettingsState.nightPushEnabled.value;
+
     if (!value) {
       AppSettingsState.setNightPushEnabled(false);
+      try {
+        await _updateAgreements(nightAgreed: false);
+      } catch (e) {
+        AppSettingsState.setNightPushEnabled(previousValue);
+        if (mounted) {
+          showAppSnackBar(context, '야간 알림 동의를 변경하지 못했어요.');
+        }
+      }
       return;
     }
 
@@ -67,11 +118,31 @@ class _SettingsScreenState extends State<SettingsScreen>
     if (!granted) return;
 
     AppSettingsState.setNightPushEnabled(true);
+    try {
+      await _updateAgreements(nightAgreed: true);
+    } catch (e) {
+      AppSettingsState.setNightPushEnabled(previousValue);
+      if (mounted) {
+        showAppSnackBar(context, '야간 알림 동의를 변경하지 못했어요.');
+      }
+    }
   }
 
   Future<void> _handleMarketingToggle(bool value) async {
+    if (_isUpdatingAgreements) return;
+
+    final previousValue = AppSettingsState.marketingEnabled.value;
+
     if (!value) {
       AppSettingsState.setMarketingEnabled(false);
+      try {
+        await _updateAgreements(mktAgreed: false);
+      } catch (e) {
+        AppSettingsState.setMarketingEnabled(previousValue);
+        if (mounted) {
+          showAppSnackBar(context, '마케팅 수신 동의를 변경하지 못했어요.');
+        }
+      }
       return;
     }
 
@@ -80,6 +151,47 @@ class _SettingsScreenState extends State<SettingsScreen>
     if (!granted) return;
 
     AppSettingsState.setMarketingEnabled(true);
+    try {
+      await _updateAgreements(mktAgreed: true);
+    } catch (e) {
+      AppSettingsState.setMarketingEnabled(previousValue);
+      if (mounted) {
+        showAppSnackBar(context, '마케팅 수신 동의를 변경하지 못했어요.');
+      }
+    }
+  }
+
+  Future<void> _updateAgreements({
+    bool? pushAgreed,
+    bool? nightAgreed,
+    bool? mktAgreed,
+  }) async {
+    final accessToken = AuthState.session?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) return;
+
+    _isUpdatingAgreements = true;
+    try {
+      await UserRepository.updateAgreements(
+        accessToken: accessToken,
+        pushAgreed: pushAgreed,
+        nightAgreed: nightAgreed,
+        mktAgreed: mktAgreed,
+      );
+    } finally {
+      _isUpdatingAgreements = false;
+    }
+  }
+
+  void _restoreNotificationSettings({
+    required bool pushEnabled,
+    required bool nightPushEnabled,
+    required bool marketingEnabled,
+  }) {
+    AppSettingsState.setPushEnabled(pushEnabled);
+    if (pushEnabled) {
+      AppSettingsState.setNightPushEnabled(nightPushEnabled);
+      AppSettingsState.setMarketingEnabled(marketingEnabled);
+    }
   }
 
   @override
@@ -209,7 +321,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                             title: '이용약관',
                             subtitle: '서비스 이용 관련 내용을 확인할 수 있어요.',
                             onTap: () {
-                              showAppSnackBar(context, '이용약관 연결 예정');
+                              LegalDocumentLinks.open(
+                                context,
+                                LegalDocumentLinks.terms,
+                              );
                             },
                           ),
                           const SizedBox(height: 10),
@@ -218,7 +333,22 @@ class _SettingsScreenState extends State<SettingsScreen>
                             title: '개인정보처리방침',
                             subtitle: '개인정보 수집 및 이용 정책을 확인할 수 있어요.',
                             onTap: () {
-                              showAppSnackBar(context, '개인정보처리방침 연결 예정');
+                              LegalDocumentLinks.open(
+                                context,
+                                LegalDocumentLinks.privacy,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          _SimpleMenuTile(
+                            icon: Icons.manage_accounts_outlined,
+                            title: '계정 삭제 안내',
+                            subtitle: '앱을 사용할 수 없을 때의 계정 삭제 방법을 확인해요.',
+                            onTap: () {
+                              LegalDocumentLinks.open(
+                                context,
+                                LegalDocumentLinks.accountDeletion,
+                              );
                             },
                           ),
                         ],

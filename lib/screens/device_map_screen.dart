@@ -282,12 +282,15 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   Future<void> _openProtectedMyPage() async {
     _closeSidePanel();
 
+    final wasLoggedIn = AuthState.isLoggedIn.value;
+
     final allowed = await AuthGate.ensureLoggedInWithPrompt(
       context,
       prompt: AuthPrompts.mapMyPage,
     );
 
     if (!allowed || !mounted) return;
+    if (!wasLoggedIn) return;
 
     await Navigator.push(
       context,
