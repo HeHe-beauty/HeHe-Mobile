@@ -399,59 +399,20 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
     return showDialog<void>(
       context: context,
       builder: (dialogContext) {
-        final palette = dialogContext.palette;
         final displayNumber = contactNumber.trim().isEmpty
             ? '전화번호를 확인하지 못했어요.'
             : contactNumber.trim();
 
-        return AlertDialog(
-          backgroundColor: palette.surface,
-          title: Text(
-            '전화 연결을 열 수 없어요',
-            style: TextStyle(
-              color: palette.textPrimary,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          content: Text(
-            displayNumber,
-            style: TextStyle(
-              color: palette.textSecondary,
-              fontSize: 14,
-              height: 1.45,
-            ),
-          ),
-          actions: [
-            if (contactNumber.trim().isNotEmpty)
-              TextButton(
-                onPressed: () async {
-                  await Clipboard.setData(
-                    ClipboardData(text: contactNumber.trim()),
-                  );
-                  if (dialogContext.mounted) {
-                    Navigator.pop(dialogContext);
-                  }
-                },
-                child: Text(
-                  '번호 복사',
-                  style: TextStyle(
-                    color: palette.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(
-                '확인',
-                style: TextStyle(
-                  color: palette.textSecondary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
+        return _CallFallbackDialog(
+          phoneNumber: displayNumber,
+          canCopy: contactNumber.trim().isNotEmpty,
+          onCopy: () async {
+            await Clipboard.setData(ClipboardData(text: contactNumber.trim()));
+            if (dialogContext.mounted) {
+              Navigator.pop(dialogContext);
+            }
+          },
+          onClose: () => Navigator.pop(dialogContext),
         );
       },
     );
@@ -1479,6 +1440,196 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
                   ),
                 );
               },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CallFallbackDialog extends StatelessWidget {
+  final String phoneNumber;
+  final bool canCopy;
+  final VoidCallback onCopy;
+  final VoidCallback onClose;
+
+  const _CallFallbackDialog({
+    required this.phoneNumber,
+    required this.canCopy,
+    required this.onCopy,
+    required this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+        decoration: BoxDecoration(
+          color: palette.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: palette.border),
+          boxShadow: [
+            BoxShadow(
+              color: palette.shadow,
+              blurRadius: 24,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: palette.primarySoft,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    Icons.call_outlined,
+                    color: palette.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '전화 연결을 열 수 없어요',
+                    style: TextStyle(
+                      color: palette.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '현재 환경에서는 전화 앱을 실행할 수 없습니다. 아래 번호를 복사해 직접 전화해 주세요.',
+              style: TextStyle(
+                color: palette.textSecondary,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              decoration: BoxDecoration(
+                color: palette.surfaceSoft,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: palette.border),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.phone_in_talk_outlined,
+                    size: 18,
+                    color: palette.textSecondary,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      phoneNumber,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        height: 1.2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: _CallDialogActionButton(
+                    label: '확인',
+                    onTap: onClose,
+                    foregroundColor: palette.textSecondary,
+                    backgroundColor: palette.surfaceSoft,
+                    borderColor: palette.border,
+                  ),
+                ),
+                if (canCopy) ...[
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _CallDialogActionButton(
+                      label: '번호 복사',
+                      onTap: onCopy,
+                      foregroundColor: palette.surface,
+                      backgroundColor: palette.primary,
+                      borderColor: palette.primary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CallDialogActionButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  final Color foregroundColor;
+  final Color backgroundColor;
+  final Color borderColor;
+
+  const _CallDialogActionButton({
+    required this.label,
+    required this.onTap,
+    required this.foregroundColor,
+    required this.backgroundColor,
+    required this.borderColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(14),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          height: 46,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: borderColor),
+          ),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: foregroundColor,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              height: 1,
             ),
           ),
         ),

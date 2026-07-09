@@ -177,43 +177,9 @@ class _MyPageScreenState extends State<MyPageScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
-        final palette = dialogContext.palette;
-
-        return AlertDialog(
-          backgroundColor: palette.surface,
-          title: Text(
-            '회원탈퇴',
-            style: AppTextStyles.homeSectionTitle.copyWith(
-              color: palette.textPrimary,
-            ),
-          ),
-          content: Text(
-            '탈퇴를 진행하려면 가입한 소셜 계정으로 한 번 더 본인 인증이 필요합니다.\n\n인증 후 계정이 비활성화되고 로그인 토큰이 만료됩니다. 찜한 병원과 일정 등 연관 데이터는 정책에 따라 보관 후 삭제됩니다.',
-            style: AppTextStyles.homeBody.copyWith(
-              color: palette.textSecondary,
-              height: 1.45,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(
-                '취소',
-                style: AppTextStyles.homeBodyStrong.copyWith(
-                  color: palette.textSecondary,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(
-                '인증 후 탈퇴',
-                style: AppTextStyles.homeBodyStrong.copyWith(
-                  color: palette.danger,
-                ),
-              ),
-            ),
-          ],
+        return _WithdrawConfirmDialog(
+          onCancel: () => Navigator.pop(dialogContext, false),
+          onConfirm: () => Navigator.pop(dialogContext, true),
         );
       },
     );
@@ -401,6 +367,160 @@ class _BackgroundCircle extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: palette.primary.withValues(alpha: opacity),
+      ),
+    );
+  }
+}
+
+class _WithdrawConfirmDialog extends StatelessWidget {
+  final VoidCallback onCancel;
+  final VoidCallback onConfirm;
+
+  const _WithdrawConfirmDialog({
+    required this.onCancel,
+    required this.onConfirm,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+        decoration: BoxDecoration(
+          color: palette.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: palette.border),
+          boxShadow: [
+            BoxShadow(
+              color: palette.shadow,
+              blurRadius: 24,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: palette.danger.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    Icons.verified_user_outlined,
+                    color: palette.danger,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '회원탈퇴',
+                    style: AppTextStyles.homeSectionTitle.copyWith(
+                      color: palette.textPrimary,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '탈퇴를 진행하려면 가입한 소셜 계정으로 한 번 더 본인 인증이 필요합니다.',
+              style: AppTextStyles.homeBodyStrong.copyWith(
+                color: palette.textPrimary,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '인증 후 계정이 비활성화되고 로그인 토큰이 만료됩니다. 찜한 병원과 일정 등 연관 데이터는 정책에 따라 보관 후 삭제됩니다.',
+              style: AppTextStyles.homeBody.copyWith(
+                color: palette.textSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: _DialogActionButton(
+                    label: '취소',
+                    onTap: onCancel,
+                    foregroundColor: palette.textSecondary,
+                    backgroundColor: palette.surfaceSoft,
+                    borderColor: palette.border,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _DialogActionButton(
+                    label: '인증 후 탈퇴',
+                    onTap: onConfirm,
+                    foregroundColor: palette.surface,
+                    backgroundColor: palette.danger,
+                    borderColor: palette.danger,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DialogActionButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  final Color foregroundColor;
+  final Color backgroundColor;
+  final Color borderColor;
+
+  const _DialogActionButton({
+    required this.label,
+    required this.onTap,
+    required this.foregroundColor,
+    required this.backgroundColor,
+    required this.borderColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(14),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          height: 46,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: borderColor),
+          ),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.homeBodyStrong.copyWith(
+              color: foregroundColor,
+              height: 1,
+            ),
+          ),
+        ),
       ),
     );
   }
