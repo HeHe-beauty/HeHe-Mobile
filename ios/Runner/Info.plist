@@ -49,6 +49,7 @@
 		<string>kakaolink</string>
 		<string>naversearchapp</string>
 		<string>naversearchthirdlogin</string>
+		<string>tel</string>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>

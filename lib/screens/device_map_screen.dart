@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -384,14 +385,76 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   Future<void> _launchHospitalCall(PlaceItem place) async {
     final uri = _callUriForPlace(place);
     if (uri == null) {
-      showAppSnackBar(context, '전화번호를 확인하지 못했어요.');
+      debugPrint('hospital contact skipped: missing phone number');
       return;
     }
 
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) {
-      showAppSnackBar(context, '전화 앱을 열 수 없어요.');
+      await _showCallFallbackDialog(place.contactNumber);
     }
+  }
+
+  Future<void> _showCallFallbackDialog(String contactNumber) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final palette = dialogContext.palette;
+        final displayNumber = contactNumber.trim().isEmpty
+            ? '전화번호를 확인하지 못했어요.'
+            : contactNumber.trim();
+
+        return AlertDialog(
+          backgroundColor: palette.surface,
+          title: Text(
+            '전화 연결을 열 수 없어요',
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: Text(
+            displayNumber,
+            style: TextStyle(
+              color: palette.textSecondary,
+              fontSize: 14,
+              height: 1.45,
+            ),
+          ),
+          actions: [
+            if (contactNumber.trim().isNotEmpty)
+              TextButton(
+                onPressed: () async {
+                  await Clipboard.setData(
+                    ClipboardData(text: contactNumber.trim()),
+                  );
+                  if (dialogContext.mounted) {
+                    Navigator.pop(dialogContext);
+                  }
+                },
+                child: Text(
+                  '번호 복사',
+                  style: TextStyle(
+                    color: palette.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                '확인',
+                style: TextStyle(
+                  color: palette.textSecondary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Uri? _callUriForPlace(PlaceItem place) {
