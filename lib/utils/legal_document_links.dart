@@ -6,10 +6,10 @@ import 'app_snackbar.dart';
 class LegalDocumentLinks {
   LegalDocumentLinks._();
 
-  static final Uri terms = Uri.https('hehehe.kr', '/terms');
-  static final Uri privacy = Uri.https('hehehe.kr', '/privacy');
+  static final Uri terms = Uri.https('www.hehehe.kr', '/terms');
+  static final Uri privacy = Uri.https('www.hehehe.kr', '/privacy');
   static final Uri accountDeletion = Uri.https(
-    'hehehe.kr',
+    'www.hehehe.kr',
     '/account-deletion',
   );
 
