@@ -30,7 +30,6 @@ class ArticleDetailScreen extends StatefulWidget {
 
 class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   late Future<ArticleDetailDto> _articleFuture;
-  bool _isBookmarked = false;
 
   @override
   void initState() {
@@ -59,11 +58,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
         child: Column(
           children: [
             _ArticleAppBar(
-              isBookmarked: _isBookmarked,
               onBack: () => Navigator.maybePop(context),
-              onBookmark: () {
-                setState(() => _isBookmarked = !_isBookmarked);
-              },
               onShare: _copyArticleTitle,
             ),
             Expanded(
@@ -106,17 +101,10 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
 }
 
 class _ArticleAppBar extends StatelessWidget {
-  final bool isBookmarked;
   final VoidCallback onBack;
-  final VoidCallback onBookmark;
   final VoidCallback onShare;
 
-  const _ArticleAppBar({
-    required this.isBookmarked,
-    required this.onBack,
-    required this.onBookmark,
-    required this.onShare,
-  });
+  const _ArticleAppBar({required this.onBack, required this.onShare});
 
   @override
   Widget build(BuildContext context) {
@@ -130,15 +118,6 @@ class _ArticleAppBar extends StatelessWidget {
             onTap: onBack,
           ),
           const Spacer(),
-          _SoftIconButton(
-            tooltip: '북마크',
-            icon: isBookmarked
-                ? Icons.bookmark_rounded
-                : Icons.bookmark_border_rounded,
-            selected: isBookmarked,
-            onTap: onBookmark,
-          ),
-          const SizedBox(width: 9),
           _SoftIconButton(
             tooltip: '공유',
             icon: Icons.ios_share_rounded,
@@ -154,13 +133,11 @@ class _SoftIconButton extends StatelessWidget {
   final String tooltip;
   final IconData icon;
   final VoidCallback onTap;
-  final bool selected;
 
   const _SoftIconButton({
     required this.tooltip,
     required this.icon,
     required this.onTap,
-    this.selected = false,
   });
 
   @override
@@ -169,7 +146,7 @@ class _SoftIconButton extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: selected ? palette.primarySoft : palette.surface,
+        color: palette.surface,
         shape: CircleBorder(side: BorderSide(color: palette.border)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -180,7 +157,7 @@ class _SoftIconButton extends StatelessWidget {
             child: Icon(
               icon,
               size: 22,
-              color: selected ? palette.primary : palette.textPrimary,
+              color: palette.textPrimary,
             ),
           ),
         ),
