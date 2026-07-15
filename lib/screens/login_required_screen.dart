@@ -153,23 +153,26 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
     });
 
     try {
+      var pushAgreed = _isNotificationAllowed;
+      if (pushAgreed) {
+        pushAgreed = await NotificationPermissionService.ensureGrantedForSignup(
+          context,
+        );
+      }
+
       final auth = await AuthRepository.signup(
         provider: credential.provider.name,
         accessToken: credential.accessToken,
-        pushAgreed: _isNotificationAllowed,
-        nightAgreed: _isNotificationAllowed && _isNightPushAllowed,
-        mktAgreed: _isNotificationAllowed && _isMarketingAllowed,
+        pushAgreed: pushAgreed,
+        nightAgreed: pushAgreed && _isNightPushAllowed,
+        mktAgreed: pushAgreed && _isMarketingAllowed,
         isOverAge: _isAgeConfirmed,
         termsVersion: _termsVersion,
       );
 
-      AppSettingsState.setPushEnabled(_isNotificationAllowed);
-      AppSettingsState.setNightPushEnabled(
-        _isNotificationAllowed && _isNightPushAllowed,
-      );
-      AppSettingsState.setMarketingEnabled(
-        _isNotificationAllowed && _isMarketingAllowed,
-      );
+      AppSettingsState.setPushEnabled(pushAgreed);
+      AppSettingsState.setNightPushEnabled(pushAgreed && _isNightPushAllowed);
+      AppSettingsState.setMarketingEnabled(pushAgreed && _isMarketingAllowed);
 
       if (!mounted) return;
 

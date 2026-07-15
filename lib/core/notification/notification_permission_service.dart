@@ -41,29 +41,14 @@ class NotificationPermissionService {
       sound: true,
     );
 
-    final hasRequested =
-        await AppSettingsState.hasRequestedNotificationPermission();
-
-    if (!hasRequested) {
-      final settings = await _messaging.requestPermission();
-      await AppSettingsState.markNotificationPermissionRequested();
-      await AppSettingsState.syncNotificationPermissionGranted(
-        granted: _isGranted(settings.authorizationStatus),
-      );
-      debugPrint(
-        'FCM first-launch permission request result: '
-        '${settings.authorizationStatus}',
-      );
-    } else {
-      final settings = await _messaging.getNotificationSettings();
-      await AppSettingsState.syncNotificationPermissionGranted(
-        granted: _isGranted(settings.authorizationStatus),
-      );
-      debugPrint(
-        'FCM app-start permission request skipped: '
-        '${settings.authorizationStatus}',
-      );
-    }
+    final settings = await _messaging.getNotificationSettings();
+    await AppSettingsState.syncNotificationPermissionGranted(
+      granted: _isGranted(settings.authorizationStatus),
+    );
+    debugPrint(
+      'FCM app-start permission request skipped: '
+      '${settings.authorizationStatus}',
+    );
   }
 
   static Future<void> initializeMessageHandlers() async {
@@ -225,6 +210,26 @@ class NotificationPermissionService {
   }
 
   static Future<bool> ensureGrantedForSettings(BuildContext context) async {
+    return _ensureGranted(
+      context,
+      title: '알림 권한이 필요해요',
+      content: '알림 설정을 사용하려면 알림 권한을 허용해주세요.',
+    );
+  }
+
+  static Future<bool> ensureGrantedForSignup(BuildContext context) async {
+    return _ensureGranted(
+      context,
+      title: '알림을 허용할까요?',
+      content: '예약과 중요한 소식을 알림으로 받아볼 수 있어요.',
+    );
+  }
+
+  static Future<bool> _ensureGranted(
+    BuildContext context, {
+    required String title,
+    required String content,
+  }) async {
     final currentSettings = await _messaging.getNotificationSettings();
     if (_isGranted(currentSettings.authorizationStatus)) {
       await AppSettingsState.syncNotificationPermissionGranted(granted: true);
@@ -237,8 +242,8 @@ class NotificationPermissionService {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('알림 권한이 필요해요'),
-          content: const Text('알림 설정을 사용하려면 알림 권한을 허용해주세요.'),
+          title: Text(title),
+          content: Text(content),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
@@ -264,7 +269,6 @@ class NotificationPermissionService {
       return true;
     }
 
-    AppSettingsState.markPendingPushEnableFromSettings();
     await openAppSettings();
 
     return false;

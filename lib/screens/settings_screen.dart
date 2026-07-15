@@ -48,6 +48,10 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Future<void> _handlePushToggle(bool value) async {
     if (_isUpdatingAgreements) return;
+    if (!AuthState.isLoggedIn.value) {
+      showAppSnackBar(context, '로그인 후 알림 설정을 진행할 수 있어요.');
+      return;
+    }
 
     final previousPush = AppSettingsState.pushEnabled.value;
     final previousNightPush = AppSettingsState.nightPushEnabled.value;
@@ -97,6 +101,10 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Future<void> _handleNightPushToggle(bool value) async {
     if (_isUpdatingAgreements) return;
+    if (!AuthState.isLoggedIn.value) {
+      showAppSnackBar(context, '로그인 후 알림 설정을 진행할 수 있어요.');
+      return;
+    }
 
     final previousValue = AppSettingsState.nightPushEnabled.value;
 
@@ -130,6 +138,10 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Future<void> _handleMarketingToggle(bool value) async {
     if (_isUpdatingAgreements) return;
+    if (!AuthState.isLoggedIn.value) {
+      showAppSnackBar(context, '로그인 후 알림 설정을 진행할 수 있어요.');
+      return;
+    }
 
     final previousValue = AppSettingsState.marketingEnabled.value;
 

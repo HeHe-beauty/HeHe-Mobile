@@ -7,19 +7,16 @@ class AppSettingsState {
   static const _pushEnabledKey = 'settings.pushEnabled';
   static const _nightPushEnabledKey = 'settings.nightPushEnabled';
   static const _marketingEnabledKey = 'settings.marketingEnabled';
-  static const _notificationPermissionRequestedKey =
-      'settings.notificationPermissionRequested';
   static const _darkThemeValue = 'dark';
   static const _lightThemeValue = 'light';
   static const _trueValue = 'true';
 
-  static final ValueNotifier<bool> pushEnabled = ValueNotifier(true);
+  static final ValueNotifier<bool> pushEnabled = ValueNotifier(false);
   static final ValueNotifier<bool> nightPushEnabled = ValueNotifier(false);
   static final ValueNotifier<bool> marketingEnabled = ValueNotifier(false);
   static final ValueNotifier<ThemeMode> themeMode = ValueNotifier(
     ThemeMode.light,
   );
-  static bool _pendingPushEnableFromSettings = false;
 
   static bool get isDarkMode => themeMode.value == ThemeMode.dark;
 
@@ -36,7 +33,7 @@ class AppSettingsState {
     themeMode.value = savedThemeMode == _darkThemeValue
         ? ThemeMode.dark
         : ThemeMode.light;
-    pushEnabled.value = savedPushEnabled != 'false';
+    pushEnabled.value = savedPushEnabled == _trueValue;
     nightPushEnabled.value =
         pushEnabled.value && savedNightPushEnabled == _trueValue;
     marketingEnabled.value = savedMarketingEnabled == _trueValue;
@@ -45,8 +42,9 @@ class AppSettingsState {
   static Future<void> syncNotificationPermissionGranted({
     required bool granted,
   }) async {
-    final nextPushEnabled =
-        granted && (_pendingPushEnableFromSettings || pushEnabled.value);
+    // Operating-system permission must never opt a user in by itself. It only
+    // turns an existing push preference off when the permission is revoked.
+    final nextPushEnabled = granted ? pushEnabled.value : false;
     await _setBoolValue(pushEnabled, _pushEnabledKey, nextPushEnabled);
 
     final nextNightPushEnabled = nextPushEnabled && nightPushEnabled.value;
@@ -62,8 +60,6 @@ class AppSettingsState {
       _marketingEnabledKey,
       nextMarketingEnabled,
     );
-
-    _pendingPushEnableFromSettings = false;
   }
 
   static void setPushEnabled(bool value) {
@@ -96,22 +92,6 @@ class AppSettingsState {
       key: _themeModeKey,
       value: isDark ? _darkThemeValue : _lightThemeValue,
     );
-  }
-
-  static Future<bool> hasRequestedNotificationPermission() async {
-    final value = await _storage.read(key: _notificationPermissionRequestedKey);
-    return value == _trueValue;
-  }
-
-  static Future<void> markNotificationPermissionRequested() {
-    return _storage.write(
-      key: _notificationPermissionRequestedKey,
-      value: _trueValue,
-    );
-  }
-
-  static void markPendingPushEnableFromSettings() {
-    _pendingPushEnableFromSettings = true;
   }
 
   static Future<void> _writeBool(String key, bool value) {

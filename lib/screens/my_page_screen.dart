@@ -3,6 +3,7 @@ import '../core/auth/auth_gate.dart';
 import '../core/auth/auth_prompt.dart';
 import '../core/auth/auth_session_store.dart';
 import '../core/auth/auth_state.dart';
+import '../core/common/app_settings_state.dart';
 import '../core/auth/social_login_service.dart';
 import '../core/common/favorite_store.dart';
 import '../core/notification/notification_permission_service.dart';
@@ -304,6 +305,7 @@ class _MyPageScreenState extends State<MyPageScreen>
                                     accessToken.isEmpty) {
                                   await AuthSessionStore.clear();
                                   AuthState.logOut();
+                                  AppSettingsState.setPushEnabled(false);
                                   if (!context.mounted) return;
 
                                   showAppSnackBar(context, '로그아웃 되었습니다');
@@ -321,6 +323,7 @@ class _MyPageScreenState extends State<MyPageScreen>
 
                                   await AuthSessionStore.clear();
                                   AuthState.logOut();
+                                  AppSettingsState.setPushEnabled(false);
                                   if (!context.mounted) return;
 
                                   showAppSnackBar(context, '로그아웃 되었습니다');

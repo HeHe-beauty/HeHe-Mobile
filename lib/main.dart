@@ -80,6 +80,7 @@ Future<void> _restoreAuthSession() async {
   final savedSession = await AuthSessionStore.read();
   if (savedSession == null) {
     AuthState.logOut();
+    AppSettingsState.setPushEnabled(false);
     return;
   }
 
@@ -101,14 +102,17 @@ Future<void> _restoreAuthSession() async {
     if (e.statusCode == 401 || e.statusCode == 403) {
       await AuthSessionStore.clear();
       AuthState.logOut();
+      AppSettingsState.setPushEnabled(false);
       debugPrint('🔥 auth session cleared due to invalid refresh token');
       return;
     }
 
     AuthState.logOut();
+    AppSettingsState.setPushEnabled(false);
     rethrow;
   } catch (e, stack) {
     AuthState.logOut();
+    AppSettingsState.setPushEnabled(false);
     debugPrint('🔥 auth token refresh error: $e');
     debugPrint('$stack');
     rethrow;
