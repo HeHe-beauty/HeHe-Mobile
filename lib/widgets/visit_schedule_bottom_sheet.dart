@@ -22,7 +22,7 @@ Future<VisitScheduleResult?> showVisitScheduleBottomSheet(
   DateTime? fixedDate,
   String? initialHospitalName,
   String? title,
-  String confirmLabel = '완료',
+  String confirmLabel = '등록하기',
   ValueChanged<VisitScheduleResult>? onConfirm,
 }) {
   final palette = context.palette;
@@ -65,7 +65,7 @@ class VisitScheduleBottomSheet extends StatefulWidget {
     this.fixedDate,
     this.initialHospitalName,
     this.title,
-    this.confirmLabel = '완료',
+    this.confirmLabel = '등록하기',
     this.onConfirm,
   });
 
@@ -304,7 +304,7 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
     final mediaQuery = MediaQuery.of(context);
     final bottomInset = mediaQuery.viewInsets.bottom;
     final bottomPadding = mediaQuery.padding.bottom;
-    final contentBottomPadding = math.max(bottomPadding, 8.0);
+    final contentBottomPadding = math.max(bottomPadding + 16, 24.0);
 
     return SafeArea(
       top: false,
@@ -423,7 +423,7 @@ class _VisitScheduleBottomSheetState extends State<VisitScheduleBottomSheet> {
                         ),
                         child: Center(
                           child: Text(
-                            '등록하기',
+                            widget.confirmLabel,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
