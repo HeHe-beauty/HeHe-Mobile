@@ -297,7 +297,10 @@ class _MyPageScreenState extends State<MyPageScreen>
                         padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
                         child: Column(
                           children: [
-                            _ProfileCard(userName: userName),
+                            _ProfileCard(
+                              userName: userName,
+                              email: _summary.email,
+                            ),
                             const SizedBox(height: 16),
                             _SummarySection(summary: _summary),
                             const SizedBox(height: 16),
@@ -514,8 +517,9 @@ class _DialogActionButton extends StatelessWidget {
 
 class _ProfileCard extends StatelessWidget {
   final String userName;
+  final String? email;
 
-  const _ProfileCard({required this.userName});
+  const _ProfileCard({required this.userName, this.email});
 
   @override
   Widget build(BuildContext context) {
@@ -561,6 +565,15 @@ class _ProfileCard extends StatelessWidget {
               letterSpacing: -0.4,
             ),
           ),
+          if (email != null && email!.trim().isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              email!,
+              style: AppTextStyles.homeCaption.copyWith(
+                color: palette.textSecondary,
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           Text(
             '내 활동과 저장한 정보를 한 번에 볼 수 있어요.',
