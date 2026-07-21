@@ -13,15 +13,13 @@ class RecentViewApi {
       headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('최근 본 병원 목록 조회 실패');
-    }
+    ApiClient.requireSuccess(body, failureMessage: '최근 본 병원 목록 조회 실패');
 
-    final data = body['data'] as List<dynamic>;
+    final data = ApiClient.requireDataList(body);
     return data
         .map(
           (recentView) =>
-              RecentViewDto.fromJson(recentView as Map<String, dynamic>),
+              RecentViewDto.fromJson(ApiClient.requireJsonMap(recentView)),
         )
         .toList();
   }
@@ -35,8 +33,6 @@ class RecentViewApi {
       headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('최근 본 병원 등록 실패');
-    }
+    ApiClient.requireSuccess(body, failureMessage: '최근 본 병원 등록 실패');
   }
 }

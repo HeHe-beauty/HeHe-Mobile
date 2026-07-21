@@ -14,13 +14,13 @@ class ContactApi {
       headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('문의 내역 조회 실패');
-    }
+    ApiClient.requireSuccess(body, failureMessage: '문의 내역 조회 실패');
 
-    final data = body['data'] as List<dynamic>;
+    final data = ApiClient.requireDataList(body);
     return data
-        .map((contact) => ContactDto.fromJson(contact as Map<String, dynamic>))
+        .map(
+          (contact) => ContactDto.fromJson(ApiClient.requireJsonMap(contact)),
+        )
         .toList();
   }
 
@@ -34,9 +34,7 @@ class ContactApi {
       headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('문의 내역 등록 실패');
-    }
+    ApiClient.requireSuccess(body, failureMessage: '문의 내역 등록 실패');
   }
 
   static Future<void> deleteContact({
@@ -48,8 +46,6 @@ class ContactApi {
       headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('문의 내역 삭제 실패');
-    }
+    ApiClient.requireSuccess(body, failureMessage: '문의 내역 삭제 실패');
   }
 }

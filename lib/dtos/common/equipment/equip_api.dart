@@ -8,10 +8,10 @@ class EquipApi {
   static Future<List<EquipDto>> fetchEquipList() async {
     final body = await _apiClient.get(ApiEndpoints.equipList);
 
-    final data = body['data'] as List<dynamic>;
+    final data = ApiClient.requireDataList(body);
 
     final list = data
-        .map((e) => EquipDto.fromJson(e as Map<String, dynamic>))
+        .map((item) => EquipDto.fromJson(ApiClient.requireJsonMap(item)))
         .toList();
 
     // displayOrder 기준 정렬
@@ -23,7 +23,7 @@ class EquipApi {
   static Future<EquipDto> fetchEquipDetail(int equipId) async {
     final body = await _apiClient.get(ApiEndpoints.equipDetail(equipId));
 
-    final data = body['data'] as Map<String, dynamic>;
+    final data = ApiClient.requireDataMap(body);
 
     return EquipDto.fromJson(data);
   }

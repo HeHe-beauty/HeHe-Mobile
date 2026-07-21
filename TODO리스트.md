@@ -1,59 +1,80 @@
 # Android 출시 TODO
 
-> 완료 이력은 제거하고 아직 필요한 작업만 관리한다. 법률 문서 세부 사항은 `docs/legal`을 기준으로 한다.
+> 완료된 코드·빌드 작업은 이 문서에서 제거한다. 아래에는 Play Console/외부 서비스에서 직접 해야 하는 일과 실기기 확인만 남긴다.
 >
-> 현재 Play Console 내부 테스트에는 `HeHe - QA1`(versionCode 1)이 활성 상태다. 코드 수정본을 배포할 때는 **더 큰 versionCode**의 새 AAB가 필요하다.
+> 현재 내부 테스트용 산출물: `1.0.4 (versionCode 5)`, `build/app/outputs/bundle/release/app-release.aab`
 
-## P0 — 새 AAB 생성·내부 테스트 배포
+## P0 — 내부 테스트 핵심 기능 확인
 
-- [ ] **릴리스 버전 확정 및 AAB 생성**
-  - `pubspec.yaml`의 `version`을 이전 업로드보다 큰 값으로 변경한다. 현재 `1.0.0+1`을 업로드했으므로 다음 예시는 `1.0.1+2`다.
-  - 실제 변경 사항과 연결된 버전명·버전 코드를 기록한다.
-  - `flutter build appbundle --release --dart-define-from-file=env/dev.json` 실행 후 `build/app/outputs/bundle/release/app-release.aab` 생성 확인
-  - 이 프로젝트는 빌드 시 `env/dev.json`의 소셜 로그인 키를 주입한다. `--dart-define-from-file` 없이 빌드하면 카카오·네이버 로그인이 의도적으로 비활성화된다.
-  - release 서명 설정(`android/key.properties`의 업로드 키)으로 빌드됐는지 확인
+- [ ] **네이버 로그인 서비스 검수 요청**
+  - 내부 테스트 설치본에서 네이버 로그인과 로그아웃은 확인을 완료했다.
+  - 프로덕션 출시 전에 Naver Developers에서 네이버 로그인 서비스 적용/검수를 요청한다.
 
-## P1 — 내부 테스트 기능 검증
+- [ ] **내부 테스트 결과 전달**
+  - 위 항목이 통과하면 알려준다. 프로덕션 번들에서는 진단 코드 표시를 끄고 `versionCode 5`보다 큰 최종 AAB를 생성해야 한다.
 
-- [ ] **실기기 핵심 흐름 확인**
-  - [x] 로그인 없이 이용 가능한 기능이 내부 테스트 설치본에서 정상 동작함을 확인
-  - 카카오·네이버 로그인, 지도, 위치 권한, FCM, 약관 링크, 회원 탈퇴를 내부 테스트 설치본에서 확인
-  - 로그인 버튼을 눌렀을 때 즉시 '설정이 아직 연결되지 않았어요'가 표시되면 키 미주입 AAB이므로, 키를 포함해 새 versionCode로 다시 빌드·업로드한다.
-  - 카카오 로그인 실패 시 Kakao Developers의 네이티브 앱 키와 `kakao{NATIVE_APP_KEY}://oauth` 스킴 확인
-  - 네이버 로그인 실패 시 Naver Developers의 네이버 로그인 사용 설정, Client ID·Secret, Android 패키지명 `kr.hehehe.hehe`가 배포 앱과 정확히 일치하는지 확인
-  - 네이버 로그인이 **개발 중** 상태라면 테스트에 사용할 네이버 ID를 로그인 허용 계정으로 등록한다. 서비스 적용/검수 전에는 등록되지 않은 일반 계정 로그인이 제한된다.
-  - Play App Signing을 사용하는 경우 Play Console의 앱 서명 인증서 SHA-1/SHA-256도 소셜 로그인 공급자 설정에 등록됐는지 확인
+## P1 — Play Console 앱 콘텐츠 작성
 
-- [ ] **릴리스 품질 점검**
-  - [x] 실제 기기 다크 모드에서 화면이 정상 표시됨을 확인
-  - [x] 실제 기기 라이트 모드, 런처 아이콘·시작 화면 확인
-  - `flutter clean` 후 `flutter analyze`, 전체 테스트, release AAB 빌드 통과
-  - AAB의 패키지 ID `kr.hehehe.hehe`, 버전, 업로드 인증서, 민감 문자열 부재 확인
+- [ ] **Google Play 심사용 소셜 계정 준비 및 로그인 세부정보 등록**
+  - 개인 계정이 아닌 Google 심사 전용 카카오·네이버 계정을 만든다. 실제 개인정보나 이용 기록은 넣지 않는다.
+  - 카카오 앱이 개발 상태라면 심사용 카카오 계정을 개발자 테스트 가능 계정으로 등록한다.
+  - 네이버 앱이 개발 상태라면 심사용 네이버 계정을 로그인 테스트 ID/멤버로 등록한다.
+  - 각 심사용 계정으로 HeHe 회원가입과 필수 동의를 미리 완료하여 로그인 제한 기능 전체에 접근할 수 있게 한다.
+  - 해외의 새 기기에서도 반복 사용할 수 있도록 2단계 인증, 문자 인증, OTP 및 만료되는 인증 절차가 나타나지 않게 한다.
+  - Play 내부 테스트 설치본에서 로그아웃 상태로 시작하여 아래 계정과 안내만으로 로그인이 가능한지 검증한다.
+  - Play Console 로그인 세부정보에 카카오 계정을 다음과 같이 영어로 등록한다.
+    - 이름: `Kakao review account`
+    - 사용자 이름: 심사용 카카오 계정 이메일
+    - 비밀번호: 심사용 카카오 계정 비밀번호
+    - 앱 액세스에 필요한 기타 정보:
 
-## P2 — Play Console·비공개 테스트 준비
+      ```text
+      1. Launch the app.
+      2. Tap the profile icon in the top-right corner.
+      3. Tap the yellow Kakao login button.
+      4. On the Kakao sign-in page, enter the email address and password provided above.
+      5. If a consent screen appears, tap "동의하고 계속하기" (Agree and continue).
 
-- [ ] **Play 개발자 계정 표시 확인**
-  - Play 개발자 계정 표시와 앱·문서의 서비스명·문의 이메일 일치 확인
+      This account is already registered with HeHe and provides access to all login-restricted features. No OTP or two-step verification is required. The app interface is currently provided in Korean.
+      ```
 
-- [ ] **Play Console 앱 설정 완료**
-  - 앱 카테고리, 연락처, 앱 액세스 정보, 광고 여부 작성
-  - 콘텐츠 등급, 타겟층 및 콘텐츠 작성
-  - 개인정보처리방침 URL, 계정 삭제 URL 입력
-  - 데이터 보안 섹션 작성
+  - Play Console 로그인 세부정보에 네이버 계정을 별도 항목으로 다음과 같이 영어로 등록한다.
+    - 이름: `Naver review account`
+    - 사용자 이름: 심사용 네이버 ID 또는 이메일
+    - 비밀번호: 심사용 네이버 계정 비밀번호
+    - 앱 액세스에 필요한 기타 정보:
 
-- [ ] **스토어 등록 자산 준비**
-  - 앱 이름·짧은 설명·전체 설명·고객지원 정보
-  - 512×512 앱 아이콘, 1024×500 그래픽 이미지, 휴대전화 스크린샷 최소 2장
-  - `hehehe.kr` favicon·Apple Touch Icon·SNS 공유 이미지는 필요 시 준비
+      ```text
+      1. Launch the app.
+      2. Tap the profile icon in the top-right corner.
+      3. Tap the green Naver login button.
+      4. On the Naver sign-in page, enter the username and password provided above.
+      5. Complete the consent step if it is displayed.
 
-- [ ] **비공개 테스트 요건 준비**
-  - Google 계정 테스터 12명 확보
-  - 비공개 테스트 트랙에 새 AAB를 게시하고, 테스터 목록 연결·참여·설치 확인
-  - 12명 이상이 14일 연속 참여한 뒤 프로덕션 액세스 신청
-  - 내부 테스트 참여자는 비공개 테스트 참여 전 내부 테스트를 중지해야 함
+      This account is already registered with HeHe and provides access to all login-restricted features. No OTP or two-step verification is required.
+      ```
 
-## P3 — 프로덕션 최종 검증·배포
+  - API 키, 네이티브 앱 키, Client ID/Secret 또는 액세스 토큰은 Play Console 로그인 정보에 입력하지 않는다.
+  - 계정으로 모든 로그인 제한 기능에 실제로 접근되는 것을 확인한 뒤에만 전체 액세스 제공 확인란을 선택한다.
 
-- [ ] 프로덕션 출시 전 법률 문서와 Play 데이터 보안 답변의 일치 최종 확인
-- [ ] 프로덕션 트랙에 올릴 AAB의 versionCode가 모든 테스트 트랙보다 큰지 확인
-- [ ] 최종 AAB를 업로드하고 출시 검토·단계적 출시 범위·출시 후 설치 및 핵심 기능을 확인
+- [ ] **데이터 보안 섹션 작성**
+  - 전송되는 위치 정보(주변 병원 조회), 계정/소셜 로그인 정보, 일정·찜·최근 본 병원·문의 활동, FCM 토큰을 실제 서버 처리 방식과 대조한다.
+  - 전송 중 암호화, 데이터 삭제 요청, 필수/선택 수집 여부를 개인정보처리방침 및 서버 동작과 일치시킨다.
+
+- [ ] **개발자 및 스토어 등록정보 완료**
+  - 앱 카테고리, 개발자 표시명, 문의 이메일/웹사이트를 앱과 법률 문서의 정보와 일치시킨다.
+  - 앱 이름·짧은 설명·전체 설명·512×512 아이콘·1024×500 그래픽·휴대전화 스크린샷을 등록한다.
+
+## P2 — 비공개 테스트 및 프로덕션 접근
+
+- [ ] 새 개인 개발자 계정에 해당하면 비공개 테스트에 12명 이상을 초대하고 14일 연속 참여 상태를 유지한다.
+- [ ] 내부 테스트 참여자는 비공개 테스트 참여 전에 내부 테스트를 선택 해제하고 비공개 테스트에 다시 참여하게 한다.
+- [ ] 비공개 테스트 피드백과 Play 사전 출시 보고서의 크래시·ANR·호환성 결과를 확인한다.
+- [ ] 요건 충족 후 프로덕션 액세스를 신청한다.
+
+## P3 — 최종 배포
+
+- [ ] 내부/비공개 테스트 결과와 네이버 검수가 끝난 뒤 최종 프로덕션 AAB 생성을 요청한다.
+- [ ] 최종 AAB의 `versionCode`가 모든 테스트 트랙보다 큰지 확인하고 프로덕션 트랙에 업로드한다.
+- [ ] 검토 제출 전 스토어 정보·콘텐츠 등급·데이터 보안·법률 문서 답변이 서로 일치하는지 최종 확인한다.
+- [ ] 단계적 출시 후 실제 Play 설치본에서 로그인, 지도, 알림, 약관 링크, 회원탈퇴를 다시 확인한다.

@@ -1,9 +1,12 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:hehe/common/utils/app_time.dart';
 
 import '../common/helper/date_refresh_mixin.dart';
 import '../core/auth/auth_state.dart';
 import '../core/common/app_settings_state.dart';
+import '../core/logging/app_log.dart';
 import '../core/notification/notification_permission_service.dart';
 import '../core/schedule/schedule_alarm_types.dart';
 import '../data/schedule/schedule_repository.dart';
@@ -546,7 +549,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
       final hasNotificationPermission =
           await NotificationPermissionService.ensureGrantedForReminder(context);
       if (!hasNotificationPermission) {
-        debugPrint('FCM skipped reminder API call due to missing permission');
+        AppLog.debug('FCM skipped reminder API call due to missing permission');
         return;
       }
     }
@@ -647,6 +650,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
       fixedDate: fixedDate,
       initialHospitalName: initialSchedule?.hospitalName,
       title: initialSchedule == null ? '병원 방문 일정을 등록할까요?' : '일정을 수정할까요?',
+      confirmLabel: initialSchedule == null ? '등록하기' : '수정하기',
     );
 
     if (result == null) return;
@@ -1679,67 +1683,25 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 18),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-                    decoration: BoxDecoration(
-                      color: palette.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: palette.primary.withValues(alpha: 0.28),
+                  _ScheduleNotificationSettingsCard(
+                    schedule: schedule,
+                    isPushEnabled: isPushEnabled,
+                    onChangedThreeDaysBefore: onChangedThreeDaysBefore,
+                    onChangedOneDayBefore: onChangedOneDayBefore,
+                    onChangedOneHourBefore: onChangedOneHourBefore,
+                  ),
+                  if (isPushEnabled) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      '알림은 설정에서 변경할 수 있어요.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: palette.textTertiary,
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '알림 설정',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: palette.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        _NotificationSwitchRow(
-                          leadText: '방문 ',
-                          emphasizedText: '3일',
-                          tailText: ' 전에 알림',
-                          value: schedule.isThreeDaysBefore,
-                          enabled: isPushEnabled,
-                          onChanged: onChangedThreeDaysBefore,
-                        ),
-                        const SizedBox(height: 8),
-                        _NotificationSwitchRow(
-                          leadText: '방문 ',
-                          emphasizedText: '1일',
-                          tailText: ' 전에 알림',
-                          value: schedule.isOneDayBefore,
-                          enabled: isPushEnabled,
-                          onChanged: onChangedOneDayBefore,
-                        ),
-                        const SizedBox(height: 8),
-                        _NotificationSwitchRow(
-                          leadText: '방문 ',
-                          emphasizedText: '1시간',
-                          tailText: ' 전에 알림',
-                          value: schedule.isOneHourBefore,
-                          enabled: isPushEnabled,
-                          onChanged: onChangedOneHourBefore,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '알림은 설정에서 변경할 수 있어요.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: palette.textTertiary,
-                    ),
-                  ),
+                  ],
                   const SizedBox(height: 14),
                   SizedBox(
                     width: double.infinity,
@@ -1769,6 +1731,124 @@ class _CalendarScheduleBottomSheetContent extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ScheduleNotificationSettingsCard extends StatelessWidget {
+  final CalendarSchedule schedule;
+  final bool isPushEnabled;
+  final Future<void> Function(bool value) onChangedThreeDaysBefore;
+  final Future<void> Function(bool value) onChangedOneDayBefore;
+  final Future<void> Function(bool value) onChangedOneHourBefore;
+
+  const _ScheduleNotificationSettingsCard({
+    required this.schedule,
+    required this.isPushEnabled,
+    required this.onChangedThreeDaysBefore,
+    required this.onChangedOneDayBefore,
+    required this.onChangedOneHourBefore,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final borderRadius = BorderRadius.circular(16);
+    final settingsContent = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      decoration: BoxDecoration(
+        color: palette.surface,
+        borderRadius: borderRadius,
+        border: Border.all(color: palette.primary.withValues(alpha: 0.28)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '알림 설정',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: palette.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _NotificationSwitchRow(
+            leadText: '방문 ',
+            emphasizedText: '3일',
+            tailText: ' 전에 알림',
+            value: schedule.isThreeDaysBefore,
+            enabled: isPushEnabled,
+            onChanged: onChangedThreeDaysBefore,
+          ),
+          const SizedBox(height: 8),
+          _NotificationSwitchRow(
+            leadText: '방문 ',
+            emphasizedText: '1일',
+            tailText: ' 전에 알림',
+            value: schedule.isOneDayBefore,
+            enabled: isPushEnabled,
+            onChanged: onChangedOneDayBefore,
+          ),
+          const SizedBox(height: 8),
+          _NotificationSwitchRow(
+            leadText: '방문 ',
+            emphasizedText: '1시간',
+            tailText: ' 전에 알림',
+            value: schedule.isOneHourBefore,
+            enabled: isPushEnabled,
+            onChanged: onChangedOneHourBefore,
+          ),
+        ],
+      ),
+    );
+
+    if (isPushEnabled) return settingsContent;
+
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: borderRadius,
+          child: ImageFiltered(
+            imageFilter: ui.ImageFilter.blur(sigmaX: 2.8, sigmaY: 2.8),
+            child: IgnorePointer(
+              child: Opacity(opacity: 0.48, child: settingsContent),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            decoration: BoxDecoration(
+              color: palette.surface.withValues(alpha: 0.76),
+              borderRadius: borderRadius,
+              border: Border.all(color: palette.border.withValues(alpha: 0.72)),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.notifications_off_outlined,
+                  size: 28,
+                  color: palette.textSecondary,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '알림 설정을 사용하려면\n설정에서 푸시 알림을 허용해주세요.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.45,
+                    fontWeight: FontWeight.w700,
+                    color: palette.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

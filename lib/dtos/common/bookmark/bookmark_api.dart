@@ -13,14 +13,13 @@ class BookmarkApi {
       headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('찜한 병원 목록 조회 실패');
-    }
+    ApiClient.requireSuccess(body, failureMessage: '찜한 병원 목록 조회 실패');
 
-    final data = body['data'] as List<dynamic>;
+    final data = ApiClient.requireDataList(body);
     return data
         .map(
-          (bookmark) => BookmarkDto.fromJson(bookmark as Map<String, dynamic>),
+          (bookmark) =>
+              BookmarkDto.fromJson(ApiClient.requireJsonMap(bookmark)),
         )
         .toList();
   }
@@ -34,9 +33,7 @@ class BookmarkApi {
       headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('찜하기 추가 실패');
-    }
+    ApiClient.requireSuccess(body, failureMessage: '찜하기 추가 실패');
   }
 
   static Future<void> deleteBookmark({
@@ -48,8 +45,6 @@ class BookmarkApi {
       headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('찜하기 삭제 실패');
-    }
+    ApiClient.requireSuccess(body, failureMessage: '찜하기 삭제 실패');
   }
 }

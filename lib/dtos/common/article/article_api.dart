@@ -9,17 +9,17 @@ class ArticleApi {
   static Future<List<ArticleDto>> fetchArticleList() async {
     final body = await _apiClient.get(ApiEndpoints.articleList);
 
-    final data = body['data'] as List<dynamic>;
+    final data = ApiClient.requireDataList(body);
 
     return data
-        .map((e) => ArticleDto.fromJson(e as Map<String, dynamic>))
+        .map((item) => ArticleDto.fromJson(ApiClient.requireJsonMap(item)))
         .toList();
   }
 
   static Future<ArticleDetailDto> fetchArticleDetail(int articleId) async {
     final body = await _apiClient.get(ApiEndpoints.articleDetail(articleId));
 
-    final data = body['data'] as Map<String, dynamic>;
+    final data = ApiClient.requireDataMap(body);
 
     return ArticleDetailDto.fromJson(data);
   }

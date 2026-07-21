@@ -110,8 +110,8 @@ class _PlaceCardState extends State<PlaceCard>
                   border: Border.all(
                     color: _isPressed
                         ? palette.primary.withValues(
-                      alpha: isDark ? 0.28 : 0.20,
-                    )
+                            alpha: isDark ? 0.28 : 0.20,
+                          )
                         : isDark
                         ? palette.bottomSheetBorder.withValues(alpha: 0.42)
                         : palette.border,
@@ -166,11 +166,9 @@ class _PlaceCardState extends State<PlaceCard>
                           runSpacing: 6,
                           children: visibleTags
                               .map(
-                                (tag) => _TagChip(
-                              label: tag,
-                              compact: isCompact,
-                            ),
-                          )
+                                (tag) =>
+                                    _TagChip(label: tag, compact: isCompact),
+                              )
                               .toList(),
                         ),
                       const SizedBox(height: 12),
@@ -212,10 +210,7 @@ class _AddressRow extends StatelessWidget {
   final String address;
   final bool compact;
 
-  const _AddressRow({
-    required this.address,
-    required this.compact,
-  });
+  const _AddressRow({required this.address, required this.compact});
 
   @override
   Widget build(BuildContext context) {
@@ -256,10 +251,7 @@ class _TagChip extends StatelessWidget {
   final String label;
   final bool compact;
 
-  const _TagChip({
-    required this.label,
-    required this.compact,
-  });
+  const _TagChip({required this.label, required this.compact});
 
   @override
   Widget build(BuildContext context) {

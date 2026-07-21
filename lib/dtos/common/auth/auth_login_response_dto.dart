@@ -18,13 +18,19 @@ class AuthLoginResponseDto {
   }
 
   factory AuthLoginResponseDto.fromJson(Map<String, dynamic> json) {
+    final accessToken = json['accessToken'] as String?;
+    final refreshToken = json['refreshToken'] as String?;
+    final user = json['user'] is Map<String, dynamic>
+        ? AuthUserDto.fromJson(json['user'] as Map<String, dynamic>)
+        : null;
+
     return AuthLoginResponseDto(
-      exists: json['exists'] as bool? ?? true,
-      accessToken: json['accessToken'] as String?,
-      refreshToken: json['refreshToken'] as String?,
-      user: json['user'] is Map<String, dynamic>
-          ? AuthUserDto.fromJson(json['user'] as Map<String, dynamic>)
-          : null,
+      exists:
+          json['exists'] as bool? ??
+          (accessToken != null && refreshToken != null && user != null),
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      user: user,
     );
   }
 }

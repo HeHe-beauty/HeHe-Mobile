@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import '../core/auth/auth_gate.dart';
 import '../core/auth/auth_prompt.dart';
-import '../core/auth/auth_session_store.dart';
+import '../core/auth/auth_session_service.dart';
 import '../core/auth/auth_state.dart';
-import '../core/common/app_settings_state.dart';
 import '../core/auth/social_login_service.dart';
-import '../core/common/favorite_store.dart';
+import '../core/logging/app_log.dart';
 import '../core/notification/notification_permission_service.dart';
 import '../data/auth/auth_repository.dart';
 import '../data/user/user_repository.dart';
@@ -158,8 +157,7 @@ class _MyPageScreenState extends State<MyPageScreen>
     final session = AuthState.session;
     final accessToken = session?.accessToken;
     if (accessToken == null || accessToken.isEmpty) {
-      await AuthSessionStore.clear();
-      AuthState.logOut();
+      await AuthSessionService.clearLocalSession();
       if (!mounted) return;
       showAppSnackBar(context, '로그인이 만료되었습니다.');
       return;
@@ -167,8 +165,7 @@ class _MyPageScreenState extends State<MyPageScreen>
 
     final provider = session?.provider;
     if (provider == null || provider.isEmpty) {
-      await AuthSessionStore.clear();
-      AuthState.logOut();
+      await AuthSessionService.clearLocalSession();
       if (!mounted) return;
       showAppSnackBar(context, '탈퇴를 위해 다시 로그인해주세요.');
       Navigator.pop(context);
@@ -202,16 +199,14 @@ class _MyPageScreenState extends State<MyPageScreen>
 
       if (!mounted) return;
 
-      FavoriteStore.instance.clear();
-      await AuthSessionStore.clear();
-      AuthState.logOut();
+      await AuthSessionService.clearLocalSession();
 
       if (!mounted) return;
       showAppSnackBar(context, '회원탈퇴가 완료되었습니다.');
       Navigator.pop(context);
     } on SocialLoginException catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, e.message);
+      showAppSnackBar(context, e.displayMessage);
     } catch (e) {
       if (!mounted) return;
       showAppSnackBar(context, '회원탈퇴에 실패했어요. 잠시 후 다시 시도해주세요.');
@@ -235,6 +230,30 @@ class _MyPageScreenState extends State<MyPageScreen>
     };
   }
 
+  Future<void> _logout() async {
+    final accessToken = AuthState.session?.accessToken;
+    if (accessToken != null && accessToken.isNotEmpty) {
+      try {
+        await NotificationPermissionService.unregisterCurrentDeviceToken(
+          accessToken: accessToken,
+        );
+        await AuthRepository.logout(accessToken);
+      } catch (error, stackTrace) {
+        // 서버 연결에 실패해도 이 기기의 인증 정보는 반드시 제거한다.
+        AppLog.debug(
+          '[Auth][Logout] remote logout failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
+
+    await AuthSessionService.clearLocalSession();
+    if (!mounted) return;
+    showAppSnackBar(context, '로그아웃 되었습니다');
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
@@ -242,7 +261,10 @@ class _MyPageScreenState extends State<MyPageScreen>
     return ValueListenableBuilder<bool>(
       valueListenable: AuthState.isLoggedIn,
       builder: (context, isLoggedIn, _) {
-        final userName = isLoggedIn ? '노명욱' : '게스트';
+        final nickname = AuthState.session?.nickname.trim();
+        final userName = isLoggedIn && nickname != null && nickname.isNotEmpty
+            ? nickname
+            : '게스트';
 
         return Scaffold(
           backgroundColor: palette.bg,
@@ -297,46 +319,7 @@ class _MyPageScreenState extends State<MyPageScreen>
                             _AccountSection(
                               isLoggedIn: isLoggedIn,
                               isWithdrawing: _isWithdrawing,
-                              onTapLogout: () async {
-                                final accessToken =
-                                    AuthState.session?.accessToken;
-
-                                if (accessToken == null ||
-                                    accessToken.isEmpty) {
-                                  await AuthSessionStore.clear();
-                                  AuthState.logOut();
-                                  AppSettingsState.setPushEnabled(false);
-                                  if (!context.mounted) return;
-
-                                  showAppSnackBar(context, '로그아웃 되었습니다');
-                                  Navigator.pop(context);
-                                  return;
-                                }
-
-                                try {
-                                  await NotificationPermissionService.unregisterCurrentDeviceToken(
-                                    accessToken: accessToken,
-                                  );
-                                  await AuthRepository.logout(accessToken);
-
-                                  if (!context.mounted) return;
-
-                                  await AuthSessionStore.clear();
-                                  AuthState.logOut();
-                                  AppSettingsState.setPushEnabled(false);
-                                  if (!context.mounted) return;
-
-                                  showAppSnackBar(context, '로그아웃 되었습니다');
-                                  Navigator.pop(context);
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    showAppSnackBar(
-                                      context,
-                                      '로그아웃에 실패했어요. 잠시 후 다시 시도해주세요.',
-                                    );
-                                  }
-                                }
-                              },
+                              onTapLogout: _logout,
                               onTapWithdraw: _withdrawAccount,
                             ),
                           ],

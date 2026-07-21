@@ -47,18 +47,18 @@ class _HomeScreenState extends State<HomeScreen>
       title: '병원 찾아보기',
       subtitle: '3단계로 사용 방법을 확인해요',
       imageAssets: [
-        'assets/images/tutorial/1_1.png',
-        'assets/images/tutorial/1_2.png',
-        'assets/images/tutorial/1_3.png',
+        'assets/images/tutorial/1_1.jpg',
+        'assets/images/tutorial/1_2.jpg',
+        'assets/images/tutorial/1_3.jpg',
       ],
     ),
     _TutorialGuideItem(
       title: '일정 관리하기',
       subtitle: '3단계로 사용 방법을 확인해요',
       imageAssets: [
-        'assets/images/tutorial/2_1.png',
-        'assets/images/tutorial/2_2.png',
-        'assets/images/tutorial/2_3.png',
+        'assets/images/tutorial/2_1.jpg',
+        'assets/images/tutorial/2_2.jpg',
+        'assets/images/tutorial/2_3.jpg',
       ],
     ),
   ];
@@ -557,10 +557,7 @@ class _HomeScreenState extends State<HomeScreen>
                                         children: [
                                           TextSpan(
                                             text: '💡 ',
-                                            style: TextStyle(
-                                              fontFamily: 'Tossface',
-                                              fontSize: 12,
-                                            ),
+                                            style: TextStyle(fontSize: 12),
                                           ),
                                           TextSpan(
                                             text:

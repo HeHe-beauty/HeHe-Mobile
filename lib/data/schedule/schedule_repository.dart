@@ -1,3 +1,4 @@
+import '../../core/cache/cache_key.dart';
 import '../../core/cache/timed_memory_cache.dart';
 import '../../dtos/common/schedule/schedule_api.dart';
 import '../../dtos/common/schedule/schedule_alarm_request_dto.dart';
@@ -73,7 +74,7 @@ class ScheduleRepository {
     required String scheduleId,
     bool forceRefresh = false,
   }) async {
-    final cacheKey = '$accessToken:$scheduleId';
+    final cacheKey = '${authScopedCacheKey(accessToken)}:$scheduleId';
     return _scheduleDetailCache.get(
       cacheKey,
       forceRefresh: forceRefresh,
@@ -148,7 +149,7 @@ class ScheduleRepository {
     required int limit,
     bool forceRefresh = false,
   }) async {
-    final cacheKey = '$accessToken:$limit';
+    final cacheKey = '${authScopedCacheKey(accessToken)}:$limit';
     return _upcomingSchedulesCache.get(
       cacheKey,
       forceRefresh: forceRefresh,
@@ -174,7 +175,7 @@ class ScheduleRepository {
     required String accessToken,
     bool forceRefresh = false,
   }) async {
-    final cacheKey = accessToken;
+    final cacheKey = authScopedCacheKey(accessToken);
     return _scheduleSummaryCache.get(
       cacheKey,
       forceRefresh: forceRefresh,
@@ -187,7 +188,7 @@ class ScheduleRepository {
     required String date,
     bool forceRefresh = false,
   }) async {
-    final cacheKey = '$accessToken:$date';
+    final cacheKey = '${authScopedCacheKey(accessToken)}:$date';
     return _dailySchedulesCache.get(
       cacheKey,
       forceRefresh: forceRefresh,
