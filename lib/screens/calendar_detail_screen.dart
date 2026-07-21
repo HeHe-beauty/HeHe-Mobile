@@ -4,6 +4,7 @@ import 'package:hehe/common/utils/app_time.dart';
 import '../common/helper/date_refresh_mixin.dart';
 import '../core/auth/auth_state.dart';
 import '../core/common/app_settings_state.dart';
+import '../core/logging/app_log.dart';
 import '../core/notification/notification_permission_service.dart';
 import '../core/schedule/schedule_alarm_types.dart';
 import '../data/schedule/schedule_repository.dart';
@@ -546,7 +547,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen>
       final hasNotificationPermission =
           await NotificationPermissionService.ensureGrantedForReminder(context);
       if (!hasNotificationPermission) {
-        debugPrint('FCM skipped reminder API call due to missing permission');
+        AppLog.debug('FCM skipped reminder API call due to missing permission');
         return;
       }
     }

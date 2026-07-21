@@ -1,11 +1,18 @@
+import '../../core/cache/cache_key.dart';
+import '../../core/cache/timed_memory_cache.dart';
 import '../../dtos/common/hospital/hospital_api.dart';
 import '../../dtos/common/hospital/hospital_detail_dto.dart';
 import '../../dtos/common/hospital/hospital_dto.dart';
 import '../../dtos/common/hospital/hospital_map_dto.dart';
 
 class HospitalRepository {
-  static final Map<String, List<HospitalDto>> _cache = {};
-  static final Map<String, HospitalDetailDto> _detailCache = {};
+  static const _cacheTtl = Duration(minutes: 1);
+  static final _hospitalsCache = TimedMemoryCache<String, List<HospitalDto>>(
+    ttl: _cacheTtl,
+  );
+  static final _detailCache = TimedMemoryCache<String, HospitalDetailDto>(
+    ttl: _cacheTtl,
+  );
 
   static Future<List<HospitalDto>> getHospitals({
     required double lat,
@@ -13,40 +20,33 @@ class HospitalRepository {
     required int precision,
     int? equipId,
     String? accessToken,
-  }) async {
+  }) {
     final cacheKey =
-        '$lat:$lng:$precision:${equipId ?? 'all'}:${accessToken ?? 'guest'}';
+        '$lat:$lng:$precision:${equipId ?? 'all'}:'
+        '${authScopedCacheKey(accessToken)}';
 
-    if (_cache.containsKey(cacheKey)) {
-      return _cache[cacheKey]!;
-    }
-
-    final hospitals = await HospitalApi.fetchHospitalList(
-      lat: lat,
-      lng: lng,
-      precision: precision,
-      equipId: equipId,
-      accessToken: accessToken,
+    return _hospitalsCache.get(
+      cacheKey,
+      fetch: () => HospitalApi.fetchHospitalList(
+        lat: lat,
+        lng: lng,
+        precision: precision,
+        equipId: equipId,
+        accessToken: accessToken,
+      ),
     );
-    _cache[cacheKey] = hospitals;
-    return hospitals;
   }
 
   static Future<HospitalDetailDto> getHospitalDetail(
     int hospitalId, {
     String? accessToken,
-  }) async {
-    final cacheKey = '$hospitalId:${accessToken ?? 'guest'}';
-    if (_detailCache.containsKey(cacheKey)) {
-      return _detailCache[cacheKey]!;
-    }
-
-    final detail = await HospitalApi.fetchHospitalDetail(
-      hospitalId,
-      accessToken: accessToken,
+  }) {
+    final cacheKey = '$hospitalId:${authScopedCacheKey(accessToken)}';
+    return _detailCache.get(
+      cacheKey,
+      fetch: () =>
+          HospitalApi.fetchHospitalDetail(hospitalId, accessToken: accessToken),
     );
-    _detailCache[cacheKey] = detail;
-    return detail;
   }
 
   static Future<HospitalMapDto> getHospitalMap({
@@ -68,7 +68,7 @@ class HospitalRepository {
   }
 
   static void clearCache() {
-    _cache.clear();
+    _hospitalsCache.clear();
     _detailCache.clear();
   }
 }

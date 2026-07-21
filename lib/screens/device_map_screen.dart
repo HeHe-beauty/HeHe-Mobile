@@ -13,6 +13,7 @@ import '../core/auth/auth_prompt.dart';
 import '../core/auth/auth_state.dart';
 import '../core/common/favorite_store.dart';
 import '../core/location/location_permission_service.dart';
+import '../core/logging/app_log.dart';
 import '../data/contact/contact_repository.dart';
 import '../data/hospital/hospital_repository.dart';
 import '../data/recent_view/recent_view_repository.dart';
@@ -374,7 +375,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
             hospitalId: hospitalId,
           );
         } catch (e) {
-          debugPrint('contact history register error: $e');
+          AppLog.debug('contact history register error', error: e);
         }
 
         await _launchHospitalCall(contactPlace);
@@ -385,11 +386,16 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
   Future<void> _launchHospitalCall(PlaceItem place) async {
     final uri = _callUriForPlace(place);
     if (uri == null) {
-      debugPrint('hospital contact skipped: missing phone number');
+      AppLog.debug('hospital contact skipped: missing phone number');
       return;
     }
 
-    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    var launched = false;
+    try {
+      launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (error) {
+      AppLog.debug('hospital phone app launch failed', error: error);
+    }
     if (!launched && mounted) {
       await _showCallFallbackDialog(place.contactNumber);
     }
@@ -808,7 +814,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
         hospitalId: hospitalId,
       );
     } catch (e) {
-      debugPrint('recent view register error: $e');
+      AppLog.debug('recent view register error', error: e);
     }
   }
 
@@ -1250,6 +1256,7 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
         child: ValueListenableBuilder<bool>(
           valueListenable: AuthState.isLoggedIn,
           builder: (context, isLoggedIn, _) {
+            final nickname = AuthState.session?.nickname.trim();
             final visibleSheetPlaces = _visiblePlacesForAuth(
               _sheetPlaces,
               isLoggedIn,
@@ -1309,7 +1316,9 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
                 MapSidePanel(
                   isOpen: _isSidePanelOpen,
                   topInset: 76,
-                  userName: isLoggedIn ? '노명욱님' : '로그인 / 회원가입',
+                  userName: isLoggedIn
+                      ? '${nickname == null || nickname.isEmpty ? '회원' : nickname}님'
+                      : '로그인 / 회원가입',
                   isLoggedIn: isLoggedIn,
                   onTapMyPage: _openProtectedMyPage,
                   onTapRecent: () => _openProtectedHistoryPage(
@@ -1328,8 +1337,6 @@ class _DeviceMapScreenState extends State<DeviceMapScreen> {
                     description: AuthPrompts.inquiries.description,
                   ),
                   onTapCalendar: _openProtectedCalendarPage,
-                  onTapNotice: () {},
-                  onTapContact: () {},
                 ),
               ],
             );

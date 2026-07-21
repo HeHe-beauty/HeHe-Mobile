@@ -3,6 +3,8 @@ import '../core/auth/auth_session_store.dart';
 import '../core/auth/auth_state.dart';
 import '../core/auth/social_login_service.dart';
 import '../core/common/app_settings_state.dart';
+import '../core/logging/app_log.dart';
+import '../core/network/api_client.dart';
 import '../core/notification/notification_permission_service.dart';
 import '../data/auth/auth_repository.dart';
 import '../dtos/common/auth/auth_login_response_dto.dart';
@@ -54,12 +56,14 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
 
     SocialLoginCredential? credential;
     try {
-      debugPrint('[Auth][LoginScreen] login tapped provider=${provider.name}');
+      AppLog.debug(
+        '[Auth][LoginScreen] login tapped provider=${provider.name}',
+      );
       credential = switch (provider) {
         SocialLoginProvider.kakao => await SocialLoginService.loginWithKakao(),
         SocialLoginProvider.naver => await SocialLoginService.loginWithNaver(),
       };
-      debugPrint(
+      AppLog.debug(
         '[Auth][LoginScreen] social credential ready '
         'provider=${credential.provider.name} '
         'idTokenPresent=${credential.idToken != null}',
@@ -82,12 +86,12 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
         provider: credential.provider.name,
       );
     } on SocialLoginException catch (e) {
-      debugPrint('[Auth][LoginScreen] social login exception: $e');
+      AppLog.debug('[Auth][LoginScreen] social login exception', error: e);
       if (mounted) {
-        showAppSnackBar(context, e.message);
+        showAppSnackBar(context, e.displayMessage);
       }
     } catch (e) {
-      debugPrint('[Auth][LoginScreen] login error: $e');
+      AppLog.debug('[Auth][LoginScreen] login error', error: e);
       if (mounted && credential != null && _isSignupRequiredError(e)) {
         _showSignupConsentFlow(credential);
         return;
@@ -105,12 +109,7 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
   }
 
   bool _isSignupRequiredError(Object error) {
-    final message = error.toString().toLowerCase();
-    return message.contains('user_not_found') ||
-        message.contains('user not found') ||
-        message.contains('not found') ||
-        message.contains('가입된') ||
-        message.contains('찾을 수 없');
+    return error is ApiException && error.indicatesMissingUser;
   }
 
   void _showSignupConsentFlow(SocialLoginCredential credential) {
@@ -181,7 +180,7 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
         provider: credential.provider.name,
       );
     } catch (e) {
-      debugPrint('[Auth][SignupConsent] signup error: $e');
+      AppLog.debug('[Auth][SignupConsent] signup error', error: e);
       if (mounted) {
         showAppSnackBar(context, '회원가입에 실패했어요. 잠시 후 다시 시도해주세요.');
       }
@@ -212,7 +211,7 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
     );
 
     await AuthSessionStore.write(session);
-    debugPrint('[Auth][LoginScreen] auth session saved');
+    AppLog.debug('[Auth][LoginScreen] auth session saved');
 
     if (!mounted) return;
 
@@ -222,7 +221,7 @@ class _LoginRequiredScreenState extends State<LoginRequiredScreen> {
 
   void _completeLogin(BuildContext context, AuthSession session) {
     AuthState.logIn(authSession: session);
-    debugPrint(
+    AppLog.debug(
       '[Auth][LoginScreen] AuthState updated userId=${session.userId}',
     );
     showAppSnackBar(context, '로그인 완료');

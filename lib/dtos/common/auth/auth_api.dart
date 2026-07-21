@@ -1,5 +1,4 @@
-import 'package:flutter/foundation.dart';
-
+import '../../../core/logging/app_log.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_endpoints.dart';
 import 'auth_login_request_dto.dart';
@@ -13,14 +12,14 @@ class AuthApi {
 
   static Future<AuthLoginResponseDto> login(AuthLoginRequestDto request) async {
     final requestBody = request.toJson();
-    debugPrint('[Auth][Api] login request provider=${request.provider}');
+    AppLog.debug('[Auth][Api] login request provider=${request.provider}');
 
     final body = await _apiClient.post(
       ApiEndpoints.authLogin,
       body: requestBody,
     );
 
-    final data = body['data'] as Map<String, dynamic>;
+    final data = ApiClient.requireDataMap(body);
 
     return AuthLoginResponseDto.fromJson(data);
   }
@@ -29,14 +28,14 @@ class AuthApi {
     AuthSignupRequestDto request,
   ) async {
     final requestBody = request.toJson();
-    debugPrint('[Auth][Api] signup request provider=${request.provider}');
+    AppLog.debug('[Auth][Api] signup request provider=${request.provider}');
 
     final body = await _apiClient.post(
       ApiEndpoints.authSignup,
       body: requestBody,
     );
 
-    final data = body['data'] as Map<String, dynamic>;
+    final data = ApiClient.requireDataMap(body);
 
     return AuthLoginResponseDto.fromJson(data);
   }
@@ -56,7 +55,7 @@ class AuthApi {
       body: request.toJson(),
     );
 
-    final data = body['data'] as Map<String, dynamic>;
+    final data = ApiClient.requireDataMap(body);
 
     return AuthTokenRefreshResponseDto.fromJson(data);
   }

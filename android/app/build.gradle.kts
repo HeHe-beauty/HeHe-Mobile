@@ -65,6 +65,25 @@ val kakaoUrlScheme = localOrProjectProperty(
         ?: "kakao_missing_native_app_key"
 )
 
+if (releaseBuildRequested) {
+    val requiredDartDefines = listOf(
+        "NAVER_MAP_CLIENT_ID",
+        "KAKAO_NATIVE_APP_KEY",
+        "NAVER_CLIENT_ID",
+        "NAVER_CLIENT_SECRET",
+    )
+    val missingDartDefines = requiredDartDefines.filter {
+        dartDefines[it].isNullOrBlank()
+    }
+    if (missingDartDefines.isNotEmpty()) {
+        throw GradleException(
+            "Release OAuth/map configuration is missing: " +
+                missingDartDefines.joinToString(", ") +
+                ". Build with --dart-define-from-file=<environment.json>."
+        )
+    }
+}
+
 android {
     namespace = "kr.hehehe.hehe"
     compileSdk = flutter.compileSdkVersion
@@ -107,12 +126,19 @@ android {
             if (releaseSigningConfigured) {
                 signingConfig = signingConfigs.getByName("release")
             }
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    implementation("com.navercorp.nid:oauth:5.11.2")
 }
 
 flutter {

@@ -58,7 +58,7 @@ class ScheduleApi {
       headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    _ensureSuccess(body, '일정 삭제 실패');
+    ApiClient.requireSuccess(body, failureMessage: '일정 삭제 실패');
   }
 
   static Future<void> createScheduleAlarm({
@@ -72,7 +72,7 @@ class ScheduleApi {
       headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    _ensureSuccess(body, '일정 알림 등록 실패');
+    ApiClient.requireSuccess(body, failureMessage: '일정 알림 등록 실패');
   }
 
   static Future<void> deleteScheduleAlarm({
@@ -85,7 +85,7 @@ class ScheduleApi {
       headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    _ensureSuccess(body, '일정 알림 삭제 실패');
+    ApiClient.requireSuccess(body, failureMessage: '일정 알림 삭제 실패');
   }
 
   static Future<List<ScheduleDetailDto>> fetchUpcomingSchedules({
@@ -125,26 +125,20 @@ class ScheduleApi {
     return _scheduleDetailList(body, '일별 일정 조회 실패');
   }
 
-  static void _ensureSuccess(Map<String, dynamic> body, String message) {
-    if (body['success'] != true) {
-      throw Exception(message);
-    }
-  }
-
   static Map<String, dynamic> _dataMap(
     Map<String, dynamic> body,
     String failureMessage,
   ) {
-    _ensureSuccess(body, failureMessage);
-    return body['data'] as Map<String, dynamic>;
+    ApiClient.requireSuccess(body, failureMessage: failureMessage);
+    return ApiClient.requireDataMap(body);
   }
 
   static List<dynamic> _dataList(
     Map<String, dynamic> body,
     String failureMessage,
   ) {
-    _ensureSuccess(body, failureMessage);
-    return body['data'] as List<dynamic>;
+    ApiClient.requireSuccess(body, failureMessage: failureMessage);
+    return ApiClient.requireDataList(body);
   }
 
   static List<ScheduleDetailDto> _scheduleDetailList(
@@ -154,7 +148,7 @@ class ScheduleApi {
     return _dataList(body, failureMessage)
         .map(
           (schedule) =>
-              ScheduleDetailDto.fromJson(schedule as Map<String, dynamic>),
+              ScheduleDetailDto.fromJson(ApiClient.requireJsonMap(schedule)),
         )
         .toList();
   }

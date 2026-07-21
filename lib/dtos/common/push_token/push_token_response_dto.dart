@@ -4,6 +4,8 @@ class PushTokenResponseDto {
   const PushTokenResponseDto({required this.success});
 
   factory PushTokenResponseDto.fromJson(Map<String, dynamic> json) {
-    return PushTokenResponseDto(success: json['success'] as bool? ?? false);
+    return PushTokenResponseDto(
+      success: json.isEmpty || (json['success'] as bool? ?? false),
+    );
   }
 }

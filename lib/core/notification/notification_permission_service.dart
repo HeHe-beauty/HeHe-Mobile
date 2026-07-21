@@ -10,6 +10,7 @@ import '../../data/push_token/push_token_repository.dart';
 import '../../screens/home_screen.dart';
 import '../auth/auth_state.dart';
 import '../common/app_settings_state.dart';
+import '../logging/app_log.dart';
 
 class NotificationPermissionService {
   const NotificationPermissionService._();
@@ -17,8 +18,8 @@ class NotificationPermissionService {
   static const AndroidNotificationChannel _androidNotificationChannel =
       AndroidNotificationChannel(
         'high_importance_channel',
-        'High Importance Notifications',
-        description: 'HeHe push notifications',
+        '중요 알림',
+        description: '예약 및 서비스 알림',
         importance: Importance.max,
       );
 
@@ -45,7 +46,7 @@ class NotificationPermissionService {
     await AppSettingsState.syncNotificationPermissionGranted(
       granted: _isGranted(settings.authorizationStatus),
     );
-    debugPrint(
+    AppLog.debug(
       'FCM app-start permission request skipped: '
       '${settings.authorizationStatus}',
     );
@@ -75,13 +76,13 @@ class NotificationPermissionService {
     _tokenRefreshSubscription ??= FirebaseMessaging.instance.onTokenRefresh
         .listen((token) async {
           if (!AppSettingsState.pushEnabled.value) {
-            debugPrint('FCM token refresh ignored: push disabled');
+            AppLog.debug('FCM token refresh ignored: push disabled');
             return;
           }
 
           final accessToken = AuthState.session?.accessToken;
           if (accessToken == null || accessToken.isEmpty) {
-            debugPrint('FCM token refreshed while logged out');
+            AppLog.debug('FCM token refreshed while logged out');
             return;
           }
 
@@ -101,7 +102,7 @@ class NotificationPermissionService {
     try {
       final token = tokenOverride ?? await _messaging.getToken();
       if (token == null || token.isEmpty) {
-        debugPrint('FCM skipped push token register: token is null');
+        AppLog.debug('FCM skipped push token register: token is null');
         return;
       }
 
@@ -113,10 +114,13 @@ class NotificationPermissionService {
         notificationPermissionGranted: _isGranted(settings.authorizationStatus),
       );
 
-      debugPrint('FCM push token register success: ${response.success}');
+      AppLog.debug('FCM push token register success: ${response.success}');
     } catch (e, stack) {
-      debugPrint('FCM push token register failed: $e');
-      debugPrint('$stack');
+      AppLog.debug(
+        'FCM push token register failed',
+        error: e,
+        stackTrace: stack,
+      );
     }
   }
 
@@ -128,7 +132,7 @@ class NotificationPermissionService {
     try {
       final token = await _messaging.getToken();
       if (token == null || token.isEmpty) {
-        debugPrint('FCM skipped push token delete: token is null');
+        AppLog.debug('FCM skipped push token delete: token is null');
         return;
       }
 
@@ -137,10 +141,9 @@ class NotificationPermissionService {
         token: token,
       );
 
-      debugPrint('FCM push token delete success: ${response.success}');
+      AppLog.debug('FCM push token delete success: ${response.success}');
     } catch (e, stack) {
-      debugPrint('FCM push token delete failed: $e');
-      debugPrint('$stack');
+      AppLog.debug('FCM push token delete failed', error: e, stackTrace: stack);
     }
   }
 
@@ -162,7 +165,7 @@ class NotificationPermissionService {
       return true;
     }
 
-    debugPrint(
+    AppLog.debug(
       'FCM reminder checkbox tapped while permission denied: '
       '${currentSettings.authorizationStatus}',
     );
@@ -190,19 +193,19 @@ class NotificationPermissionService {
     );
 
     if (shouldRequest != true) {
-      debugPrint('FCM skipped reminder API call due to missing permission');
+      AppLog.debug('FCM skipped reminder API call due to missing permission');
       return false;
     }
 
     final requestedSettings = await _messaging.requestPermission();
     if (_isGranted(requestedSettings.authorizationStatus)) {
-      debugPrint('FCM permission granted after checkbox-triggered flow');
+      AppLog.debug('FCM permission granted after checkbox-triggered flow');
       return true;
     }
 
     await openAppSettings();
 
-    debugPrint(
+    AppLog.debug(
       'FCM skipped reminder API call due to missing permission: '
       '${requestedSettings.authorizationStatus}',
     );

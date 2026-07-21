@@ -154,11 +154,7 @@ class _SoftIconButton extends StatelessWidget {
           child: SizedBox(
             width: 40,
             height: 40,
-            child: Icon(
-              icon,
-              size: 22,
-              color: palette.textPrimary,
-            ),
+            child: Icon(icon, size: 22, color: palette.textPrimary),
           ),
         ),
       ),

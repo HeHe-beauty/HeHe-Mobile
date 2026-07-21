@@ -1,31 +1,27 @@
+import '../../core/cache/timed_memory_cache.dart';
 import '../../dtos/common/equipment/equip_api.dart';
 import '../../dtos/common/equipment/equip_dto.dart';
 
 class EquipRepository {
-  static List<EquipDto>? _cache;
-  static final Map<int, EquipDto> _detailCache = {};
+  static const _cacheTtl = Duration(minutes: 15);
+  static final _equipsCache = TimedMemoryCache<String, List<EquipDto>>(
+    ttl: _cacheTtl,
+  );
+  static final _detailCache = TimedMemoryCache<int, EquipDto>(ttl: _cacheTtl);
 
-  static Future<List<EquipDto>> getEquips() async {
-    if (_cache != null) {
-      return _cache!;
-    }
-
-    _cache = await EquipApi.fetchEquipList();
-    return _cache!;
+  static Future<List<EquipDto>> getEquips() {
+    return _equipsCache.get('all', fetch: EquipApi.fetchEquipList);
   }
 
-  static Future<EquipDto> getEquipDetail(int equipId) async {
-    if (_detailCache.containsKey(equipId)) {
-      return _detailCache[equipId]!;
-    }
-
-    final detail = await EquipApi.fetchEquipDetail(equipId);
-    _detailCache[equipId] = detail;
-    return detail;
+  static Future<EquipDto> getEquipDetail(int equipId) {
+    return _detailCache.get(
+      equipId,
+      fetch: () => EquipApi.fetchEquipDetail(equipId),
+    );
   }
 
   static void clearCache() {
-    _cache = null;
+    _equipsCache.clear();
     _detailCache.clear();
   }
 }

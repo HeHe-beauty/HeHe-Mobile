@@ -14,11 +14,9 @@ class UserApi {
       headers: ApiClient.bearerHeaders(accessToken),
     );
 
-    if (body['success'] != true) {
-      throw Exception('유저 요약 조회 실패');
-    }
+    ApiClient.requireSuccess(body, failureMessage: '유저 요약 조회 실패');
 
-    final data = body['data'] as Map<String, dynamic>;
+    final data = ApiClient.requireDataMap(body);
     return UserSummaryDto.fromJson(data);
   }
 
@@ -33,9 +31,7 @@ class UserApi {
       body: {'provider': provider, 'providerAccessToken': providerAccessToken},
     );
 
-    if (body['success'] != true) {
-      throw Exception('회원 탈퇴 실패');
-    }
+    ApiClient.requireSuccess(body, failureMessage: '회원 탈퇴 실패');
   }
 
   static Future<void> updateAgreements({
@@ -51,8 +47,6 @@ class UserApi {
       body: requestBody,
     );
 
-    if (body['success'] != true) {
-      throw Exception('알림 동의 변경 실패');
-    }
+    ApiClient.requireSuccess(body, failureMessage: '알림 동의 변경 실패');
   }
 }

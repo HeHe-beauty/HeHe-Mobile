@@ -12,8 +12,6 @@ class MapSidePanel extends StatelessWidget {
   final VoidCallback onTapFavorite;
   final VoidCallback onTapInquiry;
   final VoidCallback onTapCalendar;
-  final VoidCallback onTapNotice;
-  final VoidCallback onTapContact;
 
   const MapSidePanel({
     super.key,
@@ -26,8 +24,6 @@ class MapSidePanel extends StatelessWidget {
     required this.onTapFavorite,
     required this.onTapInquiry,
     required this.onTapCalendar,
-    required this.onTapNotice,
-    required this.onTapContact,
   });
 
   @override
@@ -135,32 +131,6 @@ class MapSidePanel extends StatelessWidget {
                     ),
                   ],
                   const Spacer(),
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 6,
-                      children: [
-                        _BottomTextButton(
-                          icon: Icons.campaign_outlined,
-                          label: '공지사항',
-                          onTap: onTapNotice,
-                        ),
-                        Text(
-                          '·',
-                          style: AppTextStyles.homeCaption.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: palette.textTertiary,
-                          ),
-                        ),
-                        _BottomTextButton(
-                          icon: Icons.mail_outline_rounded,
-                          label: '문의하기',
-                          onTap: onTapContact,
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -214,48 +184,6 @@ class _MenuCard extends StatelessWidget {
                 style: AppTextStyles.homeCaption.copyWith(
                   color: palette.textSecondary,
                   height: 1.35,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BottomTextButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _BottomTextButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Material(
-      color: palette.surface.withValues(alpha: 0),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 14, color: palette.textSecondary),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: AppTextStyles.homeCaption.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: palette.textSecondary,
                 ),
               ),
             ],

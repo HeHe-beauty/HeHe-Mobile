@@ -1,0 +1,10 @@
+{
+  "API_HOST": "api.hehehe.kr",
+  "NAVER_MAP_CLIENT_ID": "",
+  "KAKAO_NATIVE_APP_KEY": "",
+  "KAKAO_CUSTOM_SCHEME": "",
+  "NAVER_CLIENT_ID": "",
+  "NAVER_CLIENT_SECRET": "",
+  "NAVER_CLIENT_NAME": "HeHe",
+  "AUTH_DIAGNOSTICS": false
+}

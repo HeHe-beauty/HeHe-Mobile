@@ -14,8 +14,17 @@ class LegalDocumentLinks {
   );
 
   static Future<void> open(BuildContext context, Uri uri) async {
-    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!launched && context.mounted) {
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (launched || !context.mounted) return;
+    } catch (_) {
+      if (!context.mounted) return;
+    }
+
+    if (context.mounted) {
       showAppSnackBar(context, '페이지를 열 수 없어요. 잠시 후 다시 시도해주세요.');
     }
   }

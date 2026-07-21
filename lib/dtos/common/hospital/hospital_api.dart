@@ -32,10 +32,10 @@ class HospitalApi {
           : ApiClient.bearerHeaders(accessToken),
     );
 
-    final data = body['data'] as List<dynamic>;
+    final data = ApiClient.requireDataList(body);
 
     return data
-        .map((e) => HospitalDto.fromJson(e as Map<String, dynamic>))
+        .map((item) => HospitalDto.fromJson(ApiClient.requireJsonMap(item)))
         .toList();
   }
 
@@ -50,7 +50,7 @@ class HospitalApi {
           : ApiClient.bearerHeaders(accessToken),
     );
 
-    final data = body['data'] as Map<String, dynamic>;
+    final data = ApiClient.requireDataMap(body);
 
     return HospitalDetailDto.fromJson(data);
   }
@@ -80,7 +80,7 @@ class HospitalApi {
       queryParameters: queryParameters,
     );
 
-    final data = body['data'] as Map<String, dynamic>;
+    final data = ApiClient.requireDataMap(body);
 
     return HospitalMapDto.fromJson(data);
   }

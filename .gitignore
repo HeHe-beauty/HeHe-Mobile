@@ -1,8 +1,9 @@
 # OS
 .DS_Store
 
-# env
-env/
+# Local build environments (keep only the schema in Git)
+env/*
+!env/example.json
 
 # Flutter / Dart
 .dart_tool/

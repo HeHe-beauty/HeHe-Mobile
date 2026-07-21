@@ -1,5 +1,6 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../core/network/api_client.dart';
 import 'server_time_api.dart';
 
 class AppTime {
@@ -20,8 +21,11 @@ class AppTime {
 
     final response = await ServerTimeApi.fetchServerTime();
 
-    final data = response['data'] as Map<String, dynamic>;
-    final datetime = data['datetime'] as String;
+    final data = ApiClient.requireDataMap(response);
+    final datetime = data['datetime'] as String?;
+    if (datetime == null || datetime.isEmpty) {
+      throw const FormatException('서버 시간 응답에 datetime이 없습니다.');
+    }
 
     final serverUtc = _parseUtcDateTime(datetime);
     final serverKst = serverUtc.add(const Duration(hours: 9));
