@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:naver_login_sdk/naver_login_sdk.dart';
 
 import '../config/app_config.dart';
 import '../logging/app_log.dart';
-import 'naver_auth_channel.dart';
 
 enum SocialLoginProvider { kakao, naver }
 
@@ -55,13 +55,23 @@ class SocialLoginService {
       AppLog.debug('[Auth][Kakao] SDK initialized');
     }
 
-    if (Platform.isAndroid && AppConfig.isNaverConfigured) {
-      _isNaverInitialized = await NaverAuthChannel.initialize(
-        clientId: AppConfig.naverClientId,
-        clientSecret: AppConfig.naverClientSecret,
-        clientName: AppConfig.naverClientName,
-      );
-      AppLog.debug('[Auth][Naver] SDK initialized=$_isNaverInitialized');
+    if (AppConfig.isNaverConfigured) {
+      try {
+        _isNaverInitialized = await NaverLoginSDK.initialize(
+          urlScheme: Platform.isIOS ? AppConfig.naverUrlScheme : null,
+          clientId: AppConfig.naverClientId,
+          clientSecret: AppConfig.naverClientSecret,
+          clientName: AppConfig.naverClientName,
+        );
+        AppLog.debug('[Auth][Naver] SDK initialized=$_isNaverInitialized');
+      } catch (error, stackTrace) {
+        _isNaverInitialized = false;
+        AppLog.debug(
+          '[Auth][Naver] SDK initialization failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
     }
   }
 
@@ -117,26 +127,30 @@ class SocialLoginService {
     }
 
     AppLog.debug('[Auth][Naver] login start');
-    final result = await NaverAuthChannel.login();
-    if (result.cancelled) {
-      throw const SocialLoginException('네이버 로그인이 취소되었어요.');
-    }
-    if (!result.isSuccess) {
+    try {
+      final signedIn = await NaverLoginSDK.login();
+      if (!signedIn) {
+        throw const SocialLoginException('네이버 로그인이 취소되었어요.');
+      }
+      final accessToken = await NaverLoginSDK.getAccessToken();
+      if (accessToken.isEmpty) {
+        throw const SocialLoginException('네이버 로그인 토큰을 받지 못했어요.');
+      }
+      AppLog.debug('[Auth][Naver] token received');
+      return SocialLoginCredential(
+        provider: SocialLoginProvider.naver,
+        accessToken: accessToken,
+      );
+    } on SocialLoginException {
+      rethrow;
+    } catch (error, stackTrace) {
       AppLog.debug(
-        '[Auth][Naver] login failed code=${result.errorCode}',
-        error: result.errorMessage,
+        '[Auth][Naver] login failed (${error.runtimeType})',
+        error: error,
+        stackTrace: stackTrace,
       );
-      throw SocialLoginException(
-        _messageForNaverError(result),
-        diagnosticCode: _diagnosticCode('NAVER', result.errorCode),
-      );
+      throw const SocialLoginException('네이버 로그인 중 문제가 발생했어요.');
     }
-    AppLog.debug('[Auth][Naver] token received');
-
-    return SocialLoginCredential(
-      provider: SocialLoginProvider.naver,
-      accessToken: result.accessToken!,
-    );
   }
 
   static bool _isKakaoCancellation(Object error) {
@@ -167,15 +181,6 @@ class SocialLoginService {
       '카카오 로그인에 실패했어요.',
       diagnosticCode: _diagnosticCode('KAKAO', code),
     );
-  }
-
-  static String _messageForNaverError(NaverAuthResult result) {
-    final code = result.errorCode?.toLowerCase() ?? '';
-    if (code == 'user_cancel') return '네이버 로그인이 취소되었어요.';
-    if (code.contains('invalid_client') || code.contains('invalid_request')) {
-      return '네이버 로그인 설정을 확인해주세요.';
-    }
-    return '네이버 로그인에 실패했어요.';
   }
 
   static String? _diagnosticCode(String provider, String? code) {

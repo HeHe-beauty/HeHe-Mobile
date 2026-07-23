@@ -19,6 +19,10 @@ class AppConfig {
   static const String naverClientSecret = String.fromEnvironment(
     'NAVER_CLIENT_SECRET',
   );
+  static const String naverUrlScheme = String.fromEnvironment(
+    'NAVER_URL_SCHEME',
+    defaultValue: 'kr.hehehe.hehe',
+  );
   static const String naverClientName = String.fromEnvironment(
     'NAVER_CLIENT_NAME',
     defaultValue: 'HeHe',
