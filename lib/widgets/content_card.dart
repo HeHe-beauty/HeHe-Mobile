@@ -8,7 +8,7 @@ class ContentCard extends StatelessWidget {
   final VoidCallback? onTap;
   final Color? backgroundColor;
   final Color? foregroundColor;
-  final Color? thumbnailBackgroundColor;
+  final Color? iconBackgroundColor;
 
   const ContentCard({
     super.key,
@@ -16,7 +16,7 @@ class ContentCard extends StatelessWidget {
     this.onTap,
     this.backgroundColor,
     this.foregroundColor,
-    this.thumbnailBackgroundColor,
+    this.iconBackgroundColor,
   });
 
   @override
@@ -24,8 +24,8 @@ class ContentCard extends StatelessWidget {
     final palette = context.palette;
     final resolvedBackgroundColor = backgroundColor ?? palette.surface;
     final resolvedForegroundColor = foregroundColor ?? palette.textPrimary;
-    final resolvedThumbnailBackgroundColor =
-        thumbnailBackgroundColor ?? palette.surfaceMuted;
+    final resolvedIconBackgroundColor =
+        iconBackgroundColor ?? palette.surfaceMuted;
 
     return Material(
       color: Colors.transparent,
@@ -45,10 +45,10 @@ class ContentCard extends StatelessWidget {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: resolvedThumbnailBackgroundColor,
+                  color: resolvedIconBackgroundColor,
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: _ContentThumbnail(item: item),
+                child: Icon(item.icon, size: 22, color: palette.primaryStrong),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -137,32 +137,5 @@ class _WordWrappedTitle extends StatelessWidget {
       TextAlign.right || TextAlign.end => Alignment.centerRight,
       _ => Alignment.centerLeft,
     };
-  }
-}
-
-class _ContentThumbnail extends StatelessWidget {
-  final ContentItem item;
-
-  const _ContentThumbnail({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-    final thumbnailUrl = item.thumbnailUrl;
-
-    if (thumbnailUrl == null || thumbnailUrl.isEmpty) {
-      return Icon(item.icon, size: 22, color: palette.primaryStrong);
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: Image.network(
-        thumbnailUrl,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Icon(item.icon, size: 22, color: palette.primaryStrong);
-        },
-      ),
-    );
   }
 }

@@ -653,7 +653,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 ContentCarousel(
                                   items: recommendationContents,
                                   cardBackgroundColor: palette.surface,
-                                  thumbnailBackgroundColor: palette.primarySoft,
+                                  iconBackgroundColor: palette.primarySoft,
                                   onTapItem: (item) {
                                     _openContentDetail(context, item);
                                   },
@@ -1212,7 +1212,6 @@ ContentItem _contentItemFromArticle(ArticleDto article) {
   return ContentItem(
     articleId: article.articleId,
     title: article.title,
-    thumbnailUrl: article.thumbnailUrl,
     markdownContent: null,
     icon: Icons.article_rounded,
   );

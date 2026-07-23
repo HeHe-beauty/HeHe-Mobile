@@ -8,7 +8,7 @@ class ContentCarousel extends StatefulWidget {
   final ValueChanged<ContentItem>? onTapItem;
   final Color? cardBackgroundColor;
   final Color? cardForegroundColor;
-  final Color? thumbnailBackgroundColor;
+  final Color? iconBackgroundColor;
 
   const ContentCarousel({
     super.key,
@@ -16,7 +16,7 @@ class ContentCarousel extends StatefulWidget {
     this.onTapItem,
     this.cardBackgroundColor,
     this.cardForegroundColor,
-    this.thumbnailBackgroundColor,
+    this.iconBackgroundColor,
   });
 
   @override
@@ -123,8 +123,7 @@ class _ContentCarouselState extends State<ContentCarousel> {
                         item: item,
                         backgroundColor: widget.cardBackgroundColor,
                         foregroundColor: widget.cardForegroundColor,
-                        thumbnailBackgroundColor:
-                            widget.thumbnailBackgroundColor,
+                        iconBackgroundColor: widget.iconBackgroundColor,
                         onTap: () => widget.onTapItem?.call(item),
                       ),
                     );
